@@ -1,0 +1,39 @@
+name: Bug report
+description: A recipe doesn't work, an MCP throws an error, or something else is broken
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: input
+    id: recipe
+    attributes:
+      label: Which recipe or MCP?
+      placeholder: "e.g. recipes/pipeline/awareness/nick-zeckets-social-listening.md"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+      description: Steps to reproduce and the error you got
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "e.g. Claude Code 1.x, macOS 15, chili-piper-mcp v0.x"
+
+  - type: checkboxes
+    id: data_safety
+    attributes:
+      label: Data safety confirmation
+      options:
+        - label: I have not included any real customer data, credentials, or API keys in this issue
+          required: true

@@ -1,0 +1,78 @@
+# GTM Clawllective — Recipe Frontmatter Schema
+# Every recipe .md file must include this YAML frontmatter block.
+# Required fields are marked (required). Optional fields are marked (optional).
+
+# ─── IDENTITY ────────────────────────────────────────────────────────────────
+
+title: string                  # (required) Human-readable recipe title
+contributor: string            # (required) GitHub handle of recipe author
+stage: enum                    # (required) One of the valid bowtie stages below
+
+# Valid stages:
+#   awareness | education | selection | onboarding | impact | expansion
+#   orchestration | measurement | leverage
+
+tool_category:                 # (required) One or more tool categories
+  - enum
+# Valid categories:
+#   content-ops | social-listening | outreach | crm | scheduling | analytics
+#   enrichment | data-warehouse | communication | routing | handoff | escalation
+
+persona:                       # (required) Who runs this recipe
+  - enum
+# Valid personas:
+#   ae | sdr | cs | rev-ops | pmm | content | events | gtm-engineer | demand-gen
+
+stack:                         # (required) Tools used — MCP names or tool slugs
+  - string
+# Examples: claude-code, chili-piper-mcp, salesforce-mcp, clay-mcp, gong-mcp
+
+# ─── HUMAN-AGENT LOOP ────────────────────────────────────────────────────────
+
+humans_in_loop:                # (required) At least one entry
+  - role: string               # Human role (e.g. AE, RevOps, CS)
+    does: string               # What this human does in the loop
+    joy: enum                  # high | medium | low (how much this human enjoys this task)
+
+agent_does:                    # (required) List of what the agent does
+  - string
+
+human_decision_points:         # (required) When humans must approve/decide
+  - enum
+# Valid values: before-send | before-meeting | before-publish | before-enrich | custom
+
+# ─── DATA ────────────────────────────────────────────────────────────────────
+
+data_sources:                  # (required) Data the recipe reads
+  - name: string
+    type: enum                 # live-api | batch-export | warehouse | synthetic
+
+data_handling:                 # (required)
+  pii_present:                 # List PII fields used ([] if none)
+    - enum
+  # Valid PII fields: email | name | phone | company | title | linkedin_url
+  storage: enum                # ephemeral | local-only | never
+  outputs_go_to: string        # Where outputs land (e.g. salesforce-campaigns)
+
+# ─── REVENUE IMPACT ──────────────────────────────────────────────────────────
+
+revenue_impact:                # (required)
+  optimizes_for:               # Which bowtie rate(s) this moves
+    - enum
+  # Valid values: win_rate | pipeline_velocity | expansion_rate | churn_rate | nrr
+  expected_lift: string        # e.g. "+5-10pp on expansion conversion"
+  evidence_strength: enum      # anecdotal | one-team | multi-team | benchmarked
+  measurement_horizon: string  # e.g. "30 days"
+
+# ─── MEASUREMENT ─────────────────────────────────────────────────────────────
+
+measurement:                   # (required)
+  writes_to:                   # Where outputs are written back for tracking
+    - string
+  attribution_signal: string   # e.g. "campaign member with first-touch source"
+  optimization_loop: string    # e.g. "weekly review of bottom-decile campaigns"
+
+# ─── OPTIONAL ────────────────────────────────────────────────────────────────
+
+upsell: url                    # (optional) Link to contributor's paid offerings
+maturity: enum                 # (required) idea | draft | tested | proven
