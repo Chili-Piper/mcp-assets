@@ -1,11 +1,11 @@
 ---
 name: no-show-analyzer
 description: Analyzes Chili Piper meeting no-show patterns by trigger type, routing path, rep, or workspace using meeting-list-put and concierge-logs to surface actionable optimization opportunities
-version: 0.2.0
+version: 0.3.0
 inputs:
   - name: date_range
     type: string
-    description: "Period to analyze: 'last-30-days' (max for concierge-logs), or 'YYYY-MM-DD:YYYY-MM-DD' (max 30-day span)"
+    description: "Period to analyze: 'last-7-days', 'last-30-days', or 'YYYY-MM-DD:YYYY-MM-DD'. For trigger/route breakdown, concierge-logs caps at 30 days. Meeting data can go further but loses routing context."
     required: false
     default: "last-30-days"
   - name: workspace
@@ -34,7 +34,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review flagged segments and decide which routing rule or confirmation flow change to test first"
 writes_to: "Salesforce task (optional) — created by human after reviewing recommendations"
-api_note: "concierge-logs has a hard 30-day window limit. Date ranges beyond 30 days will only use meeting-list-put data and cannot break down by trigger or route."
+api_note: "meeting-list-put has a strict 7-day maximum window per call — the skill chunks longer ranges automatically. concierge-logs has a separate 30-day maximum window and requires a routerId. Only log entries with status=Booked have a meetingId to join against meeting-list-put; Offered/NoMatch/NotQualified/Timeout/Error entries never became meetings and must be excluded from the join."
 ---
 
 # No-Show Analyzer
@@ -50,13 +50,38 @@ You are a GTM data analyst with deep knowledge of Chili Piper's meeting and rout
 | `concierge-logs` | POST | Routing decisions per router — `status`, `trigger`, `guestEmail`, `triggeredAt`, `matchedPath`, `assignments`, `meetingId`, `sourceUrl` |
 | `workspace-list` | GET | All workspaces — `id`, `name`, `userCount` |
 
-**Key constraint:** `concierge-logs` requires a `routerId` and has a hard **30-day maximum window**. For grouping by `trigger` or `route`, you must loop over routers and call `concierge-logs` once per router, then join on `meetingId`.
+**Key constraint — two separate windows:**
+- `meeting-list-put` has a **7-day maximum window per call**. For ranges longer than 7 days, you must make multiple sequential calls and merge the results.
+- `concierge-logs` requires a `routerId` and has a **30-day maximum window**. For grouping by `trigger` or `route`, loop over routers and call once per router, then join on `meetingId`.
 
 **Status values in meeting-list-put:**
-- `Scheduled` — upcoming, not yet occurred
-- `Completed` — meeting happened
-- `NoShow` — guest did not attend ← the signal
-- `Cancelled` — exclude from no-show rate
+| Status | Include in no-show rate? |
+|--------|------------------------|
+| `Completed` | ✓ Yes — denominator and numerator |
+| `NoShow` | ✓ Yes — numerator only |
+| `Cancelled` | ✗ No — exclude entirely |
+| `Scheduled` | ✗ No — not yet occurred |
+
+**Status values in concierge-logs (critical for the join):**
+| Status | Has `meetingId`? | Meaning |
+|--------|----------------|---------|
+| `Booked` | ✓ Yes | Lead completed booking — this `meetingId` joins to meeting-list-put |
+| `Offered` | ✗ No | Calendar was shown but lead did not book |
+| `NoMatch` | ✗ No | No routing rule matched the lead |
+| `NotQualified` | ✗ No | Lead was disqualified (spam, ICP filter, explicit disqualify rule) |
+| `Timeout` | ✗ No | Session expired before the lead booked |
+| `Error` | ✗ No | Technical routing error |
+
+Only `Booked` log entries have a `meetingId` to join with meeting-list-put. All others represent leads that never became meetings — they are a separate "booking conversion" funnel and must be excluded from no-show calculations.
+
+**Trigger types in concierge-logs:**
+| Value | What it means |
+|-------|--------------|
+| `ThirdPartyForm` | Web form submission (Marketo, HubSpot, Pardot, HTML form) |
+| `Direct` | Prospect visited the router URL directly |
+| `Email` | Scheduling link embedded in an email |
+| `RouterLink` | Router link shared via a direct URL |
+| `InApp` | In-product trigger (SaaS product-embedded booking) |
 
 **No-show rate formula:**
 ```
@@ -79,20 +104,22 @@ If `workspace` is provided as a name (not ID), call `workspace-list` first to re
 
 ## Step 2 — Fetch meeting data
 
-Call `meeting-list-put` with pagination to get all meetings in the period.
+`meeting-list-put` accepts at most a **7-day window per call**. Split the requested date range into 7-day (or shorter) chunks and issue one call per chunk.
+
+For each chunk:
 
 ```
 tool: meeting-list-put
 args:
-  start: <ISO-8601 start>
-  end: <ISO-8601 end>
+  start: <chunk start, ISO-8601>
+  end: <chunk end, ISO-8601>
   page: 0
   pageSize: 200
 ```
 
-Paginate through all pages (check `total` vs `pageSize` to determine if multiple pages are needed).
+Paginate each chunk if needed (check `total` vs `pageSize`). Merge all results into a single list and deduplicate on `id`.
 
-Filter results:
+Filter the merged list:
 - **Include:** status `Completed` or `NoShow`
 - **Exclude:** status `Scheduled`, `Cancelled`
 
@@ -123,14 +150,16 @@ args:
   end: <ISO-8601 end>
 ```
 
-From the logs, extract for each entry:
+From the logs, **first filter to entries where `status = Booked`** — only these have a `meetingId` to join on. Then extract:
 - `meetingId` — used to join with meeting status
-- `trigger` — the lead source type (e.g. `ThirdPartyForm`, `Direct`, `Email`)
-- `matchedPath` — the routing rule matched (e.g. `Ownership Rule`, `NonOwnershipRule`)
+- `trigger` — the lead source type (see trigger types table above)
+- `matchedPath` — the routing rule matched (e.g. `CrmOwnership`, `WithoutOwnership`, `CatchAll`)
 - `sourceUrl` — the page the lead came from (useful for inferring campaign/channel)
-- `assignments[0].name` — the assigned rep
+- `assignments[0].name` — the rep the router assigned
 
 Join on `meetingId` to get the meeting's actual status (`Completed` or `NoShow`).
+
+Note: concierge-logs entries with status `Offered`, `NoMatch`, `NotQualified`, `Timeout`, or `Error` never produced a meeting and will not appear in meeting-list-put. Do not attempt to join these — discard them from this analysis.
 
 ---
 
@@ -159,14 +188,17 @@ If a group has fewer than 10 meetings, note low sample size next to the rate —
 For each flagged segment, produce 1–3 hypotheses. Use what you know about GTM + CP:
 
 **By trigger type:**
-- `ThirdPartyForm` (web form submissions) — often high no-show if no SMS confirmation; booking window may be too long
-- `Direct` (direct link clicks) — lower intent signals; prospect may not remember context
-- `Email` (email-embedded links) — usually lower no-show; if high, check if link is going to spam or wrong audience
+- `ThirdPartyForm` — high no-show often means no SMS confirmation or booking window is too long (> 3–4 days)
+- `Direct` — lower intent signal; prospect clicked a link but may not remember context by meeting day
+- `Email` — usually lowest no-show of the trigger types; if high, check whether links are hitting spam filters or the wrong audience
+- `RouterLink` — similar to Direct; check lead time and whether a reminder sequence is configured
+- `InApp` — typically high-intent; if high no-show, check if the in-app trigger fires at a low-intent moment in the product flow
 
-**By matchedPath (route):**
-- `Ownership Rule` with high no-show — check if the ownership data in Salesforce is stale; wrong rep gets assigned, lead goes cold
-- `NonOwnershipRule` with high no-show — check if round-robin is balanced; overloaded reps may under-prepare
-- Any route with no `matchedPath` logged — leads may be falling to catch-all; audit routing coverage
+**By matchedPath (routing rule type):**
+- `CrmOwnership` with high no-show — check if the Salesforce ownership data is stale; wrong rep gets assigned, lead goes cold
+- `WithoutOwnership` (territory/segment rules) with high no-show — check if round-robin distribution is balanced; overloaded reps may under-prepare
+- `CatchAll` with high no-show — leads that hit the catch-all had no specific rep match; lower intent and lower rep accountability
+- Any route with `matchedPath = null` — leads falling through entirely; run `/routing-audit` to find the gap
 
 **By rep:**
 - Individual reps with >40% no-show — check if they have calendar hygiene issues, or are being assigned leads outside their territory

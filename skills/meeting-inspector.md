@@ -1,7 +1,7 @@
 ---
 name: meeting-inspector
 description: Deep-dives into a single Chili Piper meeting — booking trigger, routing path, rep assignment, and outcome — to diagnose what happened and surface a next action
-version: 0.1.0
+version: 0.2.0
 inputs:
   - name: meeting_id
     type: string
@@ -13,7 +13,7 @@ inputs:
     required: false
   - name: date_range
     type: string
-    description: "Search window when using guest_email: 'last-7-days', 'last-30-days', or 'YYYY-MM-DD:YYYY-MM-DD' (max 30-day span)"
+    description: "Search window when using guest_email: 'last-7-days', 'last-30-days', or 'YYYY-MM-DD:YYYY-MM-DD'. Note: meeting-list-put is chunked into 7-day calls automatically; concierge-logs for routing trace caps at 30 days."
     required: false
     default: "last-30-days"
   - name: workspace
@@ -32,7 +32,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review anomalies and decide: rebook, follow up with guest, or fix the underlying routing rule"
 writes_to: "Nothing — read-only diagnostic tool"
-api_note: "concierge-logs requires a routerId and has a 30-day maximum window. Routing trace is unavailable for meetings older than 30 days — meeting_summary and anomalies still work."
+api_note: "meeting-list-put has a strict 7-day maximum window per call — Path B chunks automatically. concierge-logs has a separate 30-day maximum window; routing trace is unavailable for meetings older than 30 days. meeting-get returns the status field as 'meetingStatus', not 'status' — use 'meetingStatus' when parsing meeting-get responses."
 ---
 
 # Meeting Inspector
@@ -44,16 +44,39 @@ You are a GTM diagnostic analyst with deep knowledge of Chili Piper's booking an
 | Tool | Method | What it returns |
 |------|--------|----------------|
 | `meeting-list-put` | POST | Paginated meetings — `id`, `status`, `startTime`, `assignee` (name, email), `guest` (email), `createdAt` |
-| `meeting-get` | GET | Single meeting by ID — full detail including `id`, `status`, `startTime`, `assignee`, `guest`, `createdAt` |
+| `meeting-get` | GET | Single meeting by ID — full detail including `id`, `meetingStatus`, `startTime`, `assignee`, `guest`, `createdAt` |
 | `concierge-list-routers` | GET | All routers — `id`, `name`, `slug`, `workspaceId` |
-| `concierge-logs` | POST | Routing decisions per router — `status`, `trigger`, `guestEmail`, `triggeredAt`, `matchedPath`, `assignments`, `meetingId`, `sourceUrl` |
+| `concierge-logs` | POST | Routing decisions per router — `status`, `trigger`, `guestEmail`, `triggeredAt`, `matchedPath`, `assignments`, `meetingId`, `sourceUrl`, `actionsStatus` |
 | `workspace-list` | GET | All workspaces — `id`, `name`, `userCount` |
 
-**Status values:**
-- `Scheduled` — upcoming, not yet occurred
-- `Completed` — meeting happened
-- `NoShow` — guest did not attend
-- `Cancelled` — meeting was cancelled
+**Field name gotcha:** `meeting-list-put` returns status as `status`. `meeting-get` returns it as `meetingStatus`. Use the correct field name for each tool.
+
+**Meeting status values (meeting-list-put `status` / meeting-get `meetingStatus`):**
+| Value | Meaning |
+|-------|---------|
+| `Scheduled` | Upcoming, not yet occurred |
+| `Completed` | Meeting happened |
+| `NoShow` | Guest did not attend |
+| `Cancelled` | Meeting was cancelled |
+
+**Concierge-log status values (routing session outcome):**
+| Value | Has `meetingId`? | Meaning |
+|-------|----------------|---------|
+| `Booked` | ✓ Yes | Lead completed booking — meetingId matches meeting records |
+| `Offered` | ✗ No | Calendar was shown but lead did not book |
+| `NoMatch` | ✗ No | No routing rule matched the lead |
+| `NotQualified` | ✗ No | Lead was disqualified (spam check, ICP filter, or explicit disqualify rule) |
+| `Timeout` | ✗ No | Routing session (30-min TTL) expired before lead booked |
+| `Error` | ✗ No | Technical error during routing — escalate to engineering |
+
+**Trigger types in concierge-logs:**
+| Value | What it means |
+|-------|--------------|
+| `ThirdPartyForm` | Web form submission (Marketo, HubSpot, Pardot, HTML form) |
+| `Direct` | Prospect visited the router URL directly |
+| `Email` | Scheduling link embedded in an email |
+| `RouterLink` | Router link shared via a direct URL |
+| `InApp` | In-product trigger (SaaS product-embedded booking) |
 
 ---
 
@@ -75,16 +98,18 @@ If the call returns a 404 or empty result, report: *"No meeting found with ID `<
 
 **Path B — guest_email provided (no meeting_id):**
 
+`meeting-list-put` accepts at most a **7-day window per call**. Split the `date_range` into 7-day (or shorter) chunks and issue one call per chunk. Stop as soon as a match is found — no need to fetch the full period if the meeting appears early.
+
 ```
 tool: meeting-list-put
 args:
-  start: <ISO-8601 start of date_range>
-  end: <ISO-8601 end of date_range>
+  start: <chunk start, ISO-8601>
+  end: <chunk end, ISO-8601>
   page: 0
   pageSize: 50
 ```
 
-Filter results to rows where `guest.email` matches `guest_email` (case-insensitive). If multiple meetings match, show a numbered list and ask the user to pick one before continuing:
+Search each chunk for rows where `guest.email` matches `guest_email` (case-insensitive). If multiple meetings match across chunks, show a numbered list and ask the user to pick one before continuing:
 
 ```
 Multiple meetings found for <guest_email>:
@@ -102,15 +127,15 @@ If zero matches, report: *"No meetings found for `<guest_email>` in the requeste
 
 From the meeting record, extract:
 
-| Field | Source |
-|-------|--------|
-| Meeting ID | `id` |
-| Status | `status` |
-| Scheduled time | `startTime` |
-| Booked at | `createdAt` |
-| Lead time | `startTime` minus `createdAt` (hours/days) |
-| Guest email | `guest.email` |
-| Assigned rep | `assignee.name` + `assignee.email` |
+| Field | Source (meeting-list-put) | Source (meeting-get) |
+|-------|--------------------------|---------------------|
+| Meeting ID | `id` | `id` |
+| Status | `status` | `meetingStatus` ← different field name |
+| Scheduled time | `startTime` | `startTime` |
+| Booked at | `createdAt` | `createdAt` |
+| Lead time | `startTime` minus `createdAt` | same |
+| Guest email | `guest.email` | `guest.email` |
+| Assigned rep | `assignee.name` + `assignee.email` | same |
 
 **Lead time interpretation:**
 - < 2 hours — same-day booking (high urgency signal)
@@ -145,13 +170,17 @@ args:
 Search for a log entry where `meetingId` matches the target meeting's ID, OR where `guestEmail` matches and `triggeredAt` is within a few hours of `createdAt`.
 
 If a match is found, extract:
-- `trigger` — how the lead arrived (e.g. `ThirdPartyForm`, `Direct`, `Email`)
-- `matchedPath` — the routing rule that fired (e.g. `Ownership Rule`, `Round Robin`)
+- `status` — the routing session outcome (see status table above; expect `Booked` for a completed meeting)
+- `trigger` — how the lead arrived (see trigger types table above)
+- `matchedPath` — the routing rule that fired (e.g. `CrmOwnership`, `WithoutOwnership`, `CatchAll`)
 - `sourceUrl` — the page the lead came from
 - `assignments[0].name` — the rep the router assigned
 - `triggeredAt` — when the router ran
+- `actionsStatus` — result of CRM write actions (e.g. Salesforce task creation, campaign association); a failure here means the meeting exists in CP but may not be visible in Salesforce
 
-**If no routing log is found**, note: *"No routing log found for this meeting — it may have been booked via direct link or manual scheduling outside a router."*
+**If log status is not `Booked`:** this is unusual for an existing meeting — report the status and meaning (e.g. "Routing log shows `Offered` — the lead was shown a calendar but did not complete booking. The meeting record may have been created via another path.").
+
+**If no routing log is found**, note: *"No routing log found for this meeting — it may have been booked via a direct scheduling link, manual booking, or handoff rather than a concierge router."*
 
 ---
 
@@ -219,6 +248,7 @@ Based on status and anomalies, select the most relevant action:
 | Source URL | |
 | Router assigned | |
 | Routed at | |
+| CRM actions status | |
 
 *(or: "Routing trace unavailable — meeting is older than 30 days" / "No routing log found")*
 
