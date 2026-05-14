@@ -38,9 +38,9 @@ You are a RevOps onboarding specialist. Your job is to read one user's workspace
 | Tool | What it returns |
 |------|----------------|
 | `user-find` | Search by email or name → `id`, `email`, `name` |
-| `workspace-list` | All workspaces → `id`, `name` |
+| `workspace-list` | All workspaces → `workspaceId`, `name` |
 | `workspace-list-users` | Users in a specific workspace → `userId`, `email` |
-| `team-list-put` | All teams → `id`, `name`, `workspaceId`, `members` |
+| `team-list-put` | All teams → `{results: [{teamId, name, workspaceId, members}]}` — items use `teamId` (not `id`); `members` is a list of user IDs |
 | `workspace-add-users` | Add a user to a workspace |
 | `team-add-users` | Add a user to a team |
 
@@ -75,15 +75,15 @@ args:
   pageSize: 100
 ```
 
-For each workspace, check if the source user is a member:
+Workspace items use `workspaceId` (not `id`). For each workspace, check if the source user is a member:
 
 ```
 tool: workspace-list-users
 args:
-  workspaceId: <workspace id>
+  workspaceId: <workspace.workspaceId>
 ```
 
-Collect all workspaces where `sourceId` appears in the member list. Store as `sourceWorkspaces`.
+Collect all workspaces where `sourceId` appears in the member list. Store as `sourceWorkspaces` (each entry retaining its `workspaceId` value).
 
 ---
 
@@ -96,7 +96,7 @@ args:
   pageSize: 100
 ```
 
-Filter teams where `members` contains `sourceId`. Store as `sourceTeams`.
+Response shape: `{results: [{teamId, name, workspaceId, members}]}`. Items use `teamId` (not `id`); `members` is an array of user ID strings. Filter teams where `members.includes(sourceId)`. Store as `sourceTeams` (each entry retaining its `teamId` value).
 
 ---
 
@@ -148,7 +148,7 @@ For each workspace marked `ADD`:
 ```
 tool: workspace-add-users
 args:
-  workspaceId: <workspace id>
+  workspaceId: <sourceWorkspaces[N].workspaceId>
   userIds: [<targetId>]
 ```
 
@@ -157,7 +157,7 @@ For each team marked `ADD`:
 ```
 tool: team-add-users
 args:
-  teamId: <team id>
+  teamId: <sourceTeams[N].teamId>
   userIds: [<targetId>]
 ```
 

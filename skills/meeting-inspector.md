@@ -32,7 +32,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review anomalies and decide: rebook, follow up with guest, or fix the underlying routing rule"
 writes_to: "Nothing — read-only diagnostic tool"
-api_note: "meeting-list-put has a strict 7-day maximum window per call — Path B chunks automatically. concierge-logs has a separate 30-day maximum window; routing trace is unavailable for meetings older than 30 days. meeting-get returns the status field as 'meetingStatus', not 'status' — use 'meetingStatus' when parsing meeting-get responses."
+api_note: "meeting-list-put has a strict 7-day maximum window per call — Path B chunks automatically. concierge-logs has a separate 30-day maximum window; routing trace is unavailable for meetings older than 30 days. meeting-get returns the status field as 'meetingStatus', not 'status' — use 'meetingStatus' when parsing meeting-get responses. meeting-list-put response envelope is {data: {list: [...]}, hasMore: 'Yes'|'No'}; meeting items use 'meetingId' (not 'id'), 'scheduledAt' (not 'startTime'), 'assignedUserId' (not 'assignee'); paginate by checking hasMore === 'Yes' (string, not boolean). concierge-list-routers nests routerId at routers[N].router.id, slug at routers[N].router.slug, workspaceId at routers[N].workspaceId."
 ---
 
 # Meeting Inspector
@@ -43,13 +43,17 @@ You are a GTM diagnostic analyst with deep knowledge of Chili Piper's booking an
 
 | Tool | Method | What it returns |
 |------|--------|----------------|
-| `meeting-list-put` | POST | Paginated meetings — `id`, `status`, `startTime`, `assignee` (name, email), `guest` (email), `createdAt` |
-| `meeting-get` | GET | Single meeting by ID — full detail including `id`, `meetingStatus`, `startTime`, `assignee`, `guest`, `createdAt` |
-| `concierge-list-routers` | GET | All routers — `id`, `name`, `slug`, `workspaceId` |
+| `meeting-list-put` | POST | Paginated meetings — response envelope `{data: {list: [...]}, hasMore: "Yes"\|"No"}`. Items in `data.list[]`: `meetingId`, `status`, `scheduledAt`, `assignedUserId`, `workspaceId`, `attendees` (array). Paginate by checking `hasMore === "Yes"` (string). |
+| `meeting-get` | GET | Single meeting by ID — full detail including `id`, `meetingStatus`. Scheduled time is in the `activities` array (no top-level `startTime` or `scheduledAt`). |
+| `concierge-list-routers` | GET | All routers — response: `{routers: [{router: {id, name, slug, ...}, dataFields: [...], workspaceId}]}`. Access: `routerId` at `routers[N].router.id`, `slug` at `routers[N].router.slug`, `workspaceId` at `routers[N].workspaceId`. |
 | `concierge-logs` | POST | Routing decisions per router — `status`, `trigger`, `guestEmail`, `triggeredAt`, `matchedPath`, `assignments`, `meetingId`, `sourceUrl`, `actionsStatus` |
-| `workspace-list` | GET | All workspaces — `id`, `name`, `userCount` |
+| `workspace-list` | GET | All workspaces — `[{workspaceId, name, settings}]` (items use `workspaceId`, not `id`) |
 
-**Field name gotcha:** `meeting-list-put` returns status as `status`. `meeting-get` returns it as `meetingStatus`. Use the correct field name for each tool.
+**Field name gotchas:**
+- `meeting-list-put` returns status as `status`; `meeting-get` returns it as `meetingStatus`. Use the correct field name for each tool.
+- `meeting-list-put` items use `meetingId` (not `id`), `scheduledAt` (not `startTime`), and `assignedUserId` (not `assignee`). To resolve a name/email from `assignedUserId`, call `user-find-by-ids`.
+- Guest information in `meeting-list-put` items is in the `attendees` array, not a top-level `guest` field.
+- `concierge-list-routers` nests router fields: use `routers[N].router.id` for routerId, `routers[N].router.slug` for slug, `routers[N].workspaceId` for workspaceId.
 
 **Meeting status values (meeting-list-put `status` / meeting-get `meetingStatus`):**
 | Value | Meaning |
@@ -105,11 +109,14 @@ tool: meeting-list-put
 args:
   start: <chunk start, ISO-8601>
   end: <chunk end, ISO-8601>
-  page: 0
-  pageSize: 50
+  pagination:
+    page: 0
+    pageSize: 50
 ```
 
-Search each chunk for rows where `guest.email` matches `guest_email` (case-insensitive). If multiple meetings match across chunks, show a numbered list and ask the user to pick one before continuing:
+Results are in `response.data.list[]`. Each item uses `meetingId` (not `id`). Search each chunk for rows where the guest email appears anywhere in the `attendees` array (case-insensitive email match). Paginate within each chunk by checking `hasMore === "Yes"` (string comparison). Deduplicate across chunks on `meetingId`.
+
+If multiple meetings match across chunks, show a numbered list and ask the user to pick one before continuing:
 
 ```
 Multiple meetings found for <guest_email>:
@@ -129,13 +136,13 @@ From the meeting record, extract:
 
 | Field | Source (meeting-list-put) | Source (meeting-get) |
 |-------|--------------------------|---------------------|
-| Meeting ID | `id` | `id` |
+| Meeting ID | `meetingId` | `id` |
 | Status | `status` | `meetingStatus` ← different field name |
-| Scheduled time | `startTime` | `startTime` |
-| Booked at | `createdAt` | `createdAt` |
-| Lead time | `startTime` minus `createdAt` | same |
-| Guest email | `guest.email` | `guest.email` |
-| Assigned rep | `assignee.name` + `assignee.email` | same |
+| Scheduled time | `scheduledAt` | in `activities` array (no top-level field) |
+| Booked at | uncertain — may be in `activities` | in `activities` array |
+| Lead time | `scheduledAt` minus booking timestamp (if available) | derive from `activities` |
+| Guest email | from `attendees` array (email match) | from `activities` or attendee fields |
+| Assigned rep | `assignedUserId` → resolve via `user-find-by-ids` | from meeting detail fields |
 
 **Lead time interpretation:**
 - < 2 hours — same-day booking (high urgency signal)
@@ -157,14 +164,16 @@ args:
   workspaceId: <resolved workspace ID, or omit for all>
 ```
 
+The response is `{routers: [{router: {id, name, slug, ...}, dataFields: [...], workspaceId}]}`. When iterating, use `routers[N].router.id` as the routerId, `routers[N].router.name` for display, `routers[N].router.slug` for the slug, and `routers[N].workspaceId` for the workspace.
+
 **3b. For each router, fetch logs and look for this meeting:**
 ```
 tool: concierge-logs
 args:
-  workspaceId: <router's workspaceId>
-  routerId: <router id>
-  start: <ISO-8601 — use 1 day before meeting's createdAt>
-  end: <ISO-8601 — use 1 day after meeting's createdAt>
+  workspaceId: <routers[N].workspaceId>
+  routerId: <routers[N].router.id>
+  start: <ISO-8601 — use 1 day before meeting's scheduled/booking time>
+  end: <ISO-8601 — use 1 day after meeting's scheduled/booking time>
 ```
 
 Search for a log entry where `meetingId` matches the target meeting's ID, OR where `guestEmail` matches and `triggeredAt` is within a few hours of `createdAt`.
@@ -191,9 +200,9 @@ Check for each of the following and flag any that are true:
 | Anomaly | Condition | Severity |
 |---------|-----------|----------|
 | **No-show** | `status = NoShow` | High |
-| **Late cancellation** | `status = Cancelled` AND cancellation within 2 hours of `startTime` | Medium |
+| **Late cancellation** | `status = Cancelled` AND cancellation within 2 hours of `scheduledAt` (from meeting-list-put) or scheduled time in activities (from meeting-get) | Medium |
 | **Long lead time + no-show** | Lead time > 5 days AND `status = NoShow` | High — recency decay likely |
-| **Rep assignment mismatch** | `assignments[0].name` from routing log ≠ `assignee.name` from meeting record | High — meeting was reassigned after routing |
+| **Rep assignment mismatch** | `assignments[0].name` from routing log ≠ resolved name for `assignedUserId` from meeting-list-put (or rep fields from meeting-get) | High — meeting was reassigned after routing |
 | **Routing fallthrough** | `matchedPath` is null or blank | Medium — hit catch-all or no rule matched |
 | **Unrouted meeting** | No routing log found at all | Low — may be manual or direct-link booking |
 

@@ -34,7 +34,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review flagged segments and decide which routing rule or confirmation flow change to test first"
 writes_to: "Salesforce task (optional) — created by human after reviewing recommendations"
-api_note: "meeting-list-put has a strict 7-day maximum window per call — the skill chunks longer ranges automatically. concierge-logs has a separate 30-day maximum window and requires a routerId. Only log entries with status=Booked have a meetingId to join against meeting-list-put; Offered/NoMatch/NotQualified/Timeout/Error entries never became meetings and must be excluded from the join."
+api_note: "meeting-list-put has a strict 7-day maximum window per call — the skill chunks longer ranges automatically. concierge-logs has a separate 30-day maximum window and requires a routerId. Only log entries with status=Booked have a meetingId to join against meeting-list-put; Offered/NoMatch/NotQualified/Timeout/Error entries never became meetings and must be excluded from the join. meeting-list-put response envelope is {data: {list: [...]}, hasMore: 'Yes'|'No'}; meeting items use 'meetingId' (not 'id'); paginate by checking hasMore === 'Yes' (string, not boolean). concierge-list-routers nests routerId at routers[N].router.id, workspaceId at routers[N].workspaceId, name at routers[N].router.name."
 ---
 
 # No-Show Analyzer
@@ -45,8 +45,8 @@ You are a GTM data analyst with deep knowledge of Chili Piper's meeting and rout
 
 | Tool | Method | What it returns |
 |------|--------|----------------|
-| `meeting-list-put` | POST | Paginated meetings by time range — `id`, `status`, `startTime`, `assignee` (name, email), `guest` (email) |
-| `concierge-list-routers` | GET | All routers — `id`, `name`, `slug`, `workspaceId` |
+| `meeting-list-put` | POST | Paginated meetings by time range — response envelope `{data: {list: [...]}, hasMore: "Yes"\|"No"}`. Items in `data.list[]`: `meetingId`, `status`, `scheduledAt`, `assignedUserId`, `workspaceId`, `attendees` (array). Paginate by checking `hasMore === "Yes"` (string). |
+| `concierge-list-routers` | GET | All routers — response: `{routers: [{router: {id, name, slug, ...}, dataFields: [...], workspaceId}]}`. Access: `routerId` at `routers[N].router.id`, `name` at `routers[N].router.name`, `workspaceId` at `routers[N].workspaceId`. |
 | `concierge-logs` | POST | Routing decisions per router — `status`, `trigger`, `guestEmail`, `triggeredAt`, `matchedPath`, `assignments`, `meetingId`, `sourceUrl` |
 | `workspace-list` | GET | All workspaces — `id`, `name`, `userCount` |
 
@@ -113,11 +113,12 @@ tool: meeting-list-put
 args:
   start: <chunk start, ISO-8601>
   end: <chunk end, ISO-8601>
-  page: 0
-  pageSize: 200
+  pagination:
+    page: 0
+    pageSize: 200
 ```
 
-Paginate each chunk if needed (check `total` vs `pageSize`). Merge all results into a single list and deduplicate on `id`.
+Results are in `response.data.list[]`. Paginate each chunk if needed — continue incrementing `pagination.page` while `response.hasMore === "Yes"` (string comparison, not boolean). Merge all results into a single list and deduplicate on `meetingId`.
 
 Filter the merged list:
 - **Include:** status `Completed` or `NoShow`
@@ -125,13 +126,13 @@ Filter the merged list:
 
 If `workspace` was specified, note that `meeting-list-put` does not support workspace filtering. Use `meeting-export-v2-put` with `workspaceId` instead (returns CSV — parse accordingly).
 
-Build a map of `meetingId → status` for the join in Step 3.
+Build a map of `meetingId → status` for the join in Step 3. (The field name in each meeting-list-put item is `meetingId`, so key the map on `item.meetingId`.)
 
 ---
 
 ## Step 3 — Fetch routing context (only for `trigger` or `route` grouping)
 
-Skip this step if `group_by=rep` — rep is available directly from `meeting-list-put` assignee data.
+Skip this step if `group_by=rep` — rep is available directly from `meeting-list-put` via the `assignedUserId` field (resolve to name/email via `user-find-by-ids` if needed).
 
 **3a. List all routers:**
 ```
@@ -140,12 +141,14 @@ args:
   workspaceId: <resolved workspace ID, or omit for all>
 ```
 
+The response is `{routers: [{router: {id, name, slug, ...}, dataFields: [...], workspaceId}]}`. When iterating routers use `routers[N].router.id` as the routerId, `routers[N].router.name` for display, and `routers[N].workspaceId` for the workspaceId.
+
 **3b. For each router, fetch routing logs:**
 ```
 tool: concierge-logs
 args:
-  workspaceId: <router's workspaceId>
-  routerId: <router id>
+  workspaceId: <routers[N].workspaceId>
+  routerId: <routers[N].router.id>
   start: <ISO-8601 start>
   end: <ISO-8601 end>
 ```
@@ -169,7 +172,7 @@ Group by the selected dimension:
 
 **`group_by=trigger`** — group by the `trigger` field from concierge-logs
 **`group_by=route`** — group by `matchedPath` from concierge-logs
-**`group_by=rep`** — group by `assignee.email` from meeting-list-put
+**`group_by=rep`** — group by `assignedUserId` from meeting-list-put (resolve to name/email via `user-find-by-ids` if display is needed)
 **`group_by=workspace`** — group by workspace (requires per-workspace calls or export)
 
 For each group calculate:

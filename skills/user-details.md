@@ -35,9 +35,9 @@ You are a RevOps analyst. Your job is to pull a complete profile for a Chili Pip
 
 | Tool | What it returns |
 |------|----------------|
-| `user-find` | Search by email or name → `id`, `email`, `name`, `role` |
-| `user-read` | Full user record → license, calendar provider, calendar connected, CRM connected, `workspaceIds` |
-| `workspace-list` | All workspaces → resolve IDs to names |
+| `user-find` | Search by email or name → `id`, `name`, `email`, `isSuperAdmin`, `licenses` (object), `workspaces` (array of workspaceId strings), `personalWorkspaceId` |
+| `user-read` | Full user record (same fields as user-find result item, unwrapped) → `id`, `name`, `email`, `isSuperAdmin`, `licenses` (object with boolean fields: `distro`, `chiliCalOrg`, `concierge`, `conciergeLive`, `chat`, `handoff`), `workspaces` (array of workspaceId strings, NOT `workspaceIds`), `personalWorkspaceId`. No `calendarConnected`, `calendarProvider`, or `crmConnected` fields. |
+| `workspace-list` | All workspaces → array of `{workspaceId, name, settings}` — items use `workspaceId` (NOT `id`) |
 | `team-list-put` | All teams → filter for teams containing this user |
 | `scheduling-link-list-personal` | Personal scheduling links owned by this user |
 | `scheduling-link-list-round-robin` | Round-robin links this user is part of |
@@ -72,15 +72,11 @@ args:
 
 Extract:
 - `id`, `email`, `name`
-- `role` — Admin, User, or similar
-- `licenseType` — which products they're licensed for
-- `calendarProvider` — Google / Outlook / None
-- `calendarConnected` — true/false
-- `crmConnected` — true/false
-- `workspaceIds` — list of workspace IDs
+- `isSuperAdmin` — true/false
+- `licenses` — object with boolean fields: `distro`, `chiliCalOrg`, `concierge`, `conciergeLive`, `chat`, `handoff`
+- `workspaces` — list of workspaceId strings (field is `workspaces`, NOT `workspaceIds`)
 
-Flag if `calendarConnected = false` — this user cannot appear in any scheduling flow.
-Flag if `crmConnected = false` — ownership routing will not work for this user.
+Note: `calendarConnected`, `calendarProvider`, and `crmConnected` are **not** present in the `user-read` response. Calendar connection status is not available from user-read — it will surface in routing/availability failures if misconfigured. CRM connection status is likewise not directly readable from this endpoint.
 
 ---
 
@@ -95,7 +91,7 @@ args:
   pageSize: 100
 ```
 
-Map the user's `workspaceIds` to workspace names. Note any workspaces where you'd expect them but they're absent.
+Map the user's `workspaces` (list of workspaceId strings) to workspace names using the `workspaceId` field (not `id`) from the workspace-list response. Note any workspaces where you'd expect them but they're absent.
 
 ---
 
@@ -132,16 +128,23 @@ Combine results. Note the meeting type and whether the link is active.
 
 ## Step 6 — Recent meeting activity (if include_meetings=true)
 
+The `meeting-list-put` API has a strict **< 7-day** window per call. Split the 30-day range into chunks of at most 6 days each (5 or 6 calls). For each chunk:
+
 ```
 tool: meeting-list-put
 args:
-  start: <30 days ago, ISO-8601>
-  end: <today, ISO-8601>
-  page: 0
-  pageSize: 200
+  start: <chunk start, ISO-8601>
+  end: <chunk end, ISO-8601>
+  pagination:
+    page: 0
+    pageSize: 200
 ```
 
-Filter for meetings where `assignee.email` matches the user's email.
+Paginate each chunk if needed: check `hasMore === "Yes"` (string comparison) and increment `pagination.page` until `hasMore === "No"`.
+
+Merge all results from `data.list` across all chunks. Deduplicate on `meetingId`.
+
+Filter for meetings where `assignedUserId === <resolved user ID>`.
 
 Calculate:
 - Total meetings (Completed + NoShow)
@@ -159,14 +162,12 @@ Calculate:
 | Field | Value |
 |-------|-------|
 | User ID | |
-| Role | |
-| License | |
-| Calendar | Connected (Google/Outlook) / ⚠ Not connected |
-| CRM | Connected / ⚠ Not connected |
+| Super Admin | true / false |
+| Licenses | distro, chiliCalOrg, concierge, … (list enabled ones) |
 
 **Warnings** (if any)
-- ⚠ Calendar not connected — this user will not appear in any scheduling flow
-- ⚠ CRM not connected — ownership-based routing will not resolve to this user
+- ⚠ Calendar connection status is not available from the API — check routing/availability failures if scheduling issues are reported
+- ⚠ CRM connection status is not available from the API — ownership-based routing failures will surface at routing time
 
 **Workspace memberships**
 
