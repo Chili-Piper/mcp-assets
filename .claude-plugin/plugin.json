@@ -1,0 +1,9 @@
+{
+  "name": "gtm-clawllective",
+  "version": "1.0.0",
+  "description": "AI-assisted GTM recipes, skills, and agents for moving accounts from cold to closed-won — with the Chili Piper MCP built in.",
+  "author": {
+    "name": "Chili Piper & Community",
+    "url": "https://github.com/Chili-Piper/gtm-clawllective"
+  }
+}
