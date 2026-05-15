@@ -44,7 +44,7 @@ The Chili Piper MCP uses **HTTP transport** — it connects directly to Chili Pi
 
 ```bash
 claude mcp add --transport http chili-piper \
-  https://fire.chilipiper.io/api/fire-edge/v1/org/mcp \
+  https://fire.chilipiper.com/api/fire-edge/v1/org/mcp \
   --header "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -57,7 +57,7 @@ Replace `YOUR_API_KEY` with the key from Admin Center. Replace `io` with your te
   "mcpServers": {
     "chili-piper": {
       "type": "http",
-      "url": "https://fire.chilipiper.io/api/fire-edge/v1/org/mcp",
+      "url": "https://fire.chilipiper.com/api/fire-edge/v1/org/mcp",
       "headers": {
         "Authorization": "Bearer YOUR_API_KEY"
       }
@@ -78,7 +78,7 @@ Claude Code and Codex support browser-based OAuth login — the agent handles to
 
 ```bash
 claude mcp add --transport http chili-piper \
-  https://fire.chilipiper.io/api/fire-edge/v1/org/mcp
+  https://fire.chilipiper.com/api/fire-edge/v1/org/mcp
 ```
 
 On first use, Claude Code opens a browser window for Chili Piper login. Tokens are stored in Claude Code's credential store and refreshed automatically.
@@ -87,7 +87,7 @@ On first use, Claude Code opens a browser window for Chili Piper login. Tokens a
 
 ```bash
 codex mcp add chili-piper \
-  --url https://fire.chilipiper.io/api/fire-edge/v1/org/mcp
+  --url https://fire.chilipiper.com/api/fire-edge/v1/org/mcp
 ```
 
 > OAuth must be enabled for your tenant by Chili Piper. Contact support if the browser prompt does not appear on first use.
