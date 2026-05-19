@@ -1,0 +1,188 @@
+openapi: 3.0.0
+info:
+  title: Chili Piper — Availability Inspector Actions
+  description: Endpoints used by the Availability Inspector GPT to diagnose slot availability blockers.
+  version: 0.1.0
+servers:
+  - url: https://api.chilipiper.com
+    description: Chili Piper API
+
+security:
+  - bearerAuth: []
+
+paths:
+  /users/search:
+    get:
+      operationId: findUsers
+      summary: Search for users by email or name
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Email address, name, or partial match
+      responses:
+        "200":
+          description: Matching users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSummary'
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      summary: Get full user profile by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+
+  /availability/slots:
+    post:
+      operationId: getAvailabilitySlots
+      summary: Get available slots for a user or group; returns failures map if no slots found
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expectedHost, userIds, interval]
+              properties:
+                expectedHost:
+                  type: string
+                  description: Primary host user ID
+                userIds:
+                  type: array
+                  items:
+                    type: string
+                meetingTypeRef:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    timestamp:
+                      type: string
+                      format: date-time
+                meetingTypeOverride:
+                  type: object
+                  properties:
+                    meetingDurationOverride:
+                      type: string
+                      description: Duration as millisecond string, e.g. "1800000 milliseconds"
+                interval:
+                  type: object
+                  required: [startsAt, duration]
+                  properties:
+                    startsAt:
+                      type: string
+                      format: date-time
+                    duration:
+                      type: string
+                      description: Duration as millisecond string
+                attendees:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum: [Host, Guest]
+                      userId:
+                        type: string
+                      required:
+                        type: boolean
+      responses:
+        "200":
+          description: Available slots and per-user failures
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  slots:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        startTime:
+                          type: string
+                          format: date-time
+                        endTime:
+                          type: string
+                          format: date-time
+                  failures:
+                    type: object
+                    additionalProperties:
+                      type: string
+                      enum:
+                        - CalendarNotConnected
+                        - NoWorkingHours
+                        - OutsideWorkingHours
+                        - MeetingLimitReached
+                        - AllBusy
+                        - UserNotInDistribution
+                        - NotActive
+                        - CalendarError
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        isSuperAdmin:
+          type: boolean
+        licenses:
+          type: object
+          properties:
+            distro:
+              type: boolean
+            chiliCalOrg:
+              type: boolean
+            concierge:
+              type: boolean
+            conciergeLive:
+              type: boolean
+            chat:
+              type: boolean
+            handoff:
+              type: boolean
+        workspaces:
+          type: array
+          items:
+            type: string
+          description: Array of workspaceId strings
