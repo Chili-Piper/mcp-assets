@@ -12,7 +12,20 @@ Before executing any recipe or skill that lists `chili-piper-mcp` in `tools_requ
 tool: health-ping
 ```
 
-If the call fails, stop and tell the user: *"The Chili Piper MCP is not connected. Run `claude mcp add --transport http chili-piper https://fire.chilipiper.io/api/fire-edge/v1/org/mcp --header 'Authorization: Bearer YOUR_API_KEY'` and try again."*
+If the call fails, stop and tell the user:
+
+*"The Chili Piper MCP is not connected. Connect it with one of the following options and try again:*
+
+*Option A — API key (any user with API access):*
+```
+claude mcp add --transport http chili-piper https://fire.chilipiper.com/api/fire-edge/v1/org/mcp --header 'Authorization: Bearer YOUR_API_KEY'
+```
+
+*Option B — OAuth (Admin role required):*
+```
+claude mcp add --transport http chili-piper https://fire.chilipiper.com/api/fire-edge/v1/org/mcp
+```
+*See `mcp-servers/chili-piper/README.md` for full setup instructions."*
 
 Do not proceed without a working MCP connection when one is required.
 

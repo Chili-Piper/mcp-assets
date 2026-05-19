@@ -2,7 +2,7 @@
   "mcpServers": {
     "chili-piper": {
       "type": "http",
-      "url": "https://fire.chilipiper.io/api/fire-edge/v1/org/mcp",
+      "url": "https://fire.chilipiper.com/api/fire-edge/v1/org/mcp",
       "headers": {
         "Authorization": "Bearer ${CHILI_PIPER_API_KEY}"
       }

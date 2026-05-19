@@ -40,6 +40,8 @@ The Chili Piper MCP uses **HTTP transport** — it connects directly to Chili Pi
 
 ### Option A — API key (recommended for most users)
 
+Any Chili Piper user with API access can generate an API key in Admin Center and use it here. No Admin role required.
+
 **Claude Code (one command):**
 
 ```bash
@@ -48,7 +50,7 @@ claude mcp add --transport http chili-piper \
   --header "Authorization: Bearer YOUR_API_KEY"
 ```
 
-Replace `YOUR_API_KEY` with the key from Admin Center. Replace `io` with your tenant's domain if on a different environment (e.g. `app3` for staging).
+Replace `YOUR_API_KEY` with the key from Admin Center.
 
 **Manual config** — add to `~/.claude.json` (or your agent's MCP config file):
 
@@ -70,9 +72,11 @@ Replace `YOUR_API_KEY` with the key from Admin Center. Replace `io` with your te
 
 **Cursor / Windsurf / other MCP clients:** use the same JSON format in your client's MCP config file.
 
-### Option B — OAuth (no API key needed)
+### Option B — OAuth (Admin role required)
 
 Claude Code and Codex support browser-based OAuth login — the agent handles token acquisition and refresh automatically.
+
+> **Requires Admin role.** OAuth login authenticates you as a Chili Piper user directly. Only Admins have the org-wide permissions the MCP needs to function across all tools. Non-admin users should use Option A (API key) instead.
 
 **Claude Code:**
 
