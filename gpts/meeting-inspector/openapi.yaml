@@ -1,0 +1,272 @@
+openapi: 3.0.0
+info:
+  title: Chili Piper — Meeting Inspector Actions
+  description: Endpoints used by the Meeting Inspector GPT to look up meetings and routing logs.
+  version: 0.3.0
+servers:
+  - url: https://api.chilipiper.com
+    description: Chili Piper API
+
+security:
+  - bearerAuth: []
+
+paths:
+  /meetings/{meetingId}:
+    get:
+      operationId: getMeeting
+      summary: Get a single meeting by ID
+      parameters:
+        - name: meetingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Meeting detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingDetail'
+
+  /meetings/list:
+    post:
+      operationId: listMeetings
+      summary: List meetings in a date range (max 7-day window per call)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [start, end]
+              properties:
+                start:
+                  type: string
+                  format: date-time
+                end:
+                  type: string
+                  format: date-time
+                pagination:
+                  type: object
+                  properties:
+                    page:
+                      type: integer
+                      default: 0
+                    pageSize:
+                      type: integer
+                      default: 50
+      responses:
+        "200":
+          description: Paginated meeting list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      list:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MeetingListItem'
+                  hasMore:
+                    type: string
+                    enum: ["Yes", "No"]
+
+  /workspaces:
+    get:
+      operationId: listWorkspaces
+      summary: List all workspaces
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        "200":
+          description: List of workspaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workspace'
+
+  /concierge/routers:
+    get:
+      operationId: listRouters
+      summary: List all concierge routers in a workspace
+      parameters:
+        - name: workspaceId
+          in: query
+          schema:
+            type: string
+          description: Scope to a specific workspace; omit for all workspaces
+      responses:
+        "200":
+          description: List of routers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  routers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RouterEntry'
+
+  /concierge/routers/{routerId}/logs:
+    post:
+      operationId: getRoutingLogs
+      summary: Get routing decision logs for a router (max 30-day window)
+      parameters:
+        - name: routerId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [workspaceId, start, end]
+              properties:
+                workspaceId:
+                  type: string
+                start:
+                  type: string
+                  format: date-time
+                end:
+                  type: string
+                  format: date-time
+      responses:
+        "200":
+          description: Routing log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoutingLogEntry'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    MeetingListItem:
+      type: object
+      properties:
+        meetingId:
+          type: string
+        status:
+          type: string
+          enum: [Scheduled, Completed, NoShow, Cancelled]
+        scheduledAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        assignedUserId:
+          type: string
+        workspaceId:
+          type: string
+        attendees:
+          type: array
+          items:
+            type: object
+            properties:
+              email:
+                type: string
+              name:
+                type: string
+
+    MeetingDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        meetingStatus:
+          type: string
+          enum: [Scheduled, Completed, NoShow, Cancelled]
+        createdAt:
+          type: string
+          format: date-time
+        guest:
+          type: object
+          properties:
+            email:
+              type: string
+            name:
+              type: string
+        activities:
+          type: array
+          items:
+            type: object
+
+    Workspace:
+      type: object
+      properties:
+        workspaceId:
+          type: string
+        name:
+          type: string
+
+    RouterEntry:
+      type: object
+      properties:
+        router:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            slug:
+              type: string
+        workspaceId:
+          type: string
+
+    RoutingLogEntry:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [Booked, Offered, NoMatch, NotQualified, Timeout, Error]
+        trigger:
+          type: string
+        guestEmail:
+          type: string
+        triggeredAt:
+          type: string
+          format: date-time
+        matchedPath:
+          type: string
+        assignments:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              userId:
+                type: string
+        meetingId:
+          type: string
+        sourceUrl:
+          type: string
+        actionsStatus:
+          type: string
