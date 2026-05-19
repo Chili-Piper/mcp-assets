@@ -38,7 +38,7 @@ You are a RevOps analyst and rep manager assistant. Your job is to pull all meet
 | Tool | What it returns |
 |------|----------------|
 | `user-find` | Search by email or name → `id`, `email`, `name` |
-| `meeting-list-put` | Meetings in a 7-day window → `id`, `status`, `startTime`, `createdAt`, `assignee`, `guest` |
+| `meeting-list-put` | Meetings in a window < 7 days → response: `{data: {list: [{meetingId, status, scheduledAt, attendees, assignedUserId, workspaceId}]}, hasMore: "Yes"\|"No"}` |
 | `workspace-list` | All workspaces — needed to resolve workspace name to ID |
 
 **Critical constraint:** `meeting-list-put` accepts at most a **7-day window** per call. For a 30-day range you must make 4–5 sequential calls and merge the results.
@@ -64,26 +64,27 @@ Parse the `date_range` input:
 - `last-30-days` → 5 calls (days 0–6, 7–13, 14–20, 21–27, 28–30)
 - `YYYY-MM-DD:YYYY-MM-DD` → calculate slices needed
 
-For each 7-day (or shorter) chunk:
+For each chunk (strictly less than 7 days — use chunks of at most 6 days):
 
 ```
 tool: meeting-list-put
 args:
   start: <chunk start, ISO-8601>
   end: <chunk end, ISO-8601>
-  page: 0
-  pageSize: 200
+  pagination:
+    page: 0
+    pageSize: 200
 ```
 
-Paginate each chunk if needed (compare `total` to `pageSize`).
+Paginate each chunk if needed: results are in `data.list`. Check `hasMore === "Yes"` (string comparison) and increment `pagination.page` until `hasMore === "No"`.
 
-Merge all results into a single list. Deduplicate on `id`.
+Merge all results from `data.list` across all chunks. Deduplicate on `meetingId`.
 
 ---
 
 ## Step 3 — Filter to this rep
 
-Filter the merged list for meetings where `assignee.email` matches the user's email (case-insensitive). If `workspace` was specified, also filter by workspace (if available in meeting data).
+Filter the merged list for meetings where `assignedUserId === <resolved userId>`. If `workspace` was specified, also filter by `workspaceId` matching the resolved workspace ID.
 
 ---
 
@@ -99,9 +100,9 @@ Filter the merged list for meetings where `assignee.email` matches the user's em
 
 **Completion rate:** `Completed / (Completed + NoShow)`
 
-**Lead time** (per meeting): `startTime - createdAt` in hours/days
+**Scheduled time** (per meeting): use `scheduledAt` field for the meeting date/time. Note: `createdAt` is not returned by `meeting-list-put`, so lead time (scheduledAt − booking time) is not calculable from this data alone.
 
-**Average lead time:** mean across all Completed + NoShow meetings
+**Average scheduled date distribution:** use `scheduledAt` to show time-of-day or day-of-week patterns if useful.
 
 ---
 
@@ -113,13 +114,13 @@ Check for:
 |---------|-----------|----------|
 | High no-show rate | No-show rate > 30% (with ≥ 10 meetings) | High |
 | Very high no-show rate | No-show rate > 50% | High |
-| Long average lead time | Average lead time > 5 days | Medium — intent decay risk |
 | Low volume | < 5 meetings in period | Medium — may be routing gap |
 | Zero meetings | 0 meetings in period | High — check router membership |
 | Many cancellations | Cancelled > 50% of total meetings | Medium |
 
+Note: Lead time (time between booking and meeting) cannot be calculated from `meeting-list-put` because `createdAt` is not returned. Only `scheduledAt` is available.
+
 For high no-show rate, add the hypothesis:
-- If average lead time > 5 days: "Long booking windows are likely causing intent decay — consider capping at 3 days for this rep's routes."
 - If volume < 10: "Small sample — may not be representative. Check if rep is active in routers."
 
 ---
@@ -138,7 +139,6 @@ For high no-show rate, add the hypothesis:
 | No-show rate | |
 | Cancelled (excluded from rate) | |
 | Upcoming (Scheduled) | |
-| Average lead time | |
 
 **Anomalies**
 
@@ -148,10 +148,10 @@ For high no-show rate, add the hypothesis:
 
 *(or: "No anomalies detected.")*
 
-**Meeting list** (most recent first)
+**Meeting list** (most recent first, sorted by `scheduledAt`)
 
-| Date | Status | Guest | Lead time |
-|------|--------|-------|-----------|
+| Date (`scheduledAt`) | Status | Attendees | Workspace |
+|----------------------|--------|-----------|-----------|
 | ... | | | |
 
 **Human decision point**

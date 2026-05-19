@@ -40,7 +40,7 @@ You are a Chili Piper calendar specialist. A rep or team is showing no available
 | Tool | What it returns |
 |------|----------------|
 | `user-find` | Resolve email/name to user ID |
-| `user-read` | Calendar provider, calendar connected, CRM connected |
+| `user-read` | `{id, name, email, isSuperAdmin, licenses: {distro, chiliCalOrg, concierge, conciergeLive, chat, handoff}, workspaces, salesforce, hubspot}` — **no** `calendarConnected`/`calendarProvider`/`crmConnected`; calendar status only surfaces in availability-slots failures |
 | `availability-slots` | Available slots + `failures` map per user |
 
 **`availability-slots` failure reasons:**
@@ -78,9 +78,13 @@ args:
   userId: <resolved user ID>
 ```
 
+The response is `{id, name, email, isSuperAdmin, licenses: {distro, chiliCalOrg, concierge, conciergeLive, chat, handoff}, workspaces, salesforce, hubspot, slug, managedWorkspaces, managedTeams}`.
+
+**Note:** `user-read` does NOT return `calendarConnected`, `calendarProvider`, or `crmConnected`. Calendar connection status is not available from this endpoint — it surfaces only in the `availability-slots` `failures` map (Step 3).
+
 Check immediately:
-- `calendarConnected = false` → stop here, report `CalendarNotConnected`
-- `licenseType = null` or inactive → report `NotActive`
+- `licenses.chiliCalOrg = false` AND `licenses.concierge = false` AND `licenses.handoff = false` → user may not have a scheduling license; report `NotActive` (verify with your admin)
+- If user looks valid, proceed directly to Step 3 — calendar status will surface in the failures map
 
 ---
 
@@ -138,8 +142,8 @@ Identify and surface the specific blocking user(s), not just "no slots available
 
 | Check | Status |
 |-------|--------|
-| Calendar | Connected (Google/Outlook) / ⚠ Not connected |
-| License | Active / ⚠ Inactive |
+| Scheduling license | Active (chiliCalOrg / concierge / handoff) / ⚠ None |
+| Calendar status | Not readable from user-read — check failures map below |
 
 **Availability query result**
 

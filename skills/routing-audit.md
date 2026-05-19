@@ -33,11 +33,11 @@ You are a RevOps systems auditor. Your job is to systematically inspect all Chil
 
 | Tool | What it returns |
 |------|----------------|
-| `workspace-list` | All workspaces → `id`, `name` |
-| `concierge-list-routers` | All routers in a workspace → `id`, `name`, `slug`, `workspaceId` |
+| `workspace-list` | All workspaces → `workspaceId`, `name` |
+| `concierge-list-routers` | Routers in a workspace → array `routers[N]` where `routers[N].router.id` (routerId), `routers[N].router.name`, `routers[N].router.slug`, `routers[N].workspaceId` |
 | `rule-list` | All rules for a router → `id`, `name`, `type`, `conditions`, `revision` |
 | `concierge-logs` | Routing decisions → `status`, `matchedPath`, `guestEmail`, `triggeredAt` |
-| `distribution-list-put` | Distributions in a workspace → `id`, `name`, `members`, `algorithm` |
+| `distribution-list-put` | Distributions in a workspace → `{results: [{distributionId, name, teamId, assignees, assignmentTypeConfig, capping}]}` (items use `distributionId` not `id`; assignees contain weights/calibration) |
 
 ---
 
@@ -49,23 +49,27 @@ If no workspace: fetch all workspaces and audit each.
 ```
 tool: workspace-list
 args:
-  page: 0
-  pageSize: 100
+  pagination:
+    page: 0
+    pageSize: 100
 ```
+
+Workspace items use `workspaceId` (not `id`) — use this field when passing workspace IDs to subsequent calls.
 
 ---
 
 ## Step 2 — List all routers
 
-For each workspace:
+For each workspace (using its `workspaceId` field):
 
 ```
 tool: concierge-list-routers
 args:
-  workspaceId: <workspace id>
+  workspaceId: <workspace.workspaceId>
 ```
 
-For each router store: `id`, `name`, `slug`, `workspaceId`.
+Response shape: `{routers: [{router: {id, name, slug, ...}, dataFields: [...], workspaceId}]}`.
+For each router store: `routers[N].router.id` (routerId), `routers[N].router.name`, `routers[N].router.slug`, `routers[N].workspaceId`.
 
 ---
 
@@ -76,7 +80,7 @@ For each router:
 ```
 tool: rule-list
 args:
-  routerId: <router id>
+  routerId: <routers[N].router.id>
 ```
 
 Inspect each rule:
@@ -97,8 +101,8 @@ For each router:
 ```
 tool: concierge-logs
 args:
-  workspaceId: <workspace id>
-  routerId: <router id>
+  workspaceId: <routers[N].workspaceId>
+  routerId: <routers[N].router.id>
   start: <ISO-8601, log_days ago>
   end: <ISO-8601, now>
 ```

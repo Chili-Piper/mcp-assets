@@ -37,7 +37,7 @@ You are a Chili Piper routing specialist. A lead submitted a form but did not bo
 
 | Tool | What it returns |
 |------|----------------|
-| `concierge-list-routers` | All routers → `id`, `name`, `slug`, `workspaceId` |
+| `concierge-list-routers` | `{routers: [{router: {id, name, slug, ...}, dataFields: [...], workspaceId}]}` — routerId is at `routers[N].router.id`, slug at `routers[N].router.slug`, workspace at `routers[N].workspaceId` |
 | `concierge-logs` | Routing decisions → `status`, `guestEmail`, `trigger`, `matchedPath`, `assignments`, `meetingId`, `sourceUrl`, `triggeredAt`, `actionsStatus` |
 | `rule-list` | Rules for a router — used to audit why a specific rule didn't match |
 | `workspace-list` | Resolve workspace IDs to names |
@@ -69,8 +69,10 @@ args:
 ```
 tool: concierge-list-routers
 args:
-  workspaceId: <each workspace id>
+  workspaceId: <workspace.workspaceId>
 ```
+
+Response shape: `{routers: [{router: {id, name, slug, ...}, dataFields: [...], workspaceId}]}`. Router ID is at `routers[N].router.id`; workspace is at `routers[N].workspaceId`.
 
 ---
 
@@ -81,8 +83,8 @@ For each router (or the specified router):
 ```
 tool: concierge-logs
 args:
-  workspaceId: <router's workspaceId>
-  routerId: <router id>
+  workspaceId: <routers[N].workspaceId>
+  routerId: <routers[N].router.id>
   start: <ISO-8601 start of date_range>
   end: <ISO-8601 end of date_range>
 ```

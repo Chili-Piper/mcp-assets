@@ -34,8 +34,8 @@ You are a RevOps analyst preparing an executive summary of booking health. Your 
 
 | Tool | What it returns |
 |------|----------------|
-| `meeting-list-put` | Meetings in a 7-day window → `id`, `status`, `startTime`, `assignee`, `guest` |
-| `workspace-list` | All workspaces → `id`, `name` — needed to group meetings by workspace |
+| `meeting-list-put` | Meetings in a window < 7 days → response: `{data: {list: [{meetingId, status, scheduledAt, attendees, assignedUserId, workspaceId}]}, hasMore: "Yes"\|"No"}` |
+| `workspace-list` | All workspaces → array of `{workspaceId, name, settings}` — items use `workspaceId` (NOT `id`) — needed to group meetings by workspace name |
 
 ---
 
@@ -48,11 +48,12 @@ tool: meeting-list-put
 args:
   start: <chunk start, ISO-8601>
   end: <chunk end, ISO-8601>
-  page: 0
-  pageSize: 200
+  pagination:
+    page: 0
+    pageSize: 200
 ```
 
-Paginate each chunk if needed. Merge all chunks into one list, deduplicate on `id`.
+Each chunk must be strictly less than 7 days (use at most 6-day chunks). Paginate each chunk if needed: results are in `data.list`; check `hasMore === "Yes"` (string comparison) and increment `pagination.page` until `hasMore === "No"`. Merge all results from `data.list` across all chunks, deduplicate on `meetingId`.
 
 ---
 
@@ -65,9 +66,9 @@ args:
   pageSize: 100
 ```
 
-Build a map of `workspaceId → workspaceName`.
+Build a map of `workspaceId → workspaceName` using the `workspaceId` field (not `id`) from each workspace-list item.
 
-Note: `meeting-list-put` may not return a `workspaceId` field directly — if not, this grouping is unavailable and fall back to `group_by=rep`. Report this limitation to the user.
+Note: meeting items from `meeting-list-put` include a `workspaceId` field — use it directly for grouping.
 
 ---
 
@@ -91,7 +92,7 @@ Across all meetings:
 
 **group_by=workspace:** group by `workspaceId`, resolve to name, calculate per-workspace metrics
 
-**group_by=rep:** group by `assignee.email`, calculate per-rep metrics. Sort by meeting volume descending.
+**group_by=rep:** group by `assignedUserId`, calculate per-rep metrics. Sort by meeting volume descending. To display rep names, resolve `assignedUserId` values via `user-find-by-ids` after collecting all distinct IDs.
 
 **group_by=status:** simple count of each status — useful for a quick executive pie-chart narrative.
 
