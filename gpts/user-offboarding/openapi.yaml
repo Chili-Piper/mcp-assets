@@ -1,0 +1,371 @@
+openapi: 3.0.0
+info:
+  title: Chili Piper — User Offboarding Actions
+  description: Endpoints used by the User Offboarding GPT to safely remove a departing rep.
+  version: 0.1.0
+servers:
+  - url: https://api.chilipiper.com
+    description: Chili Piper API
+
+security:
+  - bearerAuth: []
+
+paths:
+  /users/search:
+    get:
+      operationId: findUsers
+      summary: Search for users by email or name
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matching users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSummary'
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      summary: Get full user profile by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+
+  /meetings/list:
+    post:
+      operationId: listMeetings
+      summary: List meetings in a date range (max 7-day window per call)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [start, end]
+              properties:
+                start:
+                  type: string
+                  format: date-time
+                end:
+                  type: string
+                  format: date-time
+                pagination:
+                  type: object
+                  properties:
+                    page:
+                      type: integer
+                      default: 0
+                    pageSize:
+                      type: integer
+                      default: 200
+      responses:
+        "200":
+          description: Paginated meeting list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      list:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MeetingListItem'
+                  hasMore:
+                    type: string
+                    enum: ["Yes", "No"]
+
+  /meetings/{meetingId}/cancel:
+    post:
+      operationId: cancelMeeting
+      summary: Cancel a meeting
+      parameters:
+        - name: meetingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Meeting cancelled
+
+  /workspaces:
+    get:
+      operationId: listWorkspaces
+      summary: List all workspaces
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        "200":
+          description: Workspaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workspace'
+
+  /workspaces/{workspaceId}/users:
+    get:
+      operationId: listWorkspaceUsers
+      summary: List users in a workspace
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Users in workspace
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSummary'
+    delete:
+      operationId: removeWorkspaceUsers
+      summary: Remove users from a workspace
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userIds]
+              properties:
+                userIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Users removed
+
+  /teams/list:
+    post:
+      operationId: listTeams
+      summary: List all teams
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                page:
+                  type: integer
+                  default: 0
+                pageSize:
+                  type: integer
+                  default: 100
+      responses:
+        "200":
+          description: Teams
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Team'
+
+  /teams/{teamId}/users:
+    delete:
+      operationId: removeTeamUsers
+      summary: Remove users from a team
+      parameters:
+        - name: teamId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userIds]
+              properties:
+                userIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Users removed
+
+  /workspaces/{workspaceId}/distributions/list:
+    post:
+      operationId: listDistributions
+      summary: List distributions in a workspace (read-only — removal requires manual action)
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                page:
+                  type: integer
+                  default: 0
+                pageSize:
+                  type: integer
+                  default: 100
+      responses:
+        "200":
+          description: Distributions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Distribution'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+        licenses:
+          type: object
+          properties:
+            distro:
+              type: boolean
+            chiliCalOrg:
+              type: boolean
+            concierge:
+              type: boolean
+        workspaces:
+          type: array
+          items:
+            type: string
+
+    MeetingListItem:
+      type: object
+      properties:
+        meetingId:
+          type: string
+        status:
+          type: string
+          enum: [Scheduled, Completed, NoShow, Cancelled]
+        scheduledAt:
+          type: string
+          format: date-time
+        assignedUserId:
+          type: string
+        workspaceId:
+          type: string
+        attendees:
+          type: array
+          items:
+            type: object
+            properties:
+              email:
+                type: string
+              name:
+                type: string
+
+    Workspace:
+      type: object
+      properties:
+        workspaceId:
+          type: string
+        name:
+          type: string
+
+    Team:
+      type: object
+      properties:
+        teamId:
+          type: string
+        name:
+          type: string
+        workspaceId:
+          type: string
+        members:
+          type: array
+          items:
+            type: string
+
+    Distribution:
+      type: object
+      properties:
+        distributionId:
+          type: string
+        name:
+          type: string
+        assignees:
+          type: array
+          items:
+            type: object
+            properties:
+              userId:
+                type: string
