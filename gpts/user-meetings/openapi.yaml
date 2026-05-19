@@ -1,0 +1,153 @@
+openapi: 3.0.0
+info:
+  title: Chili Piper — User Meetings Actions
+  description: Endpoints used by the User Meetings GPT to pull rep-level meeting health metrics.
+  version: 0.1.0
+servers:
+  - url: https://api.chilipiper.com
+    description: Chili Piper API
+
+security:
+  - bearerAuth: []
+
+paths:
+  /users/search:
+    get:
+      operationId: findUsers
+      summary: Search for users by email or name
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matching users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSummary'
+
+  /workspaces:
+    get:
+      operationId: listWorkspaces
+      summary: List all workspaces
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        "200":
+          description: Workspaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workspace'
+
+  /meetings/list:
+    post:
+      operationId: listMeetings
+      summary: List meetings in a date range (max 7-day window per call)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [start, end]
+              properties:
+                start:
+                  type: string
+                  format: date-time
+                end:
+                  type: string
+                  format: date-time
+                pagination:
+                  type: object
+                  properties:
+                    page:
+                      type: integer
+                      default: 0
+                    pageSize:
+                      type: integer
+                      default: 200
+      responses:
+        "200":
+          description: Paginated meeting list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      list:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MeetingListItem'
+                  hasMore:
+                    type: string
+                    enum: ["Yes", "No"]
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
+
+    Workspace:
+      type: object
+      properties:
+        workspaceId:
+          type: string
+        name:
+          type: string
+
+    MeetingListItem:
+      type: object
+      properties:
+        meetingId:
+          type: string
+        status:
+          type: string
+          enum: [Scheduled, Completed, NoShow, Cancelled]
+        scheduledAt:
+          type: string
+          format: date-time
+        assignedUserId:
+          type: string
+        workspaceId:
+          type: string
+        attendees:
+          type: array
+          items:
+            type: object
+            properties:
+              email:
+                type: string
+              name:
+                type: string
