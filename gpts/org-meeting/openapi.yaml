@@ -1,0 +1,156 @@
+openapi: 3.0.0
+info:
+  title: Chili Piper — Org Meeting Snapshot Actions
+  description: Endpoints used by the Org Meeting Snapshot GPT.
+  version: 0.1.0
+servers:
+  - url: https://api.chilipiper.com
+    description: Chili Piper API
+
+security:
+  - bearerAuth: []
+
+paths:
+  /meetings/list:
+    post:
+      operationId: listMeetings
+      summary: List meetings in a date range (max 7-day window per call)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [start, end]
+              properties:
+                start:
+                  type: string
+                  format: date-time
+                end:
+                  type: string
+                  format: date-time
+                pagination:
+                  type: object
+                  properties:
+                    page:
+                      type: integer
+                      default: 0
+                    pageSize:
+                      type: integer
+                      default: 200
+      responses:
+        "200":
+          description: Paginated meeting list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      list:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MeetingListItem'
+                  hasMore:
+                    type: string
+                    enum: ["Yes", "No"]
+
+  /workspaces:
+    get:
+      operationId: listWorkspaces
+      summary: List all workspaces
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        "200":
+          description: Workspaces
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workspace'
+
+  /users/batch:
+    post:
+      operationId: getUsersByIds
+      summary: Resolve multiple user IDs to names and emails
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: User records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSummary'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    MeetingListItem:
+      type: object
+      properties:
+        meetingId:
+          type: string
+        status:
+          type: string
+          enum: [Scheduled, Completed, NoShow, Cancelled]
+        scheduledAt:
+          type: string
+          format: date-time
+        assignedUserId:
+          type: string
+        workspaceId:
+          type: string
+        attendees:
+          type: array
+          items:
+            type: object
+            properties:
+              email:
+                type: string
+
+    Workspace:
+      type: object
+      properties:
+        workspaceId:
+          type: string
+        name:
+          type: string
+
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        name:
+          type: string
