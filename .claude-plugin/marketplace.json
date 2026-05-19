@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "description": "Community cookbook of AI-assisted GTM recipes. Every recipe declares a human-agent loop and a measurement loop.",
+    "version": "1.0.0",
+    "homepage": "https://github.com/Chili-Piper/gtm-clawllective"
+  },
+  "name": "gtm-clawllective",
+  "plugins": [
+    {
+      "name": "gtm-clawllective",
+      "source": ".",
+      "description": "GTM recipes, skills, agents, and Chili Piper MCP — open-source cookbook for AI-assisted revenue teams. Covers the full bowtie: awareness, selection, onboarding, expansion.",
+      "category": "sales",
+      "version": "1.0.0"
+    }
+  ]
+}

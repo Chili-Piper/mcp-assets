@@ -2,7 +2,8 @@
 .env
 .env.*
 *.env
-.mcp.json
+# .mcp.json is intentionally committed at repo root — it uses ${ENV_VAR} references,
+# not real secrets. Personal override files belong in ~/.claude.json, not here.
 **/secrets/
 **/.secrets/
 **/credentials/
@@ -13,9 +14,12 @@
 **/.local/
 
 # Root-level data files (use synthetic fixtures in fixtures/ instead)
+# Note: .mcp.json and .secrets.baseline are excluded from this pattern via negation
 /*.csv
 /*.parquet
 /*.json
+!/.mcp.json
+!/.secrets.baseline
 /*.xlsx
 /*.xls
 
@@ -65,5 +69,6 @@ yarn-debug.log*
 # uv.lock — keep
 
 # === MCP CONFIG ===
-.mcp.json
+# The repo-level .mcp.json uses ${ENV_VAR} references and is intentionally committed.
+# claude_desktop_config.json is personal and must never be committed.
 claude_desktop_config.json
