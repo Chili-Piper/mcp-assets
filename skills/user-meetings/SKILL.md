@@ -1,7 +1,7 @@
 ---
 name: user-meetings
 description: Shows all meetings assigned to a specific rep for a period — volume, statuses, and no-show rate — to surface rep-level pipeline health and flag reps who may need coaching or routing changes
-version: 0.1.0
+version: 0.1.1
 inputs:
   - name: user
     type: string
@@ -38,8 +38,8 @@ You are a RevOps analyst and rep manager assistant. Your job is to pull all meet
 | Tool | What it returns |
 |------|----------------|
 | `user-find` | Search by email or name → `id`, `email`, `name` |
-| `meeting-list-put` | Meetings in a window < 7 days → response: `{data: {list: [{meetingId, status, scheduledAt, attendees, assignedUserId, workspaceId}]}, hasMore: "Yes"\|"No"}` |
-| `workspace-list` | All workspaces — needed to resolve workspace name to ID |
+| `meeting-list-put` | Meetings in a window < 7 days → response: `{data: {list: [{meetingId, meetingStatus, noShowStatus, dateTime: {start, end}, attendees, hostId, hostEmail, workspaceId}]}, hasMore: "Yes"\|"No"}` |
+| `workspace-list` | All workspaces — needed to resolve workspace ID to display name |
 
 **Critical constraint:** `meeting-list-put` accepts at most a **7-day window** per call. For a 30-day range you must make 4–5 sequential calls and merge the results.
 
@@ -54,6 +54,12 @@ args:
 ```
 
 If multiple results, list them and ask the human to confirm. Store the resolved `userId`, `email`, and `name`.
+
+---
+
+## Step 1b — Resolve workspace names
+
+Always call `workspace-list` at the start, regardless of whether the `workspace` input was provided. Build an `id → name` map and use it to label workspace IDs in all output. Never invent or guess workspace names.
 
 ---
 
@@ -84,25 +90,30 @@ Merge all results from `data.list` across all chunks. Deduplicate on `meetingId`
 
 ## Step 3 — Filter to this rep
 
-Filter the merged list for meetings where `assignedUserId === <resolved userId>`. If `workspace` was specified, also filter by `workspaceId` matching the resolved workspace ID.
+Filter the merged list for meetings where `hostId === <resolved userId>` (fall back to `hostEmail` if `hostId` is absent). If `workspace` was specified, also filter by `workspaceId` matching the resolved workspace ID.
 
 ---
 
 ## Step 4 — Calculate metrics
 
 **Status counts:**
-- `Completed` — meeting happened
-- `NoShow` — guest did not attend ← the signal
-- `Cancelled` — exclude from no-show rate
-- `Scheduled` — upcoming, exclude from rates
+
+The `meetingStatus` field returns `Active` or `Canceled`. Classify each meeting as follows (check in this order):
+
+1. `meetingStatus === "Canceled"` → **Cancelled** — exclude from rate
+2. `noShowStatus === "NoShow"` → **No-Show** ← the signal
+3. `meetingStatus === "Active"` + `dateTime.start` in the future → **Scheduled/Upcoming** — exclude from rate
+4. `meetingStatus === "Active"` + `dateTime.start` in the past → **Completed**
+
+Note: `noShowStatus` is frequently `Unknown` in this org, meaning no-show tracking may be sparse. Surface this caveat in the report when all values are `Unknown`.
 
 **No-show rate:** `NoShow / (Completed + NoShow)`
 
 **Completion rate:** `Completed / (Completed + NoShow)`
 
-**Scheduled time** (per meeting): use `scheduledAt` field for the meeting date/time. Note: `createdAt` is not returned by `meeting-list-put`, so lead time (scheduledAt − booking time) is not calculable from this data alone.
+**Scheduled time** (per meeting): use `dateTime.start` for the meeting date/time. Note: booking time is not returned by `meeting-list-put`, so lead time cannot be calculated from this data alone.
 
-**Average scheduled date distribution:** use `scheduledAt` to show time-of-day or day-of-week patterns if useful.
+**Average scheduled date distribution:** use `dateTime.start` to show time-of-day or day-of-week patterns if useful.
 
 ---
 
@@ -118,7 +129,7 @@ Check for:
 | Zero meetings | 0 meetings in period | High — check router membership |
 | Many cancellations | Cancelled > 50% of total meetings | Medium |
 
-Note: Lead time (time between booking and meeting) cannot be calculated from `meeting-list-put` because `createdAt` is not returned. Only `scheduledAt` is available.
+Note: Lead time (time between booking and meeting) cannot be calculated from `meeting-list-put` because booking time is not returned. Only `dateTime.start` is available.
 
 For high no-show rate, add the hypothesis:
 - If volume < 10: "Small sample — may not be representative. Check if rep is active in routers."
@@ -148,9 +159,9 @@ For high no-show rate, add the hypothesis:
 
 *(or: "No anomalies detected.")*
 
-**Meeting list** (most recent first, sorted by `scheduledAt`)
+**Meeting list** (most recent first, sorted by `dateTime.start`)
 
-| Date (`scheduledAt`) | Status | Attendees | Workspace |
+| Date (`dateTime.start`) | Status | Attendees | Workspace |
 |----------------------|--------|-----------|-----------|
 | ... | | | |
 
