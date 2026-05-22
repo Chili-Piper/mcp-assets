@@ -1,7 +1,7 @@
 ---
 name: no-show-analyzer
 description: Analyzes Chili Piper meeting no-show patterns by trigger type, routing path, rep, or workspace using meeting-list-put and concierge-logs to surface actionable optimization opportunities
-version: 0.3.2
+version: 0.3.3
 inputs:
   - name: date_range
     type: string
@@ -34,7 +34,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review flagged segments and decide which routing rule or confirmation flow change to test first"
 writes_to: "Salesforce task (optional) — created by human after reviewing recommendations"
-api_note: "meeting-list-put has a strict 7-day maximum window per call — the skill chunks longer ranges automatically. Pass status: [\"Completed\",\"NoShow\"] to avoid fetching Active/Canceled meetings that are excluded from no-show analysis anyway. Pass workspaceIds to filter server-side when workspace is specified. concierge-logs has a separate 30-day maximum window and requires a routerId. Only log entries with status=Booked have a meetingId to join against meeting-list-put; Offered/NoMatch/NotQualified/Timeout/Error entries never became meetings and must be excluded from the join. meeting-list-put response envelope is {data: {list: [...]}, hasMore: 'Yes'|'No'}; meeting items use 'meetingId' (not 'id'); paginate by checking hasMore === 'Yes' (string, not boolean). concierge-list-routers nests routerId at routers[N].router.id, workspaceId at routers[N].workspaceId, name at routers[N].router.name."
+api_note: "meeting-list-put has a strict 7-day maximum window per call — the skill chunks longer ranges automatically. Pass status: [\"Completed\",\"NoShow\",\"Active\"] in the request (status filter confirmed live as of DISTRO-4472) — exclude Canceled server-side while keeping Active to capture past-informally-completed meetings client-side. Do NOT filter to [\"Completed\",\"NoShow\"] only, as that silently shrinks the no-show denominator. Pass workspaceIds to filter server-side when workspace is specified. concierge-logs has a separate 30-day maximum window and requires a routerId. Only log entries with status=Booked have a meetingId to join against meeting-list-put; Offered/NoMatch/NotQualified/Timeout/Error entries never became meetings and must be excluded from the join. meeting-list-put response envelope is {data: {list: [...]}, hasMore: 'Yes'|'No'}; meeting items use 'meetingId' (not 'id'); paginate by checking hasMore === 'Yes' (string, not boolean). concierge-list-routers nests routerId at routers[N].router.id, workspaceId at routers[N].workspaceId, name at routers[N].router.name."
 ---
 
 # No-Show Analyzer
@@ -45,7 +45,7 @@ You are a GTM data analyst with deep knowledge of Chili Piper's meeting and rout
 
 | Tool | Method | What it returns |
 |------|--------|----------------|
-| `meeting-list-put` | POST | Paginated meetings by time range — response envelope `{data: {list: [...]}, hasMore: "Yes"\|"No"}`. Items in `data.list[]`: `meetingId`, `status`, `scheduledAt`, `assignedUserId`, `workspaceId`, `attendees` (array). Paginate by checking `hasMore === "Yes"` (string). |
+| `meeting-list-put` | POST | Paginated meetings by time range — response envelope `{data: {list: [...]}, hasMore: "Yes"\|"No"}`. Items in `data.list[]`: `meetingId`, `status`, `scheduledAt`, `assignedUserId`, `workspaceId`, `attendees` (array). Paginate by checking `hasMore === "Yes"` (string). Accepts `status` filter (confirmed live as of DISTRO-4472). |
 | `concierge-list-routers` | GET | All routers — response: `{routers: [{router: {id, name, slug, ...}, dataFields: [...], workspaceId}]}`. Access: `routerId` at `routers[N].router.id`, `name` at `routers[N].router.name`, `workspaceId` at `routers[N].workspaceId`. |
 | `concierge-logs` | POST | Routing decisions per router — `status`, `trigger`, `guestEmail`, `triggeredAt`, `matchedPath`, `assignments`, `meetingId`, `sourceUrl` |
 | `workspace-list` | GET | All workspaces — `id`, `name`, `userCount` |
@@ -69,7 +69,7 @@ Pass `status: ["Completed", "NoShow", "Active"]` in the request — exclude `Can
 
 **Status values in concierge-logs (critical for the join):**
 | Status | Has `meetingId`? | Meaning |
-|--------|----------------|---------|
+|--------|----------------|--------|
 | `Booked` | ✓ Yes | Lead completed booking — this `meetingId` joins to meeting-list-put |
 | `Offered` | ✗ No | Calendar was shown but lead did not book |
 | `NoMatch` | ✗ No | No routing rule matched the lead |
@@ -81,7 +81,7 @@ Only `Booked` log entries have a `meetingId` to join with meeting-list-put. All 
 
 **Trigger types in concierge-logs:**
 | Value | What it means |
-|-------|--------------|
+|-------|---------------|
 | `ThirdPartyForm` | Web form submission (Marketo, HubSpot, Pardot, HTML form) |
 | `Direct` | Prospect visited the router URL directly |
 | `Email` | Scheduling link embedded in an email |
