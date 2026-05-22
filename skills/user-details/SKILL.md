@@ -1,7 +1,7 @@
 ---
 name: user-details
 description: Pulls a full profile for any Chili Piper user — teams, workspaces, meeting types, scheduling links, and recent meeting activity — for onboarding audits, offboarding checks, and rep-level troubleshooting
-version: 0.1.2
+version: 0.1.3
 inputs:
   - name: user
     type: string
@@ -24,7 +24,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the profile and decide: onboard the user to missing teams, fix routing gaps, or proceed with offboarding"
 writes_to: "Nothing — read-only diagnostic"
-api_note: "user-read returns full license and calendar connection status. user-find is needed first if you have an email or name rather than a user ID."
+api_note: "user-read returns full license and calendar connection status. user-find is needed first if you have an email or name rather than a user ID. As of DISTRO-4472 (2026-05-21): team-list-put member filter is live (server-side filtering by userId, no client-side scan needed); team-list-put also accepts an optional name filter. meeting-export-v2-put now supports server-side filters: hostIds, assigneeIds, bookerIds, meetingTypeIds, status."
 ---
 
 # User Details
@@ -38,10 +38,10 @@ You are a RevOps analyst. Your job is to pull a complete profile for a Chili Pip
 | `user-find` | Search by email or name → `id`, `name`, `email`, `isSuperAdmin`, `licenses` (object), `workspaces` (array of workspaceId strings), `personalWorkspaceId` |
 | `user-read` | Full user record (same fields as user-find result item, unwrapped) → `id`, `name`, `email`, `isSuperAdmin`, `licenses` (object with boolean fields: `distro`, `chiliCalOrg`, `concierge`, `conciergeLive`, `chat`, `handoff`), `workspaces` (array of workspaceId strings, NOT `workspaceIds`), `personalWorkspaceId`. No `calendarConnected`, `calendarProvider`, or `crmConnected` fields. |
 | `workspace-list` | All workspaces → array of `{workspaceId, name, settings}` — items use `workspaceId` (NOT `id`) |
-| `team-list-put` | Teams filtered by `member: [userId]` → only teams this user belongs to; response: `{results: [{teamId, name, workspaceId, members}]}` |
+| `team-list-put` | Teams filtered by `member: [userId]` (server-side, confirmed live as of DISTRO-4472) → only teams this user belongs to; also accepts optional `name: string` filter; response: `{results: [{teamId, name, workspaceId, members}]}` |
 | `scheduling-link-list-personal` | Personal scheduling links owned by this user |
 | `scheduling-link-list-round-robin` | Round-robin links this user is part of |
-| `meeting-export-v2-put` | CSV export with `hostIds` filter → only this user's meetings; response: `{filename, data: "<CSV>"}` — parse header row for column names |
+| `meeting-export-v2-put` | CSV export — server-side filters (all confirmed live as of DISTRO-4472): `hostIds`, `assigneeIds`, `bookerIds`, `meetingTypeIds`, `status`; response: `{filename, data: "<CSV>"}` — parse header row for column names |
 
 ---
 
@@ -140,6 +140,7 @@ args:
   start: <chunk start, ISO-8601>
   end: <chunk end, ISO-8601>
   hostIds: [<resolved user ID>]
+  status: ["Active", "Completed", "NoShow", "Canceled"]
 ```
 
 Response: `{filename: "...", data: "<CSV>"}`. Parse `data` as CSV — read the header row first to identify column names. No pagination needed; all matching records for the chunk are returned in one response.
@@ -177,13 +178,13 @@ Counts:
 **Workspace memberships**
 
 | Workspace | ID |
-|-----------|----|
+|-----------|----||
 | ... | |
 
 **Team memberships**
 
 | Team | Workspace |
-|------|-----------|
+|------|----------|
 | ... | |
 
 **Scheduling links**

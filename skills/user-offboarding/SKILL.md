@@ -1,7 +1,7 @@
 ---
 name: user-offboarding
 description: Safely removes a departing Chili Piper rep — surfaces open meetings that need reassignment, removes them from workspaces and teams, and produces an audit trail — making rep offboarding repeatable and zero-leak
-version: 0.1.1
+version: 0.1.2
 inputs:
   - name: user
     type: string
@@ -26,7 +26,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review open meetings and the removal plan before setting dry_run=false — confirm reassignment target and that no meetings will be orphaned"
 writes_to: "Chili Piper workspace/team membership records; meeting cancellation records if open meetings cannot be reassigned"
-api_note: "The MCP does not have a direct 'reassign meeting' endpoint. Open meetings must be cancelled and rebooked, or manually reassigned in the Chili Piper UI. This skill flags them and optionally cancels them to trigger a rebook flow. Distribution queue membership requires manual update in the router builder — the skill flags distributions for human review."
+api_note: "The MCP does not have a direct 'reassign meeting' endpoint. Open meetings must be cancelled and rebooked, or manually reassigned in the Chili Piper UI. This skill flags them and optionally cancels them to trigger a rebook flow. As of DISTRO-4472 (2026-05-21): meeting-export-v2-put hostIds and status filters are confirmed live (server-side filtering, no post-fetch scan needed); team-list-put member filter is confirmed live. distribution-list-put now accepts optional name and assignmentType filters. Distribution queue membership still requires manual update in the router builder — the skill flags distributions for human review."
 ---
 
 # User Offboarding
@@ -39,14 +39,14 @@ You are a RevOps offboarding specialist. Your job is to make the departure of a 
 |------|----------------|
 | `user-find` | Search by email or name → `id`, `email`, `name` |
 | `user-read` | Full profile → workspaceIds, license, calendar status |
-| `meeting-export-v2-put` | CSV of meetings filtered by `hostIds` + `status` — returns `{filename, data: "<CSV>"}`. Use `status: ["Active"]` to fetch only upcoming meetings at risk. |
+| `meeting-export-v2-put` | CSV of meetings — server-side filters (confirmed live as of DISTRO-4472): `hostIds`, `assigneeIds`, `bookerIds`, `meetingTypeIds`, `status`. Returns `{filename, data: "<CSV>"}`. Use `status: ["Active"]` to fetch only upcoming meetings at risk. |
 | `workspace-list` | All workspaces → `workspaceId`, `name` |
 | `workspace-list-users` | Users in a workspace |
 | `workspace-remove-users` | Remove a user from a workspace |
-| `team-list-put` | Teams filtered by `member: [userId]` → only teams this user belongs to |
+| `team-list-put` | Teams filtered by `member: [userId]` (server-side, confirmed live as of DISTRO-4472) → only teams this user belongs to; also accepts optional `name: string` filter |
 | `team-remove-users` | Remove a user from a team |
 | `meeting-cancel` | Cancel a meeting (triggers rebook flow if configured) |
-| `distribution-list-put` | Distributions (for flagging — manual removal required) |
+| `distribution-list-put` | Distributions — optional filters: `name: string`, `assignmentType` (for flagging — manual removal required) |
 
 ---
 
@@ -116,7 +116,7 @@ args:
   workspaceId: <each workspace id>
 ```
 
-Filter distributions where this user appears as a member. These cannot be updated via MCP — flag them for manual removal in the router builder.
+Filter distributions where this user appears as a member. Optionally use the `name` filter if looking for a specific distribution by name. These cannot be updated via MCP — flag them for manual removal in the router builder.
 
 ---
 
@@ -147,7 +147,7 @@ Filter distributions where this user appears as a member. These cannot be update
 > These distributions must be updated manually in the Chili Piper router builder — MCP cannot modify distribution membership directly:
 
 | Distribution | Workspace | Action needed |
-|-------------|-----------|--------------|
+|-------------|-----------|---------------|
 | ... | | Remove from distribution queue |
 
 **Not handled by this skill (manual):**

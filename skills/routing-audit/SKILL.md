@@ -1,7 +1,7 @@
 ---
 name: routing-audit
 description: Audits all Chili Piper concierge routers for coverage gaps — unmapped lead sources, stale ownership rules, unbalanced distributions, and catch-all overflows — before they show up as lost pipeline
-version: 0.1.0
+version: 0.1.1
 inputs:
   - name: workspace
     type: string
@@ -22,7 +22,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review gaps and decide which to fix first — routing gaps silently leak pipeline, so prioritize by volume before severity"
 writes_to: "Nothing — read-only diagnostic. Use the Chili Piper router builder to apply fixes."
-api_note: "concierge-logs requires a routerId and has a hard 30-day maximum window. Rule details come from rule-list per router. Distribution membership comes from distribution-list-put per workspace."
+api_note: "concierge-logs requires a routerId and has a hard 30-day maximum window. Rule details come from rule-list per router. Distribution membership comes from distribution-list-put per workspace. As of DISTRO-4472 (2026-05-21): distribution-list-put now accepts optional name (string) and assignmentType filters to narrow results server-side."
 ---
 
 # Routing Audit
@@ -37,7 +37,7 @@ You are a RevOps systems auditor. Your job is to systematically inspect all Chil
 | `concierge-list-routers` | Routers in a workspace → array `routers[N]` where `routers[N].router.id` (routerId), `routers[N].router.name`, `routers[N].router.slug`, `routers[N].workspaceId` |
 | `rule-list` | All rules for a router → `id`, `name`, `type`, `conditions`, `revision` |
 | `concierge-logs` | Routing decisions → `status`, `matchedPath`, `guestEmail`, `triggeredAt` |
-| `distribution-list-put` | Distributions in a workspace → `{results: [{distributionId, name, teamId, assignees, assignmentTypeConfig, capping}]}` (items use `distributionId` not `id`; assignees contain weights/calibration) |
+| `distribution-list-put` | Distributions in a workspace — optional filters: `name: string`, `assignmentType` (confirmed live as of DISTRO-4472) → `{results: [{distributionId, name, teamId, assignees, assignmentTypeConfig, capping}]}` (items use `distributionId` not `id`; assignees contain weights/calibration) |
 
 ---
 
@@ -128,6 +128,8 @@ args:
   workspaceId: <workspace id>
 ```
 
+Use the optional `name` filter if you need to look up a specific distribution by name, or `assignmentType` to narrow to a particular algorithm type.
+
 For each distribution inspect:
 - **Member count:** distributions with 0 members will route no leads
 - **Members with 0 weight:** effectively excluded from routing
@@ -146,7 +148,7 @@ Flag:
 **Router summary**
 
 | Router | Rules | Has catch-all | Leads (N days) | Catch-all rate | No-match rate |
-|--------|-------|--------------|----------------|---------------|--------------|
+|--------|-------|--------------|----------------|---------------|---------------|
 | ... | | ✓ / ⚠ MISSING | | | |
 
 **Gaps found** (sorted by severity)
