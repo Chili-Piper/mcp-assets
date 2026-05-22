@@ -1,7 +1,7 @@
 ---
 name: user-meetings
 description: Shows all meetings assigned to a specific rep for a period — volume, statuses, and no-show rate — to surface rep-level pipeline health and flag reps who may need coaching or routing changes
-version: 0.1.1
+version: 0.2.0
 inputs:
   - name: user
     type: string
@@ -9,7 +9,7 @@ inputs:
     required: true
   - name: date_range
     type: string
-    description: "Period to analyze: 'last-7-days', 'last-30-days', or 'YYYY-MM-DD:YYYY-MM-DD' (max 7-day window per API call — skill will paginate automatically)"
+    description: "Period to analyze: 'last-7-days', 'last-30-days', or 'YYYY-MM-DD:YYYY-MM-DD' (max 7-day window per API call — skill will issue multiple calls automatically)"
     required: false
     default: "last-30-days"
   - name: workspace
@@ -26,7 +26,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review anomaly flags and decide: coaching conversation, territory/routing adjustment, or no action needed"
 writes_to: "Nothing — read-only diagnostic"
-api_note: "meeting-list-put has a strict 7-day maximum window per call. For date ranges longer than 7 days, the skill issues multiple calls and stitches the results. Filtering by assignee happens client-side — the API does not support assignee filtering directly."
+api_note: "Uses meeting-export-v2-put with hostIds filter — the server returns only this rep's meetings, eliminating client-side filtering across all org meetings. Still requires 7-day chunking. Response is CSV: parse the header row to identify columns; key columns are meetingId, status (Active|Canceled|NoShow|Completed), scheduledAt/start, hostId, workspaceId."
 ---
 
 # User Meetings
@@ -38,10 +38,10 @@ You are a RevOps analyst and rep manager assistant. Your job is to pull all meet
 | Tool | What it returns |
 |------|----------------|
 | `user-find` | Search by email or name → `id`, `email`, `name` |
-| `meeting-list-put` | Meetings in a window < 7 days → response: `{data: {list: [{meetingId, meetingStatus, noShowStatus, dateTime: {start, end}, attendees, hostId, hostEmail, workspaceId}]}, hasMore: "Yes"\|"No"}` |
+| `meeting-export-v2-put` | CSV export of meetings in a window ≤ 7 days — supports `hostIds`, `assigneeIds`, `bookerIds`, `meetingTypeIds`, `status`, `workspaceIds` filters. Response: `{filename: "meetings-export-....csv", data: "<CSV content>"}`. Parse `data` as CSV; read header row to identify columns. Status values: `Active` \| `Canceled` \| `NoShow` \| `Completed`. No pagination — all matching records returned in one response. |
 | `workspace-list` | All workspaces — needed to resolve workspace ID to display name |
 
-**Critical constraint:** `meeting-list-put` accepts at most a **7-day window** per call. For a 30-day range you must make 4–5 sequential calls and merge the results.
+**Critical constraint:** `meeting-export-v2-put` accepts at most a **7-day window** per call. For a 30-day range you must issue multiple sequential calls and merge the results.
 
 ---
 
@@ -63,61 +63,55 @@ Always call `workspace-list` at the start, regardless of whether the `workspace`
 
 ---
 
-## Step 2 — Slice the date range into 7-day chunks
+## Step 2 — Fetch meetings per 7-day chunk
 
 Parse the `date_range` input:
 - `last-7-days` → one call
 - `last-30-days` → 5 calls (days 0–6, 7–13, 14–20, 21–27, 28–30)
 - `YYYY-MM-DD:YYYY-MM-DD` → calculate slices needed
 
-For each chunk (strictly less than 7 days — use chunks of at most 6 days):
+For each chunk (strictly ≤ 6 days to stay within the 7-day limit):
 
 ```
-tool: meeting-list-put
+tool: meeting-export-v2-put
 args:
   start: <chunk start, ISO-8601>
   end: <chunk end, ISO-8601>
-  pagination:
-    page: 0
-    pageSize: 200
+  hostIds: [<resolved userId>]
+  workspaceIds: [<resolved workspaceId>]   # include only if workspace was specified
 ```
 
-Paginate each chunk if needed: results are in `data.list`. Check `hasMore === "Yes"` (string comparison) and increment `pagination.page` until `hasMore === "No"`.
+The response is `{filename: "...", data: "<CSV>"}`. Parse the `data` field as CSV:
+1. Read the first row as the header to identify column names.
+2. Extract all data rows as meeting records.
+3. Map columns to: meetingId, status, scheduled start time, workspaceId, and any attendee/guest fields present.
 
-Merge all results from `data.list` across all chunks. Deduplicate on `meetingId`.
+No pagination is needed — the export returns all matching records for the chunk in a single response.
+
+Merge records across all chunks. Deduplicate on `meetingId`.
 
 ---
 
-## Step 3 — Filter to this rep
+## Step 3 — Calculate metrics
 
-Filter the merged list for meetings where `hostId === <resolved userId>` (fall back to `hostEmail` if `hostId` is absent). If `workspace` was specified, also filter by `workspaceId` matching the resolved workspace ID.
+**Status values** (returned directly in the `status` column):
 
----
-
-## Step 4 — Calculate metrics
-
-**Status counts:**
-
-The `meetingStatus` field returns `Active` or `Canceled`. Classify each meeting as follows (check in this order):
-
-1. `meetingStatus === "Canceled"` → **Cancelled** — exclude from rate
-2. `noShowStatus === "NoShow"` → **No-Show** ← the signal
-3. `meetingStatus === "Active"` + `dateTime.start` in the future → **Scheduled/Upcoming** — exclude from rate
-4. `meetingStatus === "Active"` + `dateTime.start` in the past → **Completed**
-
-Note: `noShowStatus` is frequently `Unknown` in this org, meaning no-show tracking may be sparse. Surface this caveat in the report when all values are `Unknown`.
+| Status | Classification |
+|--------|---------------|
+| `Completed` | Completed — include in rate |
+| `NoShow` | No-Show — include in rate |
+| `Canceled` | Cancelled — exclude from rate |
+| `Active` | Upcoming/Scheduled — exclude from rate |
 
 **No-show rate:** `NoShow / (Completed + NoShow)`
 
 **Completion rate:** `Completed / (Completed + NoShow)`
 
-**Scheduled time** (per meeting): use `dateTime.start` for the meeting date/time. Note: booking time is not returned by `meeting-list-put`, so lead time cannot be calculated from this data alone.
-
-**Average scheduled date distribution:** use `dateTime.start` to show time-of-day or day-of-week patterns if useful.
+**Scheduled time** (per meeting): use the scheduled start column for the meeting date/time.
 
 ---
 
-## Step 5 — Detect anomalies
+## Step 4 — Detect anomalies
 
 Check for:
 
@@ -129,14 +123,12 @@ Check for:
 | Zero meetings | 0 meetings in period | High — check router membership |
 | Many cancellations | Cancelled > 50% of total meetings | Medium |
 
-Note: Lead time (time between booking and meeting) cannot be calculated from `meeting-list-put` because booking time is not returned. Only `dateTime.start` is available.
-
 For high no-show rate, add the hypothesis:
 - If volume < 10: "Small sample — may not be representative. Check if rep is active in routers."
 
 ---
 
-## Step 6 — Output format
+## Step 5 — Output format
 
 ### Meetings for `<name>` (`<email>`) | `<date range>`
 
@@ -159,10 +151,10 @@ For high no-show rate, add the hypothesis:
 
 *(or: "No anomalies detected.")*
 
-**Meeting list** (most recent first, sorted by `dateTime.start`)
+**Meeting list** (most recent first, sorted by scheduled start)
 
-| Date (`dateTime.start`) | Status | Attendees | Workspace |
-|----------------------|--------|-----------|-----------|
+| Date | Status | Attendees | Workspace |
+|------|--------|-----------|-----------|
 | ... | | | |
 
 **Human decision point**

@@ -1,7 +1,7 @@
 ---
 name: user-copy
 description: Copies a user's Chili Piper workspace and team memberships to a new or existing user — eliminating manual re-configuration when onboarding a rep onto an existing territory or replacing a departing rep
-version: 0.1.0
+version: 0.1.1
 inputs:
   - name: source_user
     type: string
@@ -40,7 +40,7 @@ You are a RevOps onboarding specialist. Your job is to read one user's workspace
 | `user-find` | Search by email or name → `id`, `email`, `name` |
 | `workspace-list` | All workspaces → `workspaceId`, `name` |
 | `workspace-list-users` | Users in a specific workspace → `userId`, `email` |
-| `team-list-put` | All teams → `{results: [{teamId, name, workspaceId, members}]}` — items use `teamId` (not `id`); `members` is a list of user IDs |
+| `team-list-put` | Teams filtered by `member: [userId]` → `{results: [{teamId, name, workspaceId, members}]}` — pass `member` to get only teams a specific user belongs to; items use `teamId` (not `id`) |
 | `workspace-add-users` | Add a user to a workspace |
 | `team-add-users` | Add a user to a team |
 
@@ -89,14 +89,18 @@ Collect all workspaces where `sourceId` appears in the member list. Store as `so
 
 ## Step 3 — Find source user's team memberships
 
+Use the `member` filter to fetch only the teams this user belongs to — no need to fetch all teams and filter client-side.
+
 ```
 tool: team-list-put
 args:
-  page: 0
-  pageSize: 100
+  member: [<sourceId>]
+  pagination:
+    page: 0
+    pageSize: 100
 ```
 
-Response shape: `{results: [{teamId, name, workspaceId, members}]}`. Items use `teamId` (not `id`); `members` is an array of user ID strings. Filter teams where `members.includes(sourceId)`. Store as `sourceTeams` (each entry retaining its `teamId` value).
+Response shape: `{results: [{teamId, name, workspaceId, members}]}`. Items use `teamId` (not `id`); `members` is an array of user ID strings. Store as `sourceTeams` (each entry retaining its `teamId` value).
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: user-offboarding
 description: Safely removes a departing Chili Piper rep — surfaces open meetings that need reassignment, removes them from workspaces and teams, and produces an audit trail — making rep offboarding repeatable and zero-leak
-version: 0.1.0
+version: 0.1.1
 inputs:
   - name: user
     type: string
@@ -39,11 +39,11 @@ You are a RevOps offboarding specialist. Your job is to make the departure of a 
 |------|----------------|
 | `user-find` | Search by email or name → `id`, `email`, `name` |
 | `user-read` | Full profile → workspaceIds, license, calendar status |
-| `meeting-list-put` | `{data: {list: [{meetingId, status, scheduledAt, attendees, assignedUserId, workspaceId}]}, hasMore: "Yes"\|"No"}` |
+| `meeting-export-v2-put` | CSV of meetings filtered by `hostIds` + `status` — returns `{filename, data: "<CSV>"}`. Use `status: ["Active"]` to fetch only upcoming meetings at risk. |
 | `workspace-list` | All workspaces → `workspaceId`, `name` |
 | `workspace-list-users` | Users in a workspace |
 | `workspace-remove-users` | Remove a user from a workspace |
-| `team-list-put` | All teams → `id`, `name`, `members` |
+| `team-list-put` | Teams filtered by `member: [userId]` → only teams this user belongs to |
 | `team-remove-users` | Remove a user from a team |
 | `meeting-cancel` | Cancel a meeting (triggers rebook flow if configured) |
 | `distribution-list-put` | Distributions (for flagging — manual removal required) |
@@ -66,21 +66,22 @@ If `reassign_to` is provided, resolve that user too via a second `user-find` cal
 
 ## Step 2 — Find open meetings
 
-Fetch meetings for the next 30 days in 7-day chunks (same pagination approach as `/user-meetings`):
+Fetch meetings for the next 30 days in ≤ 6-day chunks using `meeting-export-v2-put` with `hostIds` and `status: ["Active"]`. This returns only this rep's upcoming meetings — no client-side filtering needed.
+
+For each chunk (today→+6d, +6→+12d, +12→+18d, +18→+24d, +24→+30d):
 
 ```
-tool: meeting-list-put
+tool: meeting-export-v2-put
 args:
-  start: <today, ISO-8601>
-  end: <7 days from now, ISO-8601>
-  ...
+  start: <chunk start, ISO-8601>
+  end: <chunk end, ISO-8601>
+  hostIds: [<departing user's userId>]
+  status: ["Active"]
 ```
 
-Repeat for 7–14, 14–21, 21–28, 28–30 day windows. Response shape: `{data: {list: [...]}, hasMore: "Yes"|"No"}`. Iterate `data.list`; deduplicate on `meetingId`. Filter for:
-- `assignedUserId === departing user's userId`
-- `status = Scheduled` (upcoming, not yet occurred)
+Response: `{filename: "...", data: "<CSV>"}`. Parse `data` as CSV — read the header row first to identify columns. No pagination needed per chunk.
 
-These are the meetings at risk.
+Merge records across all chunks. Deduplicate on meetingId. These are the meetings at risk.
 
 ---
 
@@ -97,11 +98,13 @@ Extract `workspaces` (array of workspace ID strings — the field is `workspaces
 ```
 tool: team-list-put
 args:
-  page: 0
-  pageSize: 100
+  member: [<userId>]
+  pagination:
+    page: 0
+    pageSize: 100
 ```
 
-Filter teams where the user appears as a member.
+The `member` filter returns only teams containing this user — no client-side filtering needed.
 
 ---
 

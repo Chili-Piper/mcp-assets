@@ -1,7 +1,7 @@
 ---
 name: org-meeting
 description: Org-wide meeting volume and health snapshot — total booked, completed, no-show, and cancelled by workspace — for weekly or monthly executive reviews of booking capacity and pipeline coverage
-version: 0.1.0
+version: 0.1.1
 inputs:
   - name: date_range
     type: string
@@ -23,7 +23,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the breakdown and decide: share with VP Sales/CRO, drill into a flagged workspace with /no-show-analyzer, or check individual reps with /user-meetings"
 writes_to: "Nothing — read-only"
-api_note: "meeting-list-put has a strict 7-day maximum window. For 30-day ranges the skill makes multiple paginated calls. Workspace IDs are resolved via workspace-list. The API does not support server-side filtering by workspace — grouping is done client-side."
+api_note: "meeting-list-put has a strict 7-day maximum window. For 30-day ranges the skill makes multiple paginated calls. Workspace IDs are resolved via workspace-list. Pass workspaceIds for server-side workspace scoping. For historical analysis (entire date range in the past), pass status: [\"Completed\",\"NoShow\",\"Canceled\"] to skip Active/upcoming meetings and reduce data returned."
 ---
 
 # Org Meeting Snapshot
@@ -48,10 +48,14 @@ tool: meeting-list-put
 args:
   start: <chunk start, ISO-8601>
   end: <chunk end, ISO-8601>
+  status: ["Completed", "NoShow", "Canceled"]   # omit "Active" when entire range is in the past
+  workspaceIds: [<resolved workspaceId>]          # optional: only if a workspace filter is desired
   pagination:
     page: 0
     pageSize: 200
 ```
+
+**When to include `Active` in the status filter:** If the date range extends into the future (e.g., `last-7-days` includes today), add `"Active"` to capture upcoming meetings for the Upcoming row in the summary. If the entire range is historical, omit `"Active"` — this reduces pages fetched for large orgs.
 
 Each chunk must be strictly less than 7 days (use at most 6-day chunks). Paginate each chunk if needed: results are in `data.list`; check `hasMore === "Yes"` (string comparison) and increment `pagination.page` until `hasMore === "No"`. Merge all results from `data.list` across all chunks, deduplicate on `meetingId`.
 
