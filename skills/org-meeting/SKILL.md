@@ -1,7 +1,7 @@
 ---
 name: org-meeting
 description: Org-wide meeting volume and health snapshot — total booked, completed, no-show, and cancelled by workspace — for weekly or monthly executive reviews of booking capacity and pipeline coverage
-version: 0.1.1
+version: 0.1.2
 inputs:
   - name: date_range
     type: string
@@ -48,14 +48,14 @@ tool: meeting-list-put
 args:
   start: <chunk start, ISO-8601>
   end: <chunk end, ISO-8601>
-  status: ["Completed", "NoShow", "Canceled"]   # omit "Active" when entire range is in the past
+  status: ["Completed", "NoShow", "Active"]   # always include Active — past-Active meetings count in denominator; Canceled excluded server-side
   workspaceIds: [<resolved workspaceId>]          # optional: only if a workspace filter is desired
   pagination:
     page: 0
     pageSize: 200
 ```
 
-**When to include `Active` in the status filter:** If the date range extends into the future (e.g., `last-7-days` includes today), add `"Active"` to capture upcoming meetings for the Upcoming row in the summary. If the entire range is historical, omit `"Active"` — this reduces pages fetched for large orgs.
+Always include `"Active"` in the status filter. Past-Active meetings (start time in the past) must be included in the no-show rate denominator — omitting them inflates the apparent no-show rate. Future-Active meetings are separated client-side and shown as "Upcoming" in the summary.
 
 Each chunk must be strictly less than 7 days (use at most 6-day chunks). Paginate each chunk if needed: results are in `data.list`; check `hasMore === "Yes"` (string comparison) and increment `pagination.page` until `hasMore === "No"`. Merge all results from `data.list` across all chunks, deduplicate on `meetingId`.
 
@@ -81,14 +81,19 @@ Note: meeting items from `meeting-list-put` include a `workspaceId` field — us
 Across all meetings:
 
 **Statuses:**
-- `Completed` — happened
-- `NoShow` — missed
-- `Cancelled` — exclude from no-show rate
-- `Scheduled` — upcoming
+- `Completed` — explicitly marked as completed
+- `NoShow` — explicitly marked as no-show
+- `Canceled` — exclude from no-show rate entirely
+- `Active` (start in future) — upcoming, exclude from rate
+- `Active` (start in past) — meeting likely happened but never formally closed; treat as informally completed — include in denominator but NOT the no-show numerator
 
-**Org no-show rate:** `NoShow / (Completed + NoShow)`
+**Important:** meetings not explicitly closed stay `Active` indefinitely. Excluding past-`Active` from the denominator inflates the apparent no-show rate. Always split `Active` on start time vs. now.
 
-**Completion rate:** `Completed / (Completed + NoShow)`
+**Org no-show rate:** `NoShow / (Completed + NoShow + past-Active)`
+
+**Completion rate:** `(Completed + past-Active) / (Completed + NoShow + past-Active)`
+
+Surface a caveat when past-Active is a significant share of total: *"N meetings were not formally closed (Active status, past start time) — included in denominator as informally completed."*
 
 ---
 

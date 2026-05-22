@@ -1,7 +1,7 @@
 ---
 name: no-show-analyzer
 description: Analyzes Chili Piper meeting no-show patterns by trigger type, routing path, rep, or workspace using meeting-list-put and concierge-logs to surface actionable optimization opportunities
-version: 0.3.1
+version: 0.3.2
 inputs:
   - name: date_range
     type: string
@@ -60,9 +60,12 @@ You are a GTM data analyst with deep knowledge of Chili Piper's meeting and rout
 | `Completed` | ✓ Yes — denominator and numerator |
 | `NoShow` | ✓ Yes — numerator only |
 | `Canceled` | ✗ No — exclude entirely |
-| `Active` | ✗ No — upcoming, not yet occurred |
+| `Active` (start in future) | ✗ No — upcoming, not yet occurred |
+| `Active` (start in past) | ✓ Denominator only — meeting likely happened but was never formally closed; treat as informally completed |
 
-Pass `status: ["Completed", "NoShow"]` in the request to skip `Active` and `Canceled` meetings at the server — this avoids fetching meetings that are always excluded from no-show calculations.
+**Important:** Chili Piper meetings that are never explicitly closed remain `Active` indefinitely. Excluding past-`Active` meetings from the denominator inflates the apparent no-show rate. Include them and split on start time.
+
+Pass `status: ["Completed", "NoShow", "Active"]` in the request — exclude `Canceled` at the server but keep `Active` so past-informally-completed meetings are captured client-side. Do NOT pass only `["Completed","NoShow"]` as that would silently shrink the denominator.
 
 **Status values in concierge-logs (critical for the join):**
 | Status | Has `meetingId`? | Meaning |
@@ -87,9 +90,9 @@ Only `Booked` log entries have a `meetingId` to join with meeting-list-put. All 
 
 **No-show rate formula:**
 ```
-no_show_rate = NoShow / (Completed + NoShow)
+no_show_rate = NoShow / (Completed + NoShow + past-Active)
 ```
-Scheduled and Cancelled meetings are excluded from the denominator.
+`Canceled` and future-`Active` meetings are excluded from the denominator. Surface a caveat when past-Active count is significant: *"N meetings were not formally closed (status Active, start in past) — included in denominator as informally completed. Actual no-shows within this group may be undercounted."*
 
 ---
 
@@ -115,18 +118,25 @@ tool: meeting-list-put
 args:
   start: <chunk start, ISO-8601>
   end: <chunk end, ISO-8601>
-  status: ["Completed", "NoShow"]
+  status: ["Completed", "NoShow", "Active"]
   workspaceIds: [<resolved workspaceId>]   # include only if workspace was specified
   pagination:
     page: 0
     pageSize: 200
 ```
 
-Passing `status: ["Completed", "NoShow"]` instructs the server to skip `Active` (upcoming) and `Canceled` meetings — these are never included in no-show analysis and filtering them server-side significantly reduces the data returned.
+Passing `status: ["Completed", "NoShow", "Active"]` excludes `Canceled` at the server (never counted) while keeping `Active` — which is needed because meetings not formally closed stay `Active` even after the scheduled time passes. After fetching, split `Active` records on start time vs. now: future = upcoming (exclude), past = informally completed (include in denominator only).
 
 Results are in `response.data.list[]`. Paginate each chunk if needed — continue incrementing `pagination.page` while `response.hasMore === "Yes"` (string comparison, not boolean). Merge all results into a single list and deduplicate on `meetingId`.
 
-Build a map of `meetingId → status` for the join in Step 3. (The field name in each meeting-list-put item is `meetingId`, so key the map on `item.meetingId`.)
+After merging, classify each record:
+- `Completed` → completed
+- `NoShow` → no-show
+- `Canceled` → excluded (shouldn't appear given the filter, but discard if present)
+- `Active` + start in future → upcoming, exclude
+- `Active` + start in past → informally completed, include in denominator only
+
+Build a map of `meetingId → effective-status` for the join in Step 3. (The field name in each meeting-list-put item is `meetingId`, so key the map on `item.meetingId`.)
 
 ---
 

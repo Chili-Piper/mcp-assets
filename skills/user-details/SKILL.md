@@ -1,7 +1,7 @@
 ---
 name: user-details
 description: Pulls a full profile for any Chili Piper user — teams, workspaces, meeting types, scheduling links, and recent meeting activity — for onboarding audits, offboarding checks, and rep-level troubleshooting
-version: 0.1.1
+version: 0.1.2
 inputs:
   - name: user
     type: string
@@ -146,10 +146,15 @@ Response: `{filename: "...", data: "<CSV>"}`. Parse `data` as CSV — read the h
 
 Merge records across all chunks. Deduplicate on the meetingId column.
 
-Calculate from the status column:
-- Total meetings (Completed + NoShow)
-- No-show count and rate
-- Cancelled count
+Calculate from the status column. **Note on `Active`:** meetings not explicitly closed stay `Active` even after the meeting time passes. Split `Active` on the `When` column vs. now:
+- `Active` + start in future → Upcoming (exclude from rate)
+- `Active` + start in past → informally completed (include in denominator, not numerator)
+
+Counts:
+- Total in rate: Completed + NoShow + past-Active
+- No-show rate: `NoShow / (Completed + NoShow + past-Active)`
+- Cancelled count (excluded from rate)
+- Surface caveat if past-Active is significant
 
 ---
 
