@@ -1,7 +1,7 @@
 ---
 name: user-details
 description: Pulls a full profile for any Chili Piper user — teams, workspaces, meeting types, scheduling links, and recent meeting activity — for onboarding audits, offboarding checks, and rep-level troubleshooting
-version: 0.1.0
+version: 0.1.1
 inputs:
   - name: user
     type: string
@@ -38,10 +38,10 @@ You are a RevOps analyst. Your job is to pull a complete profile for a Chili Pip
 | `user-find` | Search by email or name → `id`, `name`, `email`, `isSuperAdmin`, `licenses` (object), `workspaces` (array of workspaceId strings), `personalWorkspaceId` |
 | `user-read` | Full user record (same fields as user-find result item, unwrapped) → `id`, `name`, `email`, `isSuperAdmin`, `licenses` (object with boolean fields: `distro`, `chiliCalOrg`, `concierge`, `conciergeLive`, `chat`, `handoff`), `workspaces` (array of workspaceId strings, NOT `workspaceIds`), `personalWorkspaceId`. No `calendarConnected`, `calendarProvider`, or `crmConnected` fields. |
 | `workspace-list` | All workspaces → array of `{workspaceId, name, settings}` — items use `workspaceId` (NOT `id`) |
-| `team-list-put` | All teams → filter for teams containing this user |
+| `team-list-put` | Teams filtered by `member: [userId]` → only teams this user belongs to; response: `{results: [{teamId, name, workspaceId, members}]}` |
 | `scheduling-link-list-personal` | Personal scheduling links owned by this user |
 | `scheduling-link-list-round-robin` | Round-robin links this user is part of |
-| `meeting-list-put` | Recent meetings assigned to this user |
+| `meeting-export-v2-put` | CSV export with `hostIds` filter → only this user's meetings; response: `{filename, data: "<CSV>"}` — parse header row for column names |
 
 ---
 
@@ -97,14 +97,18 @@ Map the user's `workspaces` (list of workspaceId strings) to workspace names usi
 
 ## Step 4 — Find team memberships
 
+Use the `member` filter to fetch only teams this user belongs to — no client-side filtering needed.
+
 ```
 tool: team-list-put
 args:
-  page: 0
-  pageSize: 100
+  member: [<resolved user ID>]
+  pagination:
+    page: 0
+    pageSize: 100
 ```
 
-Filter the results for teams where this user appears as a member. Extract `id`, `name`, `workspaceId` for each matching team.
+Response: `{results: [{teamId, name, workspaceId, members}]}`. Extract `teamId`, `name`, `workspaceId` for each result.
 
 ---
 
@@ -128,25 +132,21 @@ Combine results. Note the meeting type and whether the link is active.
 
 ## Step 6 — Recent meeting activity (if include_meetings=true)
 
-The `meeting-list-put` API has a strict **< 7-day** window per call. Split the 30-day range into chunks of at most 6 days each (5 or 6 calls). For each chunk:
+`meeting-export-v2-put` has a strict **≤ 7-day** window per call. Split the 30-day range into chunks of at most 6 days each (5 or 6 calls). For each chunk:
 
 ```
-tool: meeting-list-put
+tool: meeting-export-v2-put
 args:
   start: <chunk start, ISO-8601>
   end: <chunk end, ISO-8601>
-  pagination:
-    page: 0
-    pageSize: 200
+  hostIds: [<resolved user ID>]
 ```
 
-Paginate each chunk if needed: check `hasMore === "Yes"` (string comparison) and increment `pagination.page` until `hasMore === "No"`.
+Response: `{filename: "...", data: "<CSV>"}`. Parse `data` as CSV — read the header row first to identify column names. No pagination needed; all matching records for the chunk are returned in one response.
 
-Merge all results from `data.list` across all chunks. Deduplicate on `meetingId`.
+Merge records across all chunks. Deduplicate on the meetingId column.
 
-Filter for meetings where `assignedUserId === <resolved user ID>`.
-
-Calculate:
+Calculate from the status column:
 - Total meetings (Completed + NoShow)
 - No-show count and rate
 - Cancelled count

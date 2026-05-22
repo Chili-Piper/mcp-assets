@@ -1,7 +1,7 @@
 ---
 name: no-show-analyzer
 description: Analyzes Chili Piper meeting no-show patterns by trigger type, routing path, rep, or workspace using meeting-list-put and concierge-logs to surface actionable optimization opportunities
-version: 0.3.0
+version: 0.3.1
 inputs:
   - name: date_range
     type: string
@@ -34,7 +34,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review flagged segments and decide which routing rule or confirmation flow change to test first"
 writes_to: "Salesforce task (optional) — created by human after reviewing recommendations"
-api_note: "meeting-list-put has a strict 7-day maximum window per call — the skill chunks longer ranges automatically. concierge-logs has a separate 30-day maximum window and requires a routerId. Only log entries with status=Booked have a meetingId to join against meeting-list-put; Offered/NoMatch/NotQualified/Timeout/Error entries never became meetings and must be excluded from the join. meeting-list-put response envelope is {data: {list: [...]}, hasMore: 'Yes'|'No'}; meeting items use 'meetingId' (not 'id'); paginate by checking hasMore === 'Yes' (string, not boolean). concierge-list-routers nests routerId at routers[N].router.id, workspaceId at routers[N].workspaceId, name at routers[N].router.name."
+api_note: "meeting-list-put has a strict 7-day maximum window per call — the skill chunks longer ranges automatically. Pass status: [\"Completed\",\"NoShow\"] to avoid fetching Active/Canceled meetings that are excluded from no-show analysis anyway. Pass workspaceIds to filter server-side when workspace is specified. concierge-logs has a separate 30-day maximum window and requires a routerId. Only log entries with status=Booked have a meetingId to join against meeting-list-put; Offered/NoMatch/NotQualified/Timeout/Error entries never became meetings and must be excluded from the join. meeting-list-put response envelope is {data: {list: [...]}, hasMore: 'Yes'|'No'}; meeting items use 'meetingId' (not 'id'); paginate by checking hasMore === 'Yes' (string, not boolean). concierge-list-routers nests routerId at routers[N].router.id, workspaceId at routers[N].workspaceId, name at routers[N].router.name."
 ---
 
 # No-Show Analyzer
@@ -59,8 +59,10 @@ You are a GTM data analyst with deep knowledge of Chili Piper's meeting and rout
 |--------|------------------------|
 | `Completed` | ✓ Yes — denominator and numerator |
 | `NoShow` | ✓ Yes — numerator only |
-| `Cancelled` | ✗ No — exclude entirely |
-| `Scheduled` | ✗ No — not yet occurred |
+| `Canceled` | ✗ No — exclude entirely |
+| `Active` | ✗ No — upcoming, not yet occurred |
+
+Pass `status: ["Completed", "NoShow"]` in the request to skip `Active` and `Canceled` meetings at the server — this avoids fetching meetings that are always excluded from no-show calculations.
 
 **Status values in concierge-logs (critical for the join):**
 | Status | Has `meetingId`? | Meaning |
@@ -113,18 +115,16 @@ tool: meeting-list-put
 args:
   start: <chunk start, ISO-8601>
   end: <chunk end, ISO-8601>
+  status: ["Completed", "NoShow"]
+  workspaceIds: [<resolved workspaceId>]   # include only if workspace was specified
   pagination:
     page: 0
     pageSize: 200
 ```
 
+Passing `status: ["Completed", "NoShow"]` instructs the server to skip `Active` (upcoming) and `Canceled` meetings — these are never included in no-show analysis and filtering them server-side significantly reduces the data returned.
+
 Results are in `response.data.list[]`. Paginate each chunk if needed — continue incrementing `pagination.page` while `response.hasMore === "Yes"` (string comparison, not boolean). Merge all results into a single list and deduplicate on `meetingId`.
-
-Filter the merged list:
-- **Include:** status `Completed` or `NoShow`
-- **Exclude:** status `Scheduled`, `Cancelled`
-
-If `workspace` was specified, note that `meeting-list-put` does not support workspace filtering. Use `meeting-export-v2-put` with `workspaceId` instead (returns CSV — parse accordingly).
 
 Build a map of `meetingId → status` for the join in Step 3. (The field name in each meeting-list-put item is `meetingId`, so key the map on `item.meetingId`.)
 
