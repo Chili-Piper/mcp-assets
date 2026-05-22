@@ -1,7 +1,7 @@
 ---
 name: user-meetings
 description: Shows all meetings assigned to a specific rep for a period — volume, statuses, and no-show rate — to surface rep-level pipeline health and flag reps who may need coaching or routing changes
-version: 0.3.0
+version: 0.3.1
 inputs:
   - name: user
     type: string
@@ -20,13 +20,13 @@ outputs:
   - name: summary
     description: Meeting volume, completion rate, and no-show rate for the period
   - name: meeting_list
-    description: All meetings in the period with scheduled date, booked date, status, guest, and workspace
+    description: All meetings in the period with scheduled date, status, guest, and workspace
   - name: anomalies
     description: Patterns that may indicate coaching needs or routing issues
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review anomaly flags and decide: coaching conversation, territory/routing adjustment, or no action needed"
 writes_to: "Nothing — read-only diagnostic"
-api_note: "Uses meeting-list-put with status filter (Completed|NoShow|Active) to reduce data vs. unfiltered. Filters by hostId client-side. Key response fields: meetingId, hostId, dateTime.start (meeting time), bookedAt (booking time), extendedMeetingStatus (Active|Canceled|NoShow|Completed), workspaceId. Active meetings in the past are treated as informally completed."
+api_note: "Uses meeting-export-v2-put with hostIds — server returns only this rep's meetings. No bookedAt in the export CSV yet (pending API enhancement). Once edge-fire-service adds bookedAt to the export, update Step 2 to include it. Times displayed in local timezone detected via bash."
 ---
 
 # User Meetings
@@ -38,12 +38,10 @@ You are a RevOps analyst and rep manager assistant. Your job is to pull all meet
 | Tool | What it returns |
 |------|----------------|
 | `user-find` | Search by email or name → `id`, `email`, `name` |
-| `meeting-list-put` | Paginated meetings by time range. Response: `{data: {list: [{meetingId, hostId, hostEmail, workspaceId, dateTime: {start, end}, bookedAt, extendedMeetingStatus, noShowStatus, primaryGuest, attendees, ...}]}, hasMore: "Yes"\|"No"}`. Use `extendedMeetingStatus` (not `meetingStatus`) for status classification. `bookedAt` is the timestamp when the meeting was booked. |
+| `meeting-export-v2-put` | CSV export filtered by `hostIds` — server returns only this rep's meetings. Response: `{filename, data: "<CSV>"}`. Parse `data` as CSV; read header row to identify columns. Key columns: `Title`, `When` (scheduled start), `End`, `Status`, `Primary Guest`, `Meeting Type`. Status values: `Active` \| `Canceled` \| `NoShow` \| `Completed`. No pagination — all matching records in one response per chunk. **Note:** `bookedAt` is not currently in the CSV export. |
 | `workspace-list` | All workspaces — needed to resolve workspace ID to display name |
 
-**Status field to use:** `extendedMeetingStatus` — values: `Active` \| `Canceled` \| `NoShow` \| `Completed`
-
-**Critical constraint:** `meeting-list-put` accepts at most a **7-day window** per call. For a 30-day range issue multiple sequential calls and merge the results.
+**Critical constraint:** `meeting-export-v2-put` accepts at most a **7-day window** per call. For a 30-day range issue multiple sequential calls and merge the results.
 
 ---
 
@@ -61,19 +59,17 @@ If multiple results, list them and ask the human to confirm. Store the resolved 
 
 ## Step 1b — Resolve workspace names
 
-Always call `workspace-list` at the start. Build a `workspaceId → name` map for all output. Never invent or guess workspace names.
+Always call `workspace-list` at the start. Build a `workspaceId → name` map. Never invent or guess workspace names.
 
 ---
 
 ## Step 1c — Detect local timezone
 
-Run the following to get the user's local IANA timezone:
-
 ```bash
 cat /etc/timezone 2>/dev/null || readlink /etc/localtime 2>/dev/null | sed 's|.*zoneinfo/||'
 ```
 
-Store the result (e.g. `America/Chicago`). Convert **all timestamps** in output to this timezone. If the command fails, fall back to the offset from `date +%z` and note the limitation.
+Store the IANA result (e.g. `America/Chicago`). Convert **all timestamps** in output to this timezone. If the command fails, fall back to `date +%z` and note the UTC offset used.
 
 ---
 
@@ -84,39 +80,34 @@ Parse the `date_range` input:
 - `last-30-days` → 5 calls (days 0–6, 7–13, 14–20, 21–27, 28–30)
 - `YYYY-MM-DD:YYYY-MM-DD` → calculate slices needed
 
-For each chunk (strictly ≤ 6 days to stay within the 7-day limit):
+For each chunk (strictly ≤ 6 days):
 
 ```
-tool: meeting-list-put
+tool: meeting-export-v2-put
 args:
   start: <chunk start, ISO-8601>
   end: <chunk end, ISO-8601>
-  status: ["Completed", "NoShow", "Active"]
-  workspaceIds: [<resolved workspaceId>]   # include only if workspace was specified
-  pagination:
-    page: 0
-    pageSize: 200
+  hostIds: [<resolved userId>]
+  workspaceIds: [<resolved workspaceId>]   # only if workspace was specified
 ```
 
-Passing `status: ["Completed", "NoShow", "Active"]` excludes `Canceled` at the server, significantly reducing response size. Paginate each chunk: results are in `data.list`; check `hasMore === "Yes"` (string comparison) and increment `pagination.page` until `hasMore === "No"`.
+Response: `{filename, data: "<CSV>"}`. Parse `data` as CSV — read the header row first to identify columns. No pagination needed per chunk.
 
-Merge all results across all chunks. Deduplicate on `meetingId`.
-
-**Filter to this rep:** keep only records where `hostId === <resolved userId>` (fall back to `hostEmail` if `hostId` is absent).
+Merge records across all chunks. Deduplicate on any unique identifier (meeting title + `When` if no ID column present).
 
 ---
 
 ## Step 3 — Classify meetings
 
-Use `extendedMeetingStatus` for classification. Split `Active` on `dateTime.start` vs. now:
+Use the `Status` column. Split `Active` on the `When` time vs. now:
 
-| `extendedMeetingStatus` | `dateTime.start` | Classification |
-|------------------------|-----------------|----------------|
+| Status | When | Classification |
+|--------|------|----------------|
 | `Completed` | any | Completed — include in rate |
 | `NoShow` | any | No-Show — include in rate (numerator) |
-| `Canceled` | any | Cancelled — excluded (shouldn't appear given filter, discard if present) |
-| `Active` | in the future | Upcoming — exclude from rate |
-| `Active` | in the past | Informally Completed — include in denominator only |
+| `Canceled` | any | Cancelled — exclude from rate |
+| `Active` | future | Upcoming — exclude from rate |
+| `Active` | past | Informally Completed — include in denominator only |
 
 Surface a caveat when past-Active count is significant: *"N past meetings show as Active (not formally closed). No-show rate treats these as completed; actual no-shows may be undercounted."*
 
@@ -139,7 +130,6 @@ Surface a caveat when past-Active count is significant: *"N past meetings show a
 | Low volume | < 5 meetings in period | Medium — may be routing gap |
 | Zero meetings | 0 meetings | High — check router membership |
 | Many cancellations | Cancelled > 50% of total | Medium |
-| Long booking lead time | Avg days between `bookedAt` and `dateTime.start` > 7 days | Medium — elevated no-show risk |
 
 ---
 
@@ -155,8 +145,8 @@ Surface a caveat when past-Active count is significant: *"N past meetings show a
 | Completed | |
 | No-shows | |
 | No-show rate | |
-| Cancelled (excluded from rate) | |
 | Past Active (informally completed) | |
+| Cancelled (excluded from rate) | |
 | Upcoming | |
 
 **Anomalies**
@@ -167,15 +157,13 @@ Surface a caveat when past-Active count is significant: *"N past meetings show a
 
 *(or: "No anomalies detected.")*
 
-**Meeting list** (most recent first, sorted by `dateTime.start`)
+**Meeting list** (most recent first, sorted by `When`)
 
-| Scheduled (`dateTime.start`) | Booked (`bookedAt`) | Lead Time | Status | Primary Guest | Workspace |
-|------------------------------|---------------------|-----------|--------|--------------|-----------|
-| ... | | | | | |
+| Scheduled (`When`) | Booked | Status | Primary Guest | Workspace |
+|--------------------|--------|--------|--------------|-----------|
+| ... | — (pending API) | | | |
 
-- All times displayed in local timezone (`<tz>`)
-- **Lead time** = days between `bookedAt` and `dateTime.start`
-- **Workspace** resolved from `workspaceId` via the workspace map
+> All times in `<tz>`. **Booked** column will be populated once `bookedAt` is added to the export endpoint (tracked in edge-fire-service).
 
 **Human decision point**
 
