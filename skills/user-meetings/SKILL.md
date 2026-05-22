@@ -1,7 +1,7 @@
 ---
 name: user-meetings
 description: Shows all meetings assigned to a specific rep for a period — volume, statuses, and no-show rate — to surface rep-level pipeline health and flag reps who may need coaching or routing changes
-version: 0.2.0
+version: 0.2.1
 inputs:
   - name: user
     type: string
@@ -101,13 +101,19 @@ Merge records across all chunks. Deduplicate on `meetingId`.
 | `Completed` | Completed — include in rate |
 | `NoShow` | No-Show — include in rate |
 | `Canceled` | Cancelled — exclude from rate |
-| `Active` | Upcoming/Scheduled — exclude from rate |
+| `Active` | See note below |
 
-**No-show rate:** `NoShow / (Completed + NoShow)`
+**Important — `Active` covers two cases:** Chili Piper meetings that were never explicitly closed out stay `Active` indefinitely, even after the scheduled time has passed. Split on the scheduled start time relative to now:
+- `Active` + start **in the future** → **Upcoming** — exclude from rate
+- `Active` + start **in the past** → treat as **informally Completed** — include in the denominator but NOT the no-show numerator; flag these in the output so the human knows the count is estimated
 
-**Completion rate:** `Completed / (Completed + NoShow)`
+Surface a caveat in the report when a significant number of past meetings are `Active`: *"N past meetings show as Active (not formally closed). No-show rate treats these as completed; actual no-shows may be undercounted."*
 
-**Scheduled time** (per meeting): use the scheduled start column for the meeting date/time.
+**No-show rate:** `NoShow / (Completed + NoShow + past-Active)`
+
+**Completion rate:** `(Completed + past-Active) / (Completed + NoShow + past-Active)`
+
+**Scheduled time** (per meeting): use the `When` column for the meeting date/time.
 
 ---
 
