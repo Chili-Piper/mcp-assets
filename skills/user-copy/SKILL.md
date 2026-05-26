@@ -1,7 +1,7 @@
 ---
 name: user-copy
 description: Copies a user's Chili Piper workspace and team memberships to a new or existing user — eliminating manual re-configuration when onboarding a rep onto an existing territory or replacing a departing rep
-version: 0.1.2
+version: 0.1.3
 inputs:
   - name: source_user
     type: string
@@ -26,7 +26,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the plan before setting dry_run=false — confirm the target user is correctly identified and the workspace/team list is what you expect"
 writes_to: "Chili Piper workspace and team membership records"
-api_note: "This skill reads source memberships via workspace-list-users and team-list-put, then writes via workspace-add-users and team-add-users. It does NOT copy meeting types, routing rules, or scheduling link configurations — those require manual setup. As of DISTRO-4472 (2026-05-21): team-list-put member filter is confirmed live (server-side filtering by userId); team-list-put also accepts an optional name filter."
+api_note: "This skill reads source memberships via workspace-list-users and team-list-put, then writes via workspace-add-users and team-add-users. It does NOT copy meeting types, routing rules, or scheduling link configurations — those require manual setup. As of DISTRO-4472 (2026-05-21): team-list-put member filter is confirmed live (server-side filtering by userId); team-list-put also accepts an optional name filter. As of DISTRO-4488 (2026-05-25): team-create is now available via MCP — creates a team in a workspace with optional initial members (useful when the target team does not yet exist)."
 ---
 
 # User Copy
@@ -43,6 +43,7 @@ You are a RevOps onboarding specialist. Your job is to read one user's workspace
 | `team-list-put` | Teams filtered by `member: [userId]` (server-side, confirmed live as of DISTRO-4472) and optionally `name: string` → `{results: [{teamId, name, workspaceId, members}]}` — items use `teamId` (not `id`) |
 | `workspace-add-users` | Add a user to a workspace |
 | `team-add-users` | Add a user to a team |
+| `team-create` | Create a new team in a workspace → `{id, workspaceId, name, members, metadata}` — accepts `workspaceId` (req), `name` (req), `members` (opt, initial user IDs) |
 
 ---
 

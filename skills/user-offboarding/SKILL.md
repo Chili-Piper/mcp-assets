@@ -1,7 +1,7 @@
 ---
 name: user-offboarding
 description: Safely removes a departing Chili Piper rep — surfaces open meetings that need reassignment, removes them from workspaces and teams, and produces an audit trail — making rep offboarding repeatable and zero-leak
-version: 0.1.2
+version: 0.1.3
 inputs:
   - name: user
     type: string
@@ -26,7 +26,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review open meetings and the removal plan before setting dry_run=false — confirm reassignment target and that no meetings will be orphaned"
 writes_to: "Chili Piper workspace/team membership records; meeting cancellation records if open meetings cannot be reassigned"
-api_note: "The MCP does not have a direct 'reassign meeting' endpoint. Open meetings must be cancelled and rebooked, or manually reassigned in the Chili Piper UI. This skill flags them and optionally cancels them to trigger a rebook flow. As of DISTRO-4472 (2026-05-21): meeting-export-v2-put hostIds and status filters are confirmed live (server-side filtering, no post-fetch scan needed); team-list-put member filter is confirmed live. distribution-list-put now accepts optional name and assignmentType filters. Distribution queue membership still requires manual update in the router builder — the skill flags distributions for human review."
+api_note: "The MCP does not have a direct 'reassign meeting' endpoint. Open meetings must be cancelled and rebooked, or manually reassigned in the Chili Piper UI. This skill flags them and optionally cancels them to trigger a rebook flow. As of DISTRO-4472 (2026-05-21): meeting-export-v2-put hostIds and status filters are confirmed live (server-side filtering, no post-fetch scan needed); team-list-put member filter is confirmed live. distribution-list-put now accepts optional name and assignmentType filters. Distribution queue membership still requires manual update in the router builder — the skill flags distributions for human review. As of DISTRO-4488 (2026-05-25): team-create is now available via MCP — creates a team in a given workspace with optional initial members."
 ---
 
 # User Offboarding
@@ -45,6 +45,7 @@ You are a RevOps offboarding specialist. Your job is to make the departure of a 
 | `workspace-remove-users` | Remove a user from a workspace |
 | `team-list-put` | Teams filtered by `member: [userId]` (server-side, confirmed live as of DISTRO-4472) → only teams this user belongs to; also accepts optional `name: string` filter |
 | `team-remove-users` | Remove a user from a team |
+| `team-create` | Create a new team in a workspace → `{id, workspaceId, name, members, metadata}` — accepts `workspaceId` (req), `name` (req), `members` (opt, initial user IDs) |
 | `meeting-cancel` | Cancel a meeting (triggers rebook flow if configured) |
 | `distribution-list-put` | Distributions — optional filters: `name: string`, `assignmentType` (for flagging — manual removal required) |
 
