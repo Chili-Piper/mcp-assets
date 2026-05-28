@@ -1,7 +1,7 @@
 ---
 name: user-offboarding
 description: Safely removes a departing Chili Piper rep — surfaces open meetings that need reassignment, removes them from workspaces and teams, and produces an audit trail — making rep offboarding repeatable and zero-leak
-version: 0.1.3
+version: 0.1.4
 inputs:
   - name: user
     type: string
@@ -26,7 +26,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review open meetings and the removal plan before setting dry_run=false — confirm reassignment target and that no meetings will be orphaned"
 writes_to: "Chili Piper workspace/team membership records; meeting cancellation records if open meetings cannot be reassigned"
-api_note: "The MCP does not have a direct 'reassign meeting' endpoint. Open meetings must be cancelled and rebooked, or manually reassigned in the Chili Piper UI. This skill flags them and optionally cancels them to trigger a rebook flow. As of DISTRO-4472 (2026-05-21): meeting-export-v2-put hostIds and status filters are confirmed live (server-side filtering, no post-fetch scan needed); team-list-put member filter is confirmed live. distribution-list-put now accepts optional name and assignmentType filters. Distribution queue membership still requires manual update in the router builder — the skill flags distributions for human review. As of DISTRO-4488 (2026-05-25): team-create is now available via MCP — creates a team in a given workspace with optional initial members."
+api_note: "The MCP does not have a direct 'reassign meeting' endpoint. Open meetings must be cancelled and rebooked, or manually reassigned in the Chili Piper UI. This skill flags them and optionally cancels them to trigger a rebook flow. As of DISTRO-4472 (2026-05-21): meeting-export-v2-put hostIds and status filters are confirmed live (server-side filtering, no post-fetch scan needed); team-list-put member filter is confirmed live. distribution-list-put now accepts optional name and assignmentType filters. Distribution queue membership still requires manual update in the router builder — the skill flags distributions for human review. As of DISTRO-4488 (2026-05-25): team-create is now available via MCP — creates a team in a given workspace with optional initial members. As of DISTRO-4492 (2026-05-27): team-delete is now available via MCP — permanently deletes a team; requires team.remove permission; fails if any active distributions still reference the team (use distribution-update-v3 to reassign first). Only use team-delete when the team itself should be retired, not just when a user leaves."
 ---
 
 # User Offboarding
@@ -46,6 +46,7 @@ You are a RevOps offboarding specialist. Your job is to make the departure of a 
 | `team-list-put` | Teams filtered by `member: [userId]` (server-side, confirmed live as of DISTRO-4472) → only teams this user belongs to; also accepts optional `name: string` filter |
 | `team-remove-users` | Remove a user from a team |
 | `team-create` | Create a new team in a workspace → `{id, workspaceId, name, members, metadata}` — accepts `workspaceId` (req), `name` (req), `members` (opt, initial user IDs) |
+| `team-delete` | Permanently delete a team → `{id, workspaceId, name, members, metadata}` — the deleted record; requires `team.remove` permission; fails if active distributions still reference the team; use only when retiring the team itself, not just removing a member |
 | `meeting-cancel` | Cancel a meeting (triggers rebook flow if configured) |
 | `distribution-list-put` | Distributions — optional filters: `name: string`, `assignmentType` (for flagging — manual removal required) |
 
@@ -190,6 +191,14 @@ args:
   userIds: [<userId>]
 ```
 
+> **Optional — retire empty teams:** If removing this user leaves a team with zero members and the team should be retired (not just emptied), you can delete it with `team-delete`. Ask the human to confirm before doing so — deletion is irreversible and will fail if any active distribution still references the team.
+>
+> ```
+> tool: team-delete
+> args:
+>   teamId: <teamId>
+> ```
+
 ---
 
 ## Step 7 — Confirm and produce audit trail
@@ -215,4 +224,4 @@ Re-check memberships after removal. Report any that failed.
 
 - **PII present:** user email, guest emails in meeting list
 - **Storage:** ephemeral — no data persists; keep a copy of the audit output if needed
-- **Writes:** workspace/team removals; meeting cancellations (if dry_run=false)
+- **Writes:** workspace/team removals; meeting cancellations (if dry_run=false); optional team deletion if human confirms
