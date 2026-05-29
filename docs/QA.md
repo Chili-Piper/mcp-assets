@@ -21,22 +21,22 @@ This file tracks the quality of every skill in this repo so we (and clients) alw
 
 ## Status matrix
 
-_Last updated: 2026-05-29. Read-only live run = end-to-end execution against tenant `floatingapps.com`._
+_Last updated: 2026-05-29. Static-review fixes applied on branch `repurpose-official-skills` (commits "fix meeting-list-put field drift", "fix routing, concierge, and availability skills", "fix user/org skills"). Read-only live run = end-to-end execution against tenant `floatingapps.com` — pending for `verified`._
 
-| Skill | Version | Read-only? | Static review | Live run | Maturity | Blocking issues |
+| Skill | Version | Read-only? | Static review | Live run | Maturity | Notes |
 |-------|:------:|:---:|:---:|:---:|:---:|---|
-| meeting-inspector | 0.3.0 | ✅ | ✅ done | ⬜ | `draft` | meeting-list-put field drift (`status`/`scheduledAt`/`assignedUserId`), `Scheduled`/`Cancelled` status values, `startTime` (see below) |
-| no-show-analyzer | — | ✅ | ✅ done | ⬜ | `draft` | meeting-list-put field drift; `workspace-list` `userCount`→`nrOfUsers` & `id` |
-| org-meeting | — | ✅ | ✅ done | ⬜ | `draft` | meeting-list-put field drift; group-by `assignedUserId`→`hostId` |
-| user-meetings | 0.3.1 | ✅ | ✅ done | ⬜ | `tested`* | Uses CSV export — no JSON field drift. Verify export CSV header against a real export. |
-| routing-audit | — | ✅ | ✅ done | ⬜ | `draft` | `rule-list` misuse (no `routerId`; needs `filter.ruleBuilderVersion`); rule type enum; `distribution-list-put` shape; `workspace-list` `id` |
-| concierge-debugger | — | ✅ | ✅ done | ⬜ | `draft` | `rule-list` misuse; `concierge-logs` status enum wrong; `assignments[].name` doesn't exist; `matchedPath` is an object; flat pagination |
-| availability-inspector | — | ✅ | ✅ done | ⬜ | `draft` | `availability-slots` request shape invalid (`expectedHost` must be object; no `userIds`; attendee `type:Host` invalid; `meetingTypeRef.id` required); failure-reason enum unverified |
-| user-details | — | ✅ | ✅ done | ⬜ | `draft` | `workspace-list` `id` (not `workspaceId`); `team-list-put` `id` (not `teamId`); flat pagination on `workspace-list` |
-| user-copy | — | ⚠️ writes | ✅ done | n/a | `draft` | `sourceWorkspaces[].id` / `sourceTeams[].id` (skill reads `.workspaceId`/`.teamId`); flat pagination. Dry-run/approval gates present ✅ |
-| user-offboarding | — | ⚠️ writes | ✅ done | n/a | `draft` | `team-list-put` `id`; `distribution-list-put` arg `workspaceIds[]` (not `workspaceId`) & read `assignees`; user-read API-ref row drift. Approval/destructive gates present ✅ |
+| meeting-inspector | 0.3.0 | ✅ | ✅ fixed | ⬜ | `tested` | meeting-list-put drift, status values, `startTime`, `matchedPath` corrected |
+| no-show-analyzer | 0.3.3 | ✅ | ✅ fixed | ⬜ | `tested` | meeting-list-put drift + `workspace-list` `nrOfUsers` + concierge status `Scheduled` corrected |
+| org-meeting | 0.1.3 | ✅ | ✅ fixed | ⬜ | `tested` | meeting-list-put drift + group-by `hostId` + workspace `id` join corrected |
+| user-meetings | 0.3.1 | ✅ | ✅ done | ⬜ | `tested` | Uses CSV export — no JSON drift. Verify export CSV header against a real export. |
+| routing-audit | 0.2.0 | ✅ | ✅ fixed | ⬜ | `tested` | `rule-list` workspace-scoped, router rules from `router.routing`, `distribution-list-put` array shape, workspace `id` |
+| concierge-debugger | 0.2.0 | ✅ | ✅ fixed | ⬜ | `tested` | invented status enum removed; diagnose via `matchedPath.route.type` + `meetingId`; `assignments[].userId` |
+| availability-inspector | 0.1.0 | ✅ | ✅ fixed | ⬜ | `tested` | `availability-slots` request shape corrected; failure-reason strings read literally |
+| user-details | 0.1.3 | ✅ | ✅ fixed | ⬜ | `tested` | `workspace-list` `id`, `team-list-put` `id`, nested pagination |
+| user-copy | 0.1.3 | ⚠️ writes | ✅ fixed | n/a | `tested` | `.id` joins corrected (was `.workspaceId`/`.teamId`); dry-run/approval gates present ✅ |
+| user-offboarding | 0.1.4 | ⚠️ writes | ✅ fixed | n/a | `tested` | `team-list-put` `id`; `distribution-list-put` `workspaceIds[]` + members via weights/userStates; user-read row. Approval/destructive gates present ✅ |
 
-\* `user-meetings` is the closest to ready — it avoids the JSON field drift by using the CSV export path. Promote to `verified` after a read-only live run.
+All ten skills are now `tested` (static review complete, no known correctness bugs against the live MCP). The next step for `verified` is an end-to-end read-only live run per skill, logged in the verification log below. The two write skills (`user-copy`, `user-offboarding`) stay at static-review only — never executed for QA.
 
 **New skills to build (rebuilt on the public MCP, replacing the internal bo-sql versions):**
 
