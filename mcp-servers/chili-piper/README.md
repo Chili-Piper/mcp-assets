@@ -149,4 +149,4 @@ Full guide: [help.chilipiper.com — Edge API References](https://help.chilipipe
 
 ## Contributing
 
-Issues and PRs welcome. See [.community/CONTRIBUTING.md](../../.community/CONTRIBUTING.md).
+Issues and PRs welcome. See [CONTRIBUTING.md](../../CONTRIBUTING.md).

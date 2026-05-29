@@ -1,13 +1,13 @@
-name: Bug report
-description: A recipe doesn't work, an MCP throws an error, or something else is broken
+name: Skill bug report
+description: A skill or GPT doesn't work, returns wrong data, or throws an error
 title: "[Bug] "
 labels: ["bug"]
 body:
   - type: input
-    id: recipe
+    id: skill
     attributes:
-      label: Which recipe or MCP?
-      placeholder: "e.g. recipes/pipeline/awareness/nick-zeckets-social-listening.md"
+      label: Which skill or GPT?
+      placeholder: "e.g. skills/meeting-inspector or gpts/no-show-analyzer"
     validations:
       required: true
 
@@ -15,7 +15,7 @@ body:
     id: what_happened
     attributes:
       label: What happened?
-      description: Steps to reproduce and the error you got
+      description: Steps to reproduce and the error or wrong output you got
     validations:
       required: true
 
@@ -28,7 +28,7 @@ body:
     id: environment
     attributes:
       label: Environment
-      placeholder: "e.g. Claude Code 1.x, macOS 15, chili-piper-mcp v0.x"
+      placeholder: "e.g. Claude Code 1.x, macOS 15, chili-piper MCP via API key / OAuth"
 
   - type: checkboxes
     id: data_safety

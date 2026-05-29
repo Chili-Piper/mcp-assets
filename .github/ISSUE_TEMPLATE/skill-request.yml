@@ -1,0 +1,38 @@
+name: New skill request
+description: Request a new Chili Piper skill or an improvement to an existing one
+title: "[Skill] "
+labels: ["skill-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion! Tell us what Chili Piper task you'd like an AI specialist for.
+
+  - type: input
+    id: title
+    attributes:
+      label: Skill name / idea
+      placeholder: "e.g. distribution-rebalancer — even out a round-robin queue"
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What should it do?
+      description: What Chili Piper task should this skill accomplish, and what should it return?
+    validations:
+      required: true
+
+  - type: textarea
+    id: tools
+    attributes:
+      label: Which Chili Piper MCP tools would it use?
+      placeholder: "e.g. distribution-list-put, distribution-adjust-v3"
+
+  - type: checkboxes
+    id: writes
+    attributes:
+      label: Does it modify data?
+      options:
+        - label: This skill would write/modify Chili Piper data (not read-only)

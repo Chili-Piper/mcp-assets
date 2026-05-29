@@ -1,9 +1,11 @@
 {
-  "name": "gtm-clawllective",
+  "name": "chili-piper-skills",
   "version": "1.0.0",
-  "description": "AI-assisted GTM recipes, skills, and agents for moving accounts from cold to closed-won — with the Chili Piper MCP built in.",
+  "description": "Official Chili Piper Skills for the Chili Piper MCP — meeting diagnostics, routing audits, no-show analysis, availability checks, and user onboarding/offboarding.",
   "author": {
-    "name": "Chili Piper & Community",
-    "url": "https://github.com/Chili-Piper/gtm-clawllective"
-  }
+    "name": "Chili Piper",
+    "url": "https://github.com/Chili-Piper/mcp-assets"
+  },
+  "homepage": "https://github.com/Chili-Piper/mcp-assets",
+  "license": "MIT"
 }
