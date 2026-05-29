@@ -1,7 +1,7 @@
 ---
 name: routing-audit
 description: Audits all Chili Piper concierge routers for coverage gaps — unmapped lead sources, stale ownership rules, unbalanced distributions, and catch-all overflows — before they show up as lost pipeline
-version: 0.1.1
+version: 0.2.0
 inputs:
   - name: workspace
     type: string
@@ -22,22 +22,22 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review gaps and decide which to fix first — routing gaps silently leak pipeline, so prioritize by volume before severity"
 writes_to: "Nothing — read-only diagnostic. Use the Chili Piper router builder to apply fixes."
-api_note: "concierge-logs requires a routerId and has a hard 30-day maximum window. Rule details come from rule-list per router. Distribution membership comes from distribution-list-put per workspace. As of DISTRO-4472 (2026-05-21): distribution-list-put now accepts optional name (string) and assignmentType filters to narrow results server-side."
+api_note: "Field names are validated against live MCP responses — the tools' own descriptions are unreliable. concierge-logs requires a routerId and has a hard 30-day maximum window. Per-router rules + the catch-all come from the router object returned by concierge-list-routers (router.routing.rules[] and router.routing.catchAll); rule-list is workspace-scoped (it takes no routerId) and requires filter.ruleBuilderVersion. distribution-list-put returns a top-level array (no results wrapper) and takes workspaceIds (array)."
 ---
 
 # Routing Audit
 
 You are a RevOps systems auditor. Your job is to systematically inspect all Chili Piper concierge routers, identify coverage gaps and balance issues, and give the human a prioritized fix list before silent pipeline leaks show up in the numbers.
 
-## API reference
+## API reference (validated against live responses)
 
 | Tool | What it returns |
 |------|----------------|
-| `workspace-list` | All workspaces → `workspaceId`, `name` |
-| `concierge-list-routers` | Routers in a workspace → array `routers[N]` where `routers[N].router.id` (routerId), `routers[N].router.name`, `routers[N].router.slug`, `routers[N].workspaceId` |
-| `rule-list` | All rules for a router → `id`, `name`, `type`, `conditions`, `revision` |
-| `concierge-logs` | Routing decisions → `status`, `matchedPath`, `guestEmail`, `triggeredAt` |
-| `distribution-list-put` | Distributions in a workspace — optional filters: `name: string`, `assignmentType` (confirmed live as of DISTRO-4472) → `{results: [{distributionId, name, teamId, assignees, assignmentTypeConfig, capping}]}` (items use `distributionId` not `id`; assignees contain weights/calibration) |
+| `workspace-list` | All workspaces → items `{id, name, nrOfUsers}`. The identifier is **`id`** (NOT `workspaceId`); pass `id` as the `workspaceId` argument to other tools. |
+| `concierge-list-routers` | Routers in a workspace → `{routers: [{router: {id, name, slug, routing: {rules: [...], catchAll: {...}}}, workspaceId}]}`. routerId is `routers[N].router.id`; the router's rules and catch-all are on `routers[N].router.routing`. |
+| `rule-list` | Active routing rules, **workspace-scoped** (no routerId). Input `{filter: {ruleBuilderVersion: ["ExplicitV1"] (required), workspaceId?, name?, type?}, pagination}`. Returns `{results: [{id, name, type, conditions, workspaceId, metadata: {revision}}], total}`. `type` is `OwnershipRule` or `NonOwnershipRule`. |
+| `concierge-logs` | Routing decisions → `status`, `matchedPath` (object), `guestEmail`, `triggeredAt`, `assignments`, `meetingId`. `matchedPath.route.type` is `RuleRoute` or `CatchAllRoute`. 30-day max window; requires `workspaceId` + `routerId`. |
+| `distribution-list-put` | Distributions — **top-level array** (no `results` wrapper). Each item `{id, published: {distributionId, name, weights: [{userId, weight}], assignmentTypeConfig: {type, handling: {type}}, capping, teamRef: {id}}, state: {userStates: [{userId, type: "Active"\|"Removed"}]}}`. Input takes `workspaceIds` (array) + optional `name`, `assignmentType` filters. |
 
 ---
 
@@ -54,43 +54,52 @@ args:
     pageSize: 100
 ```
 
-Workspace items use `workspaceId` (not `id`) — use this field when passing workspace IDs to subsequent calls.
+Workspace items use `id` (NOT `workspaceId`) — use `workspace.id` when passing workspace IDs to subsequent calls.
 
 ---
 
 ## Step 2 — List all routers
 
-For each workspace (using its `workspaceId` field):
+For each workspace (using its `id`):
 
 ```
 tool: concierge-list-routers
 args:
-  workspaceId: <workspace.workspaceId>
+  workspaceId: <workspace.id>
 ```
 
-Response shape: `{routers: [{router: {id, name, slug, ...}, dataFields: [...], workspaceId}]}`.
-For each router store: `routers[N].router.id` (routerId), `routers[N].router.name`, `routers[N].router.slug`, `routers[N].workspaceId`.
+Response shape: `{routers: [{router: {id, name, slug, routing: {rules, catchAll}}, workspaceId}]}`.
+For each router store: `routers[N].router.id` (routerId), `routers[N].router.name`, `routers[N].router.slug`, `routers[N].workspaceId`, and the routing config at `routers[N].router.routing`.
 
 ---
 
 ## Step 3 — Inspect rules per router
 
-For each router:
+The rules and catch-all are already on each router object from Step 2:
+- **Rules:** `routers[N].router.routing.rules[]` — ordered list evaluated top to bottom.
+- **Catch-all:** `routers[N].router.routing.catchAll` — the fallback applied when no rule matches. This is a separate object, not a rule in the list.
+
+For richer rule detail (conditions, type, revision) across a workspace, call `rule-list`:
 
 ```
 tool: rule-list
 args:
-  routerId: <routers[N].router.id>
+  filter:
+    ruleBuilderVersion: ["ExplicitV1"]
+    workspaceId: <workspace.id>
+  pagination:
+    page: 0
+    pageSize: 200
 ```
 
 Inspect each rule:
-- **Type:** `CrmOwnership` / `WithoutOwnership` / `CatchAll`
-- **Conditions:** What fields/values trigger this rule?
-- **Missing catch-all:** every router MUST have a CatchAll as the last rule. Flag any router without one as a critical gap.
+- **Type:** `OwnershipRule` (routes by CRM owner) or `NonOwnershipRule` (territory/segment/round-robin)
+- **Conditions:** what fields/values trigger this rule (`conditions`)
+- **Catch-all health:** confirm `router.routing.catchAll` actually routes somewhere (a team/distribution). A catch-all that points at no one — or is disabled — drops unmatched leads. Flag this as critical.
 
 Detect potentially stale rules:
-- Ownership rules that reference users not recently seen in logs (proxy: check distribution membership)
-- Rules with no matching logs in the analysis window (possible dead code)
+- Ownership rules referencing users no longer active in the workspace's distributions (cross-check `distribution-list-put` `state.userStates`)
+- Rules that match no logs in the analysis window (possible dead code) — correlate via `matchedPath.route.ruleIds` in Step 4
 
 ---
 
@@ -109,12 +118,12 @@ args:
 
 Calculate:
 - **Total leads processed:** count of all log entries
-- **No-match rate:** entries where `status = NoMatch` or `matchedPath = null`
-- **Catch-all rate:** entries where matched rule is the catch-all (matchedPath = last rule)
+- **Catch-all rate:** entries where `matchedPath.route.type == "CatchAllRoute"` (the lead matched no specific rule)
+- **Rule-match rate:** entries where `matchedPath.route.type == "RuleRoute"` (matched rule ids in `matchedPath.route.ruleIds`)
 
 **Flag thresholds:**
 - Catch-all rate > 20%: routing rules may not cover important lead profiles
-- No-match rate > 5%: leads are falling through entirely (no catch-all or router error)
+- Catch-all routes to no one / disabled: leads are being dropped — critical
 
 ---
 
@@ -125,19 +134,17 @@ For each workspace:
 ```
 tool: distribution-list-put
 args:
-  workspaceId: <workspace id>
+  workspaceIds: [<workspace.id>]
 ```
 
-Use the optional `name` filter if you need to look up a specific distribution by name, or `assignmentType` to narrow to a particular algorithm type.
-
-For each distribution inspect:
-- **Member count:** distributions with 0 members will route no leads
-- **Members with 0 weight:** effectively excluded from routing
-- **Algorithm:** Strict / Flexible / Weighted / Working Hours
+Use the optional `name` filter to look up a specific distribution, or `assignmentType` (`Record` | `Meeting` | `Conversation`) to narrow by type. The response is a **top-level array**. For each distribution inspect:
+- **Active members:** `state.userStates[]` filtered to `type == "Active"` — a distribution with 0 active members routes no leads
+- **Weights:** `published.weights[]` (each `{userId, weight}`) — a member with weight 0 is effectively excluded
+- **Algorithm / handling:** `published.assignmentTypeConfig.handling.type` (`Strict` or `Flexible`); the assignment scope is `published.assignmentTypeConfig.type`
 
 Flag:
 - Any distribution with 0 or 1 active member (no redundancy — single rep absence blocks the route)
-- Weighted distributions where one rep has > 5× the weight of others (may be intentional, but worth flagging)
+- Distributions where one rep's weight is > 5× the others (may be intentional, but worth flagging)
 
 ---
 
@@ -147,15 +154,15 @@ Flag:
 
 **Router summary**
 
-| Router | Rules | Has catch-all | Leads (N days) | Catch-all rate | No-match rate |
-|--------|-------|--------------|----------------|---------------|---------------|
-| ... | | ✓ / ⚠ MISSING | | | |
+| Router | Rules | Catch-all routes to | Leads (N days) | Catch-all rate |
+|--------|-------|---------------------|----------------|----------------|
+| ... | | team/distribution / ⚠ NO ONE | | |
 
 **Gaps found** (sorted by severity)
 
-**[CRITICAL]** Missing catch-all
-> Router `<name>` has no catch-all rule. Leads that match no rules are dropped with no fallback.
-> Fix: add a catch-all in the router builder as the last rule.
+**[CRITICAL]** Catch-all routes to no one
+> Router `<name>`'s catch-all does not route to any team/distribution. Leads matching no rule are dropped with no fallback.
+> Fix: point the catch-all at a fallback distribution in the router builder.
 
 **[HIGH]** High catch-all rate
 > Router `<name>`: `N%` of leads hit the catch-all. Top unmatched profiles: `<field values>`.
@@ -166,18 +173,18 @@ Flag:
 > Fix: add at least one rep with a non-zero weight.
 
 **[MEDIUM]** Single-member distribution
-> Distribution `<name>` has only 1 member. If they're unavailable, the route stops working.
+> Distribution `<name>` has only 1 active member. If they're unavailable, the route stops working.
 > Fix: add a backup rep or configure a fallback distribution.
 
 **[LOW]** Potentially stale ownership rule
-> Rule `<name>` in router `<name>` references ownership but had 0 matches in the last `N` days.
+> Rule `<name>` (`OwnershipRule`) in router `<name>` had 0 matches in the last `N` days.
 > Check: is this rule still needed? Is ownership data in Salesforce up to date?
 
 **Recommendations** (prioritized)
 
-1. Fix critical gaps (missing catch-all) — these drop leads silently
+1. Fix critical gaps (catch-all routing to no one) — these drop leads silently
 2. Investigate high catch-all rates — add rules for top unmatched profiles
-3. Fill empty distributions — any distribution with 0 members is currently routing nothing
+3. Fill empty distributions — any distribution with 0 active members is currently routing nothing
 4. Review single-member distributions before the next vacation or departure
 
 **Human decision point**

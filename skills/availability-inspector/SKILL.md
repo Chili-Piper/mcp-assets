@@ -28,7 +28,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the diagnosis and fix the blocker — most causes require action in Chili Piper admin, Google/Outlook calendar settings, or Zoom/Teams reconnection"
 writes_to: "Nothing — read-only diagnostic"
-api_note: "availability-slots returns a `failures` map per user with enum failure reasons. The `required: true` flag on attendees is frequently misconfigured — a required attendee with no calendar connected blocks the entire slot query. Duration must be passed as a millisecond string: '1800000 milliseconds' for 30 minutes."
+api_note: "Field names validated against the live availability-slots schema. expectedHost must be an OBJECT ({type:'User', userId}); attendees use a type discriminator (ManuallyAssigned|DistributionAssignee|AssignedViaTeam|AdditionalAttendee) and a required boolean (omitting `required` returns 400). meetingTypeRef.id is REQUIRED. Durations use Scala FiniteDuration ('30 minutes') or ISO-8601 ('PT30M'); the interval duration is e.g. '14 days'/'P14D' (not milliseconds). availability-slots returns {startTimes, failures:{userId: failure}}; the exact failure-reason strings are not documented — read the literal value rather than assuming an enum. A required attendee with no calendar connected blocks the entire slot query."
 ---
 
 # Availability Inspector
@@ -43,18 +43,20 @@ You are a Chili Piper calendar specialist. A rep or team is showing no available
 | `user-read` | `{id, name, email, isSuperAdmin, licenses: {distro, chiliCalOrg, concierge, conciergeLive, chat, handoff}, workspaces, salesforce, hubspot}` — **no** `calendarConnected`/`calendarProvider`/`crmConnected`; calendar status only surfaces in availability-slots failures |
 | `availability-slots` | Available slots + `failures` map per user |
 
-**`availability-slots` failure reasons:**
+**`availability-slots` failure reasons (common patterns — confirm the exact string against the live `failures` map):**
 
-| Failure reason | Meaning | Fix |
+> The API returns a `failures: {userId: failure}` map but does not publish a fixed enum of reason strings. Read the literal value returned and map it to the closest cause below; if it doesn't match, surface the raw value.
+
+| Likely cause | Meaning | Fix |
 |---------------|---------|-----|
-| `CalendarNotConnected` | User's calendar (Google/Outlook) is not connected to Chili Piper | User must reconnect calendar in Account Settings |
-| `NoWorkingHours` | User has no working hours configured in ChiliCal | User (or admin) must set working hours in ChiliCal |
-| `OutsideWorkingHours` | All slots in the requested window fall outside the user's configured working hours | Extend the lookahead window, or ask the user to update their working hours |
-| `MeetingLimitReached` | User has hit their daily or total meeting cap for the period | RevOps must increase or remove the meeting limit in the distribution config |
-| `AllBusy` | Every slot in the window is blocked by existing calendar events | User is fully booked — check for back-to-back holds |
-| `UserNotInDistribution` | The user being queried is not a member of the requested distribution | Add the user to the distribution/team in the router builder |
-| `NotActive` | User license is inactive or suspended | Reactivate the license in Admin Center |
-| `CalendarError` | Calendar API returned an error (usually OAuth expiry) | User must reconnect their calendar |
+| Calendar not connected | User's calendar (Google/Outlook) is not connected to Chili Piper | User must reconnect calendar in Account Settings |
+| No working hours | User has no working hours configured in ChiliCal | User (or admin) must set working hours in ChiliCal |
+| Outside working hours | All slots in the requested window fall outside the user's working hours | Extend the lookahead window, or update working hours |
+| Meeting limit reached | User has hit their daily/total meeting cap for the period | RevOps must increase or remove the meeting limit in the distribution config |
+| All busy | Every slot in the window is blocked by existing calendar events | User is fully booked — check for back-to-back holds |
+| Not in distribution | The user is not a member of the requested distribution | Add the user to the distribution/team in the router builder |
+| License inactive | User license is inactive or suspended | Reactivate the license in Admin Center |
+| Calendar error | Calendar API returned an error (usually OAuth expiry) | User must reconnect their calendar |
 
 ---
 
@@ -90,28 +92,31 @@ Check immediately:
 
 ## Step 3 — Call availability-slots
 
-Build the request. Duration in milliseconds as a string.
+Build the request using the verified shape below. `expectedHost` must be an **object**, `meetingTypeRef.id` is **required**, and every attendee needs both a `type` discriminator and a `required` boolean.
+
+> **`meetingTypeRef.id` is required.** If you don't have one, get a `meetingTypeId` from one of the user's existing meetings (`meeting-list-put` returns `meetingTypeId`) or from the rep's scheduling link, and pass it here. The API will 400 without it.
 
 ```
 tool: availability-slots
 args:
-  expectedHost: <userId>
-  userIds: [<userId>]
+  expectedHost:
+    type: User
+    userId: <userId>
+  attendees:
+    - type: ManuallyAssigned
+      userId: <userId>
+      required: true
   meetingTypeRef:
-    id: <meeting type ID if known — omit if unknown>
+    id: <meetingTypeId>
     timestamp: <ISO-8601 now>
   meetingTypeOverride:
-    meetingDurationOverride: "1800000 milliseconds"
+    meetingDurationOverride: "30 minutes"     # FiniteDuration or ISO-8601 ("PT30M"); omit to use the meeting type's default
   interval:
     startsAt: <ISO-8601 now>
-    duration: "<lookahead_days * 86400000> milliseconds"
-  attendees:
-    - type: Host
-      userId: <userId>
-      required: false
+    duration: "<lookahead_days> days"          # e.g. "14 days" or "P14D" — NOT milliseconds
 ```
 
-> **Important:** Set `required: false` on all attendees unless you are specifically testing a required-attendee scenario. A `required: true` attendee with no calendar connected will block all slots even if the host is available.
+> **Diagnostic intent:** to find a single rep's blocker, query just that rep as a `required: true` `ManuallyAssigned` attendee — if they're unavailable, they'll appear in `failures`. When checking a team, a slot is only returned when ALL `required: true` attendees are free simultaneously, so the `failures` map pinpoints which member is blocking.
 
 ---
 
