@@ -26,7 +26,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review anomaly flags and decide: coaching conversation, territory/routing adjustment, or no action needed"
 writes_to: "Nothing — read-only diagnostic"
-api_note: "As of DISTRO-4472 (2026-05-21) meeting-export-v2-put supports these server-side filters (all confirmed live): hostIds, assigneeIds, bookerIds, meetingTypeIds, status. As of DISTRO-4483 (in production 2026-05-29) the export CSV now includes bookedAt and meetingId columns — dedupe on meetingId and populate the Booked column from bookedAt. Verify the exact CSV header strings against a real export. Times displayed in local timezone detected via bash."
+api_note: "As of DISTRO-4472 (2026-05-21) meeting-export-v2-put supports these server-side filters (all confirmed live): hostIds, assigneeIds, bookerIds, meetingTypeIds, status. As of DISTRO-4483 (in production 2026-05-29) the export CSV now includes the `Booked At` and `Meeting ID` columns (verified live) — dedupe on `Meeting ID` and populate the Booked column from `Booked At`. Times displayed in local timezone detected via bash."
 ---
 
 # User Meetings
@@ -38,7 +38,7 @@ You are a RevOps analyst and rep manager assistant. Your job is to pull all meet
 | Tool | What it returns |
 |------|----------------|
 | `user-find` | Search by email or name → `id`, `email`, `name` |
-| `meeting-export-v2-put` | CSV export with server-side filters (all confirmed live as of DISTRO-4472): `hostIds`, `assigneeIds`, `bookerIds`, `meetingTypeIds`, `status`. Response: `{filename, data: "<CSV>"}`. Parse `data` as CSV; read header row to identify columns. Key columns: `meetingId`, `Title`, `When` (scheduled start), `End`, `bookedAt`, `Status`, `Primary Guest`, `Meeting Type`. Status values: `Active` \| `Canceled` \| `NoShow` \| `Completed`. No pagination — all matching records in one response per chunk. **`bookedAt` and `meetingId` columns added in DISTRO-4483 (production 2026-05-29);** confirm the exact header strings against a real export. |
+| `meeting-export-v2-put` | CSV export with server-side filters (all confirmed live as of DISTRO-4472): `hostIds`, `assigneeIds`, `bookerIds`, `meetingTypeIds`, `status`. Response: `{filename, data: "<CSV>"}`. Parse `data` as CSV; read header row to identify columns. Columns (verified live): `Title`, `When` (scheduled start), `End`, `Meeting Type`, `Status`, `Source`, `Host`, `Assignee`, `Booker`, `Primary Guest`, UTM columns, `CRM Event Id`, `Meeting ID`, `Booked At`. Status values: `Active` \| `Canceled` \| `NoShow` \| `Completed`. No pagination — all matching records in one response per chunk. **`Meeting ID` and `Booked At` columns added in DISTRO-4483 (production 2026-05-29).** |
 | `workspace-list` | All workspaces — needed to resolve workspace ID to display name |
 
 **Critical constraint:** `meeting-export-v2-put` accepts at most a **7-day window** per call. For a 30-day range issue multiple sequential calls and merge the results.
@@ -94,7 +94,7 @@ args:
 
 Response: `{filename, data: "<CSV>"}`. Parse `data` as CSV — read the header row first to identify columns. No pagination needed per chunk.
 
-Merge records across all chunks. Deduplicate on the `meetingId` column.
+Merge records across all chunks. Deduplicate on the `Meeting ID` column.
 
 ---
 
@@ -160,11 +160,11 @@ Surface a caveat when past-Active count is significant: *"N past meetings show a
 
 **Meeting list** (most recent first, sorted by `When`)
 
-| Scheduled (`When`) | Booked (`bookedAt`) | Status | Primary Guest | Workspace |
-|--------------------|---------------------|--------|--------------|----------|
+| Scheduled (`When`) | Booked (`Booked At`) | Status | Primary Guest | Workspace |
+|--------------------|----------------------|--------|--------------|----------|
 | ... | | | | |
 
-> All times in `<tz>`. The **Booked** column comes from the `bookedAt` CSV column (added in DISTRO-4483); lead time = `When` − `bookedAt`.
+> All times in `<tz>`. The **Booked** column comes from the `Booked At` CSV column (added in DISTRO-4483); lead time = `When` − `Booked At`.
 
 **Human decision point**
 

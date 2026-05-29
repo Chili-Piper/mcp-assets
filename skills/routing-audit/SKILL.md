@@ -120,6 +120,7 @@ Calculate:
 - **Total leads processed:** count of all log entries
 - **Catch-all rate:** entries where `matchedPath.route.type == "CatchAllRoute"` (the lead matched no specific rule)
 - **Rule-match rate:** entries where `matchedPath.route.type == "RuleRoute"` (matched rule ids in `matchedPath.route.ruleIds`)
+- Other route types appear in live data (e.g. `SpamCheckRoute`); count anything that is not `RuleRoute` as "no rule matched", and surface a notable non-catch-all type (like spam filtering) separately rather than treating it as an error.
 
 **Flag thresholds:**
 - Catch-all rate > 20%: routing rules may not cover important lead profiles

@@ -21,29 +21,32 @@ This file tracks the quality of every skill in this repo so we (and clients) alw
 
 ## Status matrix
 
-_Last updated: 2026-05-29. Static-review fixes applied across the skills (see git history). Read-only live run = end-to-end execution against a connected test tenant — pending for `verified`._
+_Last updated: 2026-05-29. Static-review fixes applied across the skills, then an end-to-end read-only live run against a connected test tenant (9/9 read-only skills PASS). Write skills stay at static-review only — never executed for QA._
 
 | Skill | Version | Read-only? | Static review | Live run | Maturity | Notes |
 |-------|:------:|:---:|:---:|:---:|:---:|---|
-| meeting-inspector | 0.3.0 | ✅ | ✅ fixed | ⬜ | `tested` | meeting-list-put drift, status values, `startTime`, `matchedPath` corrected |
-| no-show-analyzer | 0.3.3 | ✅ | ✅ fixed | ⬜ | `tested` | meeting-list-put drift + `workspace-list` `nrOfUsers` + concierge status `Scheduled` corrected |
-| org-meeting | 0.1.3 | ✅ | ✅ fixed | ⬜ | `tested` | meeting-list-put drift + group-by `hostId` + workspace `id` join corrected |
-| user-meetings | 0.4.0 | ✅ | ✅ done | ⬜ | `tested` | Uses CSV export — no JSON drift. Updated for DISTRO-4483 (bookedAt + meetingId CSV columns). Verify exact CSV header strings against a real export. |
-| routing-audit | 0.2.0 | ✅ | ✅ fixed | ⬜ | `tested` | `rule-list` workspace-scoped, router rules from `router.routing`, `distribution-list-put` array shape, workspace `id` |
-| concierge-debugger | 0.2.0 | ✅ | ✅ fixed | ⬜ | `tested` | invented status enum removed; diagnose via `matchedPath.route.type` + `meetingId`; `assignments[].userId` |
-| availability-inspector | 0.1.0 | ✅ | ✅ fixed | ⬜ | `tested` | `availability-slots` request shape corrected; failure-reason strings read literally |
-| user-details | 0.1.3 | ✅ | ✅ fixed | ⬜ | `tested` | `workspace-list` `id`, `team-list-put` `id`, nested pagination |
-| user-copy | 0.1.3 | ⚠️ writes | ✅ fixed | n/a | `tested` | `.id` joins corrected (was `.workspaceId`/`.teamId`); dry-run/approval gates present ✅ |
-| user-offboarding | 0.1.4 | ⚠️ writes | ✅ fixed | n/a | `tested` | `team-list-put` `id`; `distribution-list-put` `workspaceIds[]` + members via weights/userStates; user-read row. Approval/destructive gates present ✅ |
+| meeting-inspector | 0.3.0 | ✅ | ✅ fixed | ✅ pass | `verified` | meeting-list-put + meeting-get + concierge shapes confirmed live |
+| no-show-analyzer | 0.3.3 | ✅ | ✅ fixed | ✅ pass | `verified` | `noShowStatus` + concierge `trigger`/`matchedPath`/`meetingId` confirmed |
+| org-meeting | 0.1.3 | ✅ | ✅ fixed | ✅ pass | `verified` | meeting `workspaceId` + workspace `id` join + `user-find-by-ids` confirmed |
+| user-meetings | 0.4.0 | ✅ | ✅ done | ✅ pass | `verified` | CSV export confirmed; real headers are `Meeting ID` + `Booked At` (DISTRO-4483) |
+| routing-audit | 0.2.0 | ✅ | ✅ fixed | ✅ pass | `verified` | rule-list (702 rules), router.routing, distribution-list-put array all confirmed |
+| concierge-debugger | 0.2.0 | ✅ | ✅ fixed | ✅ pass | `verified` | `matchedPath.route.{type,ruleIds}` + `assignments[].userId` confirmed |
+| availability-inspector | 0.1.0 | ✅ | ✅ fixed | ✅ pass | `verified` | corrected request returned 12 live slots; `{startTimes, failures}` confirmed |
+| user-details | 0.1.3 | ✅ | ✅ fixed | ✅ pass | `verified` | user-read (no calendar/CRM), `team-list-put` `id`, scheduling-link shapes confirmed |
+| distribution-analysis | 0.1.0 | ✅ | ✅ built | ✅ pass | `verified` | distribution-list-put array (weights/userStates/handling) + meeting attribution confirmed |
+| user-copy | 0.1.3 | ⚠️ writes | ✅ fixed | n/a | `tested` | `.id` joins corrected; dry-run/approval gates present ✅ (write skill — not live-run) |
+| user-offboarding | 0.1.4 | ⚠️ writes | ✅ fixed | n/a | `tested` | `team-list-put` `id`; `distribution-list-put` `workspaceIds[]` + weights/userStates; approval/destructive gates present ✅ (write skill — not live-run) |
 
-All ten skills are now `tested` (static review complete, no known correctness bugs against the live MCP). The next step for `verified` is an end-to-end read-only live run per skill, logged in the verification log below. The two write skills (`user-copy`, `user-offboarding`) stay at static-review only — never executed for QA.
+The 9 read-only skills are `verified` (static review + a passing end-to-end read-only run against a real tenant). The 2 write skills (`user-copy`, `user-offboarding`) are `tested` (static review complete; intentionally never executed for QA).
 
-**New skills (rebuilt on the public MCP, replacing earlier internal database-backed versions):**
+> `tenant-meetings` was **not** added — `org-meeting` already covers tenant/org meeting volume via the public MCP, and the earlier internal version was internal-only.
 
-| Skill | Version | Static review | Live run | Maturity | Notes |
-|-------|:---:|:---:|:---:|:---:|---|
-| distribution-analysis (public) | 0.1.0 | ✅ built | ⬜ | `tested` | Built on `distribution-list-put` + `meeting-list-put` + `user-find-by-ids`. No internal DB tooling, no config-history; attributes meetings by host rep (caveat documented in-skill). |
-| ~~tenant-meetings~~ | — | — | — | dropped | Not added — `org-meeting` already covers tenant/org meeting volume via the public MCP, and the earlier internal version was internal-only. |
+## Verification log
+
+**2026-05-29 — read-only live run (connected test tenant), 9/9 PASS.** Window 2026-05-22→05-28. Exercised each skill's core MCP calls; all corrected response shapes held. Highlights:
+- `meeting-export-v2-put` CSV header confirmed; the new columns are **`Meeting ID`** and **`Booked At`** (DISTRO-4483) — title-case with spaces, not `meetingId`/`bookedAt`. Skills updated to the exact header names.
+- `availability-slots` with the corrected request shape returned live slots; `meetingTypeRef.{meetingTypeId,timestamp}` on a meeting item is the easiest source for the required `{id,timestamp}`.
+- `concierge-logs` `matchedPath.route.type` has more values than `RuleRoute`/`CatchAllRoute` in live data (e.g. `SpamCheckRoute`); `matchedPath.type` varies (`RoutePathLive`/`RoutePathWithCalendar`/`RoutePathWithoutCalendar`). routing-audit + concierge-debugger updated to treat unknown route types as fall-through.
 
 ---
 

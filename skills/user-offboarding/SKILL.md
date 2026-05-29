@@ -83,7 +83,7 @@ args:
 
 Response: `{filename: "...", data: "<CSV>"}`. Parse `data` as CSV — read the header row first to identify columns. No pagination needed per chunk.
 
-Merge records across all chunks. Deduplicate on meetingId. These are the meetings at risk.
+Merge records across all chunks. Deduplicate on the `Meeting ID` column. These are the meetings at risk.
 
 ---
 

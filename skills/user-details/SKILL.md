@@ -146,7 +146,7 @@ args:
 
 Response: `{filename: "...", data: "<CSV>"}`. Parse `data` as CSV — read the header row first to identify column names. No pagination needed; all matching records for the chunk are returned in one response.
 
-Merge records across all chunks. Deduplicate on the meetingId column.
+Merge records across all chunks. Deduplicate on the `Meeting ID` column.
 
 Calculate from the status column. **Note on `Active`:** meetings not explicitly closed stay `Active` even after the meeting time passes. Split `Active` on the `When` column vs. now:
 - `Active` + start in future → Upcoming (exclude from rate)

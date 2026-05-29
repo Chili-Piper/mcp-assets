@@ -85,20 +85,20 @@ Every skill carries a QA maturity level (tracked in [`../docs/QA.md`](../docs/QA
 
 | Skill | What it does | Maturity |
 |-------|-------------|:--------:|
-| [meeting-inspector](meeting-inspector/SKILL.md) | Deep-dives a single meeting — routing path, rep assignment, outcome, anomalies | `tested` |
-| [no-show-analyzer](no-show-analyzer/SKILL.md) | Analyzes no-show patterns by trigger, route, rep, or workspace | `tested` |
-| [routing-audit](routing-audit/SKILL.md) | Audits all concierge routers for coverage gaps and stale rules | `tested` |
-| [availability-inspector](availability-inspector/SKILL.md) | Diagnoses why a rep or team has no available slots | `tested` |
-| [concierge-debugger](concierge-debugger/SKILL.md) | Traces why a specific lead didn't book | `tested` |
-| [org-meeting](org-meeting/SKILL.md) | Org-wide (and single-tenant) meeting volume and health snapshot | `tested` |
-| [distribution-analysis](distribution-analysis/SKILL.md) | Analyzes a round-robin distribution — meeting counts by rep, imbalance vs. weights, skew, cancellations | `tested` |
+| [meeting-inspector](meeting-inspector/SKILL.md) | Deep-dives a single meeting — routing path, rep assignment, outcome, anomalies | `verified` |
+| [no-show-analyzer](no-show-analyzer/SKILL.md) | Analyzes no-show patterns by trigger, route, rep, or workspace | `verified` |
+| [routing-audit](routing-audit/SKILL.md) | Audits all concierge routers for coverage gaps and stale rules | `verified` |
+| [availability-inspector](availability-inspector/SKILL.md) | Diagnoses why a rep or team has no available slots | `verified` |
+| [concierge-debugger](concierge-debugger/SKILL.md) | Traces why a specific lead didn't book | `verified` |
+| [org-meeting](org-meeting/SKILL.md) | Org-wide (and single-tenant) meeting volume and health snapshot | `verified` |
+| [distribution-analysis](distribution-analysis/SKILL.md) | Analyzes a round-robin distribution — meeting counts by rep, imbalance vs. weights, skew, cancellations | `verified` |
 
 ### User & org operations
 
 | Skill | What it does | Maturity |
 |-------|-------------|:--------:|
-| [user-details](user-details/SKILL.md) | Full profile for any Chili Piper user | `tested` |
-| [user-meetings](user-meetings/SKILL.md) | Rep-level meeting volume and health metrics | `tested` |
+| [user-details](user-details/SKILL.md) | Full profile for any Chili Piper user | `verified` |
+| [user-meetings](user-meetings/SKILL.md) | Rep-level meeting volume and health metrics | `verified` |
 | [user-copy](user-copy/SKILL.md) | Copies a user's workspace/team memberships to another user (writes) | `tested` |
 | [user-offboarding](user-offboarding/SKILL.md) | Safely removes a departing rep, with an audit trail (writes/destructive) | `tested` |
 
