@@ -34,7 +34,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review flagged segments and decide which routing rule or confirmation flow change to test first"
 writes_to: "Salesforce task (optional) — created by human after reviewing recommendations"
-api_note: "meeting-list-put has a strict 7-day maximum window per call — the skill chunks longer ranges automatically. Pass status: [\"Completed\",\"NoShow\",\"Active\"] in the request (status filter confirmed live as of DISTRO-4472) — exclude Canceled server-side while keeping Active to capture past-informally-completed meetings client-side. Do NOT filter to [\"Completed\",\"NoShow\"] only, as that silently shrinks the no-show denominator. Pass workspaceIds to filter server-side when workspace is specified. concierge-logs has a separate 30-day maximum window and requires a routerId. Only log entries with status=Booked have a meetingId to join against meeting-list-put; Offered/NoMatch/NotQualified/Timeout/Error entries never became meetings and must be excluded from the join. meeting-list-put response envelope is {data: {list: [...]}, hasMore: 'Yes'|'No'}; meeting items use 'meetingId' (not 'id'); paginate by checking hasMore === 'Yes' (string, not boolean). concierge-list-routers nests routerId at routers[N].router.id, workspaceId at routers[N].workspaceId, name at routers[N].router.name."
+api_note: "meeting-list-put has a strict 7-day maximum window per call — the skill chunks longer ranges automatically. Pass status: [\"Completed\",\"NoShow\",\"Active\"] in the request (status filter confirmed live as of DISTRO-4472) — exclude Canceled server-side while keeping Active to capture past-informally-completed meetings client-side. Do NOT filter to [\"Completed\",\"NoShow\"] only, as that silently shrinks the no-show denominator. Pass workspaceIds to filter server-side when workspace is specified. concierge-logs has a separate 30-day maximum window and requires a routerId. Only log entries with status=Scheduled reliably have a meetingId to join against meeting-list-put; entries that never became meetings (e.g. TimedOut) must be excluded from the join. meeting-list-put response envelope is {data: {list: [...]}, hasMore: 'Yes'|'No'}; meeting items use 'meetingId' (not 'id'); paginate by checking hasMore === 'Yes' (string, not boolean). concierge-list-routers nests routerId at routers[N].router.id, workspaceId at routers[N].workspaceId, name at routers[N].router.name."
 ---
 
 # No-Show Analyzer
@@ -45,10 +45,10 @@ You are a GTM data analyst with deep knowledge of Chili Piper's meeting and rout
 
 | Tool | Method | What it returns |
 |------|--------|----------------|
-| `meeting-list-put` | POST | Paginated meetings by time range — response envelope `{data: {list: [...]}, hasMore: "Yes"\|"No"}`. Items in `data.list[]`: `meetingId`, `status`, `scheduledAt`, `assignedUserId`, `workspaceId`, `attendees` (array). Paginate by checking `hasMore === "Yes"` (string). Accepts `status` filter (confirmed live as of DISTRO-4472). |
+| `meeting-list-put` | POST | Paginated meetings by time range — response envelope `{data: {list: [...]}, hasMore: "Yes"\|"No"}`. Items in `data.list[]`: `meetingId`, `meetingStatus`, `dateTime.start`, `hostId`/`hostEmail`/`hostName`, `workspaceId`, `attendees` (array). Paginate by checking `hasMore === "Yes"` (string). Accepts `status` filter (confirmed live as of DISTRO-4472). |
 | `concierge-list-routers` | GET | All routers — response: `{routers: [{router: {id, name, slug, ...}, dataFields: [...], workspaceId}]}`. Access: `routerId` at `routers[N].router.id`, `name` at `routers[N].router.name`, `workspaceId` at `routers[N].workspaceId`. |
 | `concierge-logs` | POST | Routing decisions per router — `status`, `trigger`, `guestEmail`, `triggeredAt`, `matchedPath`, `assignments`, `meetingId`, `sourceUrl` |
-| `workspace-list` | GET | All workspaces — `id`, `name`, `userCount` |
+| `workspace-list` | GET | All workspaces — `id`, `name`, `nrOfUsers` |
 
 **Key constraint — two separate windows:**
 - `meeting-list-put` has a **7-day maximum window per call**. For ranges longer than 7 days, you must make multiple sequential calls and merge the results.
@@ -70,14 +70,11 @@ Pass `status: ["Completed", "NoShow", "Active"]` in the request — exclude `Can
 **Status values in concierge-logs (critical for the join):**
 | Status | Has `meetingId`? | Meaning |
 |--------|----------------|--------|
-| `Booked` | ✓ Yes | Lead completed booking — this `meetingId` joins to meeting-list-put |
-| `Offered` | ✗ No | Calendar was shown but lead did not book |
-| `NoMatch` | ✗ No | No routing rule matched the lead |
-| `NotQualified` | ✗ No | Lead was disqualified (spam, ICP filter, explicit disqualify rule) |
-| `Timeout` | ✗ No | Session expired before the lead booked |
-| `Error` | ✗ No | Technical routing error |
+| `Scheduled` | ✓ Yes | Lead completed booking — this `meetingId` joins to meeting-list-put |
+| `TimedOut` | ✗ No | Routing session expired before the lead booked |
+| `Cancelled` | varies | The routing session / resulting meeting was cancelled |
 
-Only `Booked` log entries have a `meetingId` to join with meeting-list-put. All others represent leads that never became meetings — they are a separate "booking conversion" funnel and must be excluded from no-show calculations.
+Only `Scheduled` log entries reliably carry a `meetingId` to join with meeting-list-put. These are the values observed against live routing logs; if you encounter another status, verify it against a live log before relying on it. Entries that never produced a meeting are a separate "booking conversion" funnel and must be excluded from no-show calculations.
 
 **Trigger types in concierge-logs:**
 | Value | What it means |
@@ -142,7 +139,7 @@ Build a map of `meetingId → effective-status` for the join in Step 3. (The fie
 
 ## Step 3 — Fetch routing context (only for `trigger` or `route` grouping)
 
-Skip this step if `group_by=rep` — rep is available directly from `meeting-list-put` via the `assignedUserId` field (resolve to name/email via `user-find-by-ids` if needed).
+Skip this step if `group_by=rep` — rep is available directly from `meeting-list-put` via `hostId`/`hostEmail`/`hostName` (the host name is already included, so no separate lookup is needed).
 
 **3a. List all routers:**
 ```
@@ -163,16 +160,16 @@ args:
   end: <ISO-8601 end>
 ```
 
-From the logs, **first filter to entries where `status = Booked`** — only these have a `meetingId` to join on. Then extract:
+From the logs, **first filter to entries where `status = Scheduled`** — only these reliably have a `meetingId` to join on. Then extract:
 - `meetingId` — used to join with meeting status
 - `trigger` — the lead source type (see trigger types table above)
-- `matchedPath` — the routing rule matched (e.g. `CrmOwnership`, `WithoutOwnership`, `CatchAll`)
+- `matchedPath.route.type` — the route kind (`RuleRoute` if a rule matched, with rule ids in `matchedPath.route.ruleIds`; `CatchAllRoute` if the lead hit the catch-all)
 - `sourceUrl` — the page the lead came from (useful for inferring campaign/channel)
-- `assignments[0].name` — the rep the router assigned
+- `assignments[0].userId` — the rep the router assigned (resolve to a name via `user-find-by-ids` if needed)
 
-Join on `meetingId` to get the meeting's actual status (`Completed` or `NoShow`).
+Join on `meetingId` to get the meeting's actual status (`NoShow`, or `Active`/`Completed`).
 
-Note: concierge-logs entries with status `Offered`, `NoMatch`, `NotQualified`, `Timeout`, or `Error` never produced a meeting and will not appear in meeting-list-put. Do not attempt to join these — discard them from this analysis.
+Note: concierge-logs entries that never produced a meeting (e.g. `TimedOut`) will not appear in meeting-list-put. Do not attempt to join these — discard them from this analysis.
 
 ---
 
@@ -182,7 +179,7 @@ Group by the selected dimension:
 
 **`group_by=trigger`** — group by the `trigger` field from concierge-logs
 **`group_by=route`** — group by `matchedPath` from concierge-logs
-**`group_by=rep`** — group by `assignedUserId` from meeting-list-put (resolve to name/email via `user-find-by-ids` if display is needed)
+**`group_by=rep`** — group by `hostId` from meeting-list-put (`hostName`/`hostEmail` are already present for display)
 **`group_by=workspace`** — group by workspace (requires per-workspace calls or export)
 
 For each group calculate:
@@ -207,11 +204,9 @@ For each flagged segment, produce 1–3 hypotheses. Use what you know about GTM 
 - `RouterLink` — similar to Direct; check lead time and whether a reminder sequence is configured
 - `InApp` — typically high-intent; if high no-show, check if the in-app trigger fires at a low-intent moment in the product flow
 
-**By matchedPath (routing rule type):**
-- `CrmOwnership` with high no-show — check if the Salesforce ownership data is stale; wrong rep gets assigned, lead goes cold
-- `WithoutOwnership` (territory/segment rules) with high no-show — check if round-robin distribution is balanced; overloaded reps may under-prepare
-- `CatchAll` with high no-show — leads that hit the catch-all had no specific rep match; lower intent and lower rep accountability
-- Any route with `matchedPath = null` — leads falling through entirely; run `/routing-audit` to find the gap
+**By route (`matchedPath.route.type`):**
+- `RuleRoute` with high no-show — a specific rule matched; check whether the assigned rep is right (e.g. stale Salesforce ownership pointing leads at the wrong rep) and whether distribution is balanced
+- `CatchAllRoute` with high no-show — leads that hit the catch-all had no specific rule match; lower intent and lower rep accountability. If catch-all volume is high, run `/audit-routing` to find the coverage gap
 
 **By rep:**
 - Individual reps with >40% no-show — check if they have calendar hygiene issues, or are being assigned leads outside their territory

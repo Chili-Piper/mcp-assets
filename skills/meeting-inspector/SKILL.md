@@ -80,13 +80,13 @@ If `workspace` is a name (not ID), resolve it via `workspace-list`.
 
 Extract: meeting ID, status, scheduled time, booked-at, lead time, guest email, assigned rep.
 
-See `references/api-reference.md` for the correct field names — `meeting-list-put` and `meeting-get` use *different* field names for status.
+See `references/api-reference.md` for the correct field names. Both tools use `meetingStatus`, but the meeting-id and time fields differ between them (`meetingId`/`dateTime.start` in list vs `id`/`activities[]` in get).
 
 Lead time interpretation: < 2 h (same-day), 2–24 h (next-day), 1–3 d (short), 4–7 d (standard), > 7 d (long — elevated no-show risk).
 
 ### Step 3 — Fetch the routing trace
 
-Skip if `createdAt` > 30 days ago; note this in output.
+Skip if the meeting's `bookedAt` is > 30 days ago; note this in output.
 
 See `references/routing-trace.md` for the full step-by-step procedure including how to match a log entry to the meeting.
 

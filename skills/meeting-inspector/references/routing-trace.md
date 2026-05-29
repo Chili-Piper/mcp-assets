@@ -2,7 +2,7 @@
 
 How to fetch and interpret the routing trace for a meeting.
 
-Skip this entire section if the meeting's `createdAt` is more than 30 days ago — note "Routing trace unavailable (>30 days)" in the output.
+Skip this entire section if the meeting's `bookedAt` is more than 30 days ago — note "Routing trace unavailable (>30 days)" in the output.
 
 ---
 
@@ -27,8 +27,8 @@ tool: concierge-logs
 args:
   workspaceId: <router's workspaceId>
   routerId: <router id>
-  start: <ISO-8601 — 1 day before meeting's createdAt>
-  end: <ISO-8601 — 1 day after meeting's createdAt>
+  start: <ISO-8601 — 1 day before meeting's bookedAt>
+  end: <ISO-8601 — 1 day after meeting's bookedAt>
 ```
 
 ---
@@ -37,17 +37,17 @@ args:
 
 A log entry matches if either of these is true:
 - `meetingId` equals the target meeting's ID
-- `guestEmail` matches (case-insensitive) AND `triggeredAt` is within a few hours of `createdAt`
+- `guestEmail` matches (case-insensitive) AND `triggeredAt` is within a few hours of `bookedAt`
 
 When a match is found, extract:
 
 | Field | Meaning |
 |-------|---------|
-| `status` | Routing session outcome — expect `Booked` for a completed meeting |
+| `status` | Routing session outcome — expect `Scheduled` for a completed booking |
 | `trigger` | How the lead arrived (see trigger types in `api-reference.md`) |
-| `matchedPath` | Routing rule that fired (e.g., `CrmOwnership`, `WithoutOwnership`, `CatchAll`) |
+| `matchedPath.route.type` | Route kind: `RuleRoute` (a rule matched; ids in `matchedPath.route.ruleIds`) or `CatchAllRoute` (hit the catch-all) |
 | `sourceUrl` | Page the lead came from |
-| `assignments[0].name` | Rep the router assigned |
+| `assignments[0].userId` | Rep the router assigned (resolve to a name via `user-find-by-ids` if needed) |
 | `triggeredAt` | When the router ran |
 | `actionsStatus` | CRM write-back result |
 
@@ -55,15 +55,14 @@ When a match is found, extract:
 
 ## Interpreting unexpected log statuses
 
-If a log is found but status is not `Booked`:
+If a log is found but status is not `Scheduled`:
 
 | Log status | Interpretation |
 |-----------|---------------|
-| `Offered` | Lead was shown a calendar but did not complete booking. Meeting may have been created via another path (direct link, handoff). |
-| `NoMatch` | No rule matched — meeting was routed through a different router or booked manually. |
-| `NotQualified` | Lead was disqualified before seeing a calendar. Investigate ICP filters if a meeting still exists. |
-| `Timeout` | Session expired. Meeting created after timeout via re-entry or manual booking. |
-| `Error` | Technical error during routing — escalate to engineering. |
+| `TimedOut` | Routing session expired before the lead booked. A meeting may still exist if created after timeout via re-entry or manual booking. |
+| `Cancelled` | The routing session or resulting meeting was cancelled. |
+
+These are the statuses observed against live routing logs. If you encounter another value, verify its meaning against a live log rather than assuming. To see *why* no rule matched, read `matchedPath.route.type` (a `CatchAllRoute` means the lead fell through to the catch-all).
 
 ---
 

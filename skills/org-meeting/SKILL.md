@@ -34,8 +34,8 @@ You are a RevOps analyst preparing an executive summary of booking health. Your 
 
 | Tool | What it returns |
 |------|----------------|
-| `meeting-list-put` | Meetings in a window < 7 days → response: `{data: {list: [{meetingId, status, scheduledAt, attendees, assignedUserId, workspaceId}]}, hasMore: "Yes"\|"No"}`. Accepts `status` filter (confirmed live as of DISTRO-4472). |
-| `workspace-list` | All workspaces → array of `{workspaceId, name, settings}` — items use `workspaceId` (NOT `id`) — needed to group meetings by workspace name |
+| `meeting-list-put` | Meetings in a window < 7 days → response: `{data: {list: [{meetingId, meetingStatus, dateTime: {start, end}, attendees, hostId, hostEmail, hostName, workspaceId}]}, hasMore: "Yes"\|"No"}`. Accepts `status` filter (confirmed live as of DISTRO-4472). |
+| `workspace-list` | All workspaces → array of `{id, name, nrOfUsers}` — the identifier is `id` (NOT `workspaceId`) — join `meeting.workspaceId` to `workspace.id` to get the workspace name |
 
 ---
 
@@ -66,11 +66,12 @@ Each chunk must be strictly less than 7 days (use at most 6-day chunks). Paginat
 ```
 tool: workspace-list
 args:
-  page: 0
-  pageSize: 100
+  pagination:
+    page: 0
+    pageSize: 100
 ```
 
-Build a map of `workspaceId → workspaceName` using the `workspaceId` field (not `id`) from each workspace-list item.
+Build a map of `id → name` from each workspace-list item (the workspace identifier is `id`), then join each meeting's `workspaceId` to that `id` to get the workspace name.
 
 Note: meeting items from `meeting-list-put` include a `workspaceId` field — use it directly for grouping.
 
@@ -101,7 +102,7 @@ Surface a caveat when past-Active is a significant share of total: *"N meetings 
 
 **group_by=workspace:** group by `workspaceId`, resolve to name, calculate per-workspace metrics
 
-**group_by=rep:** group by `assignedUserId`, calculate per-rep metrics. Sort by meeting volume descending. To display rep names, resolve `assignedUserId` values via `user-find-by-ids` after collecting all distinct IDs.
+**group_by=rep:** group by `hostId`, calculate per-rep metrics. Sort by meeting volume descending. Rep names are already present as `hostName`/`hostEmail` on each meeting — no separate lookup needed.
 
 **group_by=status:** simple count of each status — useful for a quick executive pie-chart narrative.
 

@@ -10,10 +10,10 @@ Check every row. Flag any condition that is true.
 
 | Anomaly | Condition | Severity |
 |---------|-----------|----------|
-| **No-show** | `status = NoShow` | High |
-| **Late cancellation** | `status = Cancelled` AND cancellation within 2 hours of `startTime` | Medium |
-| **Long lead time + no-show** | Lead time > 5 days AND `status = NoShow` | High — recency decay likely |
-| **Rep assignment mismatch** | `assignments[0].name` (routing log) ≠ `assignee.name` (meeting record) | High — meeting was reassigned after routing |
+| **No-show** | `meetingStatus = NoShow` (or `noShowStatus = NoShow`) | High |
+| **Late cancellation** | `meetingStatus = Canceled` AND cancellation within 2 hours of `dateTime.start` | Medium |
+| **Long lead time + no-show** | Lead time > 5 days AND `meetingStatus = NoShow` | High — recency decay likely |
+| **Rep assignment mismatch** | `assignments[0].userId` (routing log) ≠ `hostId` (meeting record) | High — meeting was reassigned after routing |
 | **Routing fallthrough** | `matchedPath` is null or blank | Medium — hit catch-all or no rule matched |
 | **Unrouted meeting** | No routing log found at all | Low — likely manual or direct-link booking |
 | **CRM write-back failure** | `actionsStatus` is not a success state | Medium — meeting not visible in Salesforce |
