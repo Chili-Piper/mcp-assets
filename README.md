@@ -50,7 +50,7 @@ Every skill talks to your Chili Piper account through the official MCP server. S
 
 ```
 /plugin marketplace add Chili-Piper/mcp-assets
-/plugin install chili-piper-skills
+/plugin install chili-piper-skills@chili-piper-skills
 ```
 
 This installs every skill, the bundled slash commands, and the Chili Piper MCP config in one step. Updating later is a single command (see [Staying up to date](#staying-up-to-date)).
@@ -82,7 +82,7 @@ A single admin can roll these skills out to an entire team or org so everyone ge
 
 We actively improve these skills, fix correctness issues, and add new ones. To stay current:
 
-- **Claude Code plugin:** run `/plugin update chili-piper-skills` (or enable auto-update).
+- **Claude Code plugin:** run `/plugin update chili-piper-skills@chili-piper-skills` (or enable auto-update).
 - **Manual install:** `git pull`, or re-download the skill folder.
 - **Watch releases:** click **Watch → Custom → Releases** on this repo to be notified of every versioned update.
 - **Changelog:** every release is logged in [`CHANGELOG.md`](CHANGELOG.md).

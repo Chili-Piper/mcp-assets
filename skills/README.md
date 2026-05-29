@@ -8,7 +8,7 @@ Each skill works in Claude Code (and other Claude Skills-compatible agents). The
 
 ## How to use a skill
 
-Install the plugin (`/plugin marketplace add Chili-Piper/mcp-assets` → `/plugin install chili-piper-skills`) and invoke the bundled commands:
+Install the plugin (`/plugin marketplace add Chili-Piper/mcp-assets` → `/plugin install chili-piper-skills@chili-piper-skills`) and invoke the bundled commands:
 
 ```
 /inspect-meeting guest@example.com
