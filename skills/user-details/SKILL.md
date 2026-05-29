@@ -24,7 +24,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the profile and decide: onboard the user to missing teams, fix routing gaps, or proceed with offboarding"
 writes_to: "Nothing — read-only diagnostic"
-api_note: "user-read returns full license and calendar connection status. user-find is needed first if you have an email or name rather than a user ID. As of DISTRO-4472 (2026-05-21): team-list-put member filter is live (server-side filtering by userId, no client-side scan needed); team-list-put also accepts an optional name filter. meeting-export-v2-put now supports server-side filters: hostIds, assigneeIds, bookerIds, meetingTypeIds, status."
+api_note: "Field names validated against live MCP responses. user-read returns license info but NO calendar/CRM connection status. user-find is needed first if you have an email or name rather than a user ID. workspace-list items use `id` (not `workspaceId`); team-list-put results use `id` (not `teamId`) and include `workspaceId`. As of DISTRO-4472 (2026-05-21): team-list-put member filter is live (server-side filtering by userId); team-list-put also accepts an optional name filter. meeting-export-v2-put supports server-side filters: hostIds, assigneeIds, bookerIds, meetingTypeIds, status."
 ---
 
 # User Details
@@ -37,8 +37,8 @@ You are a RevOps analyst. Your job is to pull a complete profile for a Chili Pip
 |------|----------------|
 | `user-find` | Search by email or name → `id`, `name`, `email`, `isSuperAdmin`, `licenses` (object), `workspaces` (array of workspaceId strings), `personalWorkspaceId` |
 | `user-read` | Full user record (same fields as user-find result item, unwrapped) → `id`, `name`, `email`, `isSuperAdmin`, `licenses` (object with boolean fields: `distro`, `chiliCalOrg`, `concierge`, `conciergeLive`, `chat`, `handoff`), `workspaces` (array of workspaceId strings, NOT `workspaceIds`), `personalWorkspaceId`. No `calendarConnected`, `calendarProvider`, or `crmConnected` fields. |
-| `workspace-list` | All workspaces → array of `{workspaceId, name, settings}` — items use `workspaceId` (NOT `id`) |
-| `team-list-put` | Teams filtered by `member: [userId]` (server-side, confirmed live as of DISTRO-4472) → only teams this user belongs to; also accepts optional `name: string` filter; response: `{results: [{teamId, name, workspaceId, members}]}` |
+| `workspace-list` | All workspaces → array of `{id, name, nrOfUsers}` — the identifier is `id` (NOT `workspaceId`) |
+| `team-list-put` | Teams filtered by `member: [userId]` (server-side, confirmed live as of DISTRO-4472) → only teams this user belongs to; also accepts optional `name: string` filter; response: `{results: [{id, name, workspaceId, members, metadata}], total}` (the team identifier is `id`, NOT `teamId`) |
 | `scheduling-link-list-personal` | Personal scheduling links owned by this user |
 | `scheduling-link-list-round-robin` | Round-robin links this user is part of |
 | `meeting-export-v2-put` | CSV export — server-side filters (all confirmed live as of DISTRO-4472): `hostIds`, `assigneeIds`, `bookerIds`, `meetingTypeIds`, `status`; response: `{filename, data: "<CSV>"}` — parse header row for column names |
@@ -87,11 +87,12 @@ Call `workspace-list` to get all workspace names.
 ```
 tool: workspace-list
 args:
-  page: 0
-  pageSize: 100
+  pagination:
+    page: 0
+    pageSize: 100
 ```
 
-Map the user's `workspaces` (list of workspaceId strings) to workspace names using the `workspaceId` field (not `id`) from the workspace-list response. Note any workspaces where you'd expect them but they're absent.
+Map the user's `workspaces` (list of workspaceId strings) to workspace names by joining to the `id` field of each workspace-list item. Note any workspaces where you'd expect them but they're absent.
 
 ---
 
@@ -108,7 +109,7 @@ args:
     pageSize: 100
 ```
 
-Response: `{results: [{teamId, name, workspaceId, members}]}`. Extract `teamId`, `name`, `workspaceId` for each result.
+Response: `{results: [{id, name, workspaceId, members, metadata}], total}`. Extract `id` (team identifier), `name`, `workspaceId` for each result.
 
 ---
 

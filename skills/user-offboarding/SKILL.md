@@ -38,9 +38,9 @@ You are a RevOps offboarding specialist. Your job is to make the departure of a 
 | Tool | What it returns |
 |------|----------------|
 | `user-find` | Search by email or name → `id`, `email`, `name` |
-| `user-read` | Full profile → workspaceIds, license, calendar status |
+| `user-read` | Full profile → `workspaces` (array of workspaceId strings), `licenses`; no calendar/CRM connection status |
 | `meeting-export-v2-put` | CSV of meetings — server-side filters (confirmed live as of DISTRO-4472): `hostIds`, `assigneeIds`, `bookerIds`, `meetingTypeIds`, `status`. Returns `{filename, data: "<CSV>"}`. Use `status: ["Active"]` to fetch only upcoming meetings at risk. |
-| `workspace-list` | All workspaces → `workspaceId`, `name` |
+| `workspace-list` | All workspaces → items `{id, name, nrOfUsers}` — the identifier is `id` (NOT `workspaceId`) |
 | `workspace-list-users` | Users in a workspace |
 | `workspace-remove-users` | Remove a user from a workspace |
 | `team-list-put` | Teams filtered by `member: [userId]` (server-side, confirmed live as of DISTRO-4472) → only teams this user belongs to; also accepts optional `name: string` filter |
@@ -48,7 +48,7 @@ You are a RevOps offboarding specialist. Your job is to make the departure of a 
 | `team-create` | Create a new team in a workspace → `{id, workspaceId, name, members, metadata}` — accepts `workspaceId` (req), `name` (req), `members` (opt, initial user IDs) |
 | `team-delete` | Permanently delete a team → `{id, workspaceId, name, members, metadata}` — the deleted record; requires `team.remove` permission; fails if active distributions still reference the team; use only when retiring the team itself, not just removing a member |
 | `meeting-cancel` | Cancel a meeting (triggers rebook flow if configured) |
-| `distribution-list-put` | Distributions — optional filters: `name: string`, `assignmentType` (for flagging — manual removal required) |
+| `distribution-list-put` | Distributions — input takes `workspaceIds` (array) + optional `name`, `assignmentType`. Returns a top-level array; members are in `published.weights[]` (`{userId, weight}`) and `state.userStates[]` (`{userId, type: "Active"\|"Removed"}`). For flagging only — distribution membership cannot be modified via MCP. |
 
 ---
 
@@ -115,10 +115,10 @@ The `member` filter returns only teams containing this user — no client-side f
 ```
 tool: distribution-list-put
 args:
-  workspaceId: <each workspace id>
+  workspaceIds: [<workspace id>]
 ```
 
-Filter distributions where this user appears as a member. Optionally use the `name` filter if looking for a specific distribution by name. These cannot be updated via MCP — flag them for manual removal in the router builder.
+The response is a top-level array. Flag distributions where this user's `userId` appears in `published.weights[]` or in `state.userStates[]` with `type: "Active"`. Optionally use the `name` filter to look for a specific distribution. Distribution membership cannot be updated via MCP — flag these for manual removal in the router builder.
 
 ---
 

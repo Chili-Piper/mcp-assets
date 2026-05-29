@@ -38,9 +38,9 @@ You are a RevOps onboarding specialist. Your job is to read one user's workspace
 | Tool | What it returns |
 |------|----------------|
 | `user-find` | Search by email or name → `id`, `email`, `name` |
-| `workspace-list` | All workspaces → `workspaceId`, `name` |
+| `workspace-list` | All workspaces → items `{id, name, nrOfUsers}` — the identifier is `id` (NOT `workspaceId`) |
 | `workspace-list-users` | Users in a specific workspace → `userId`, `email` |
-| `team-list-put` | Teams filtered by `member: [userId]` (server-side, confirmed live as of DISTRO-4472) and optionally `name: string` → `{results: [{teamId, name, workspaceId, members}]}` — items use `teamId` (not `id`) |
+| `team-list-put` | Teams filtered by `member: [userId]` (server-side, confirmed live as of DISTRO-4472) and optionally `name: string` → `{results: [{id, name, workspaceId, members, metadata}], total}` — the team identifier is `id` (NOT `teamId`) |
 | `workspace-add-users` | Add a user to a workspace |
 | `team-add-users` | Add a user to a team |
 | `team-create` | Create a new team in a workspace → `{id, workspaceId, name, members, metadata}` — accepts `workspaceId` (req), `name` (req), `members` (opt, initial user IDs) |
@@ -72,19 +72,20 @@ Store `sourceId`, `sourceEmail`, `targetId`, `targetEmail`.
 ```
 tool: workspace-list
 args:
-  page: 0
-  pageSize: 100
+  pagination:
+    page: 0
+    pageSize: 100
 ```
 
-Workspace items use `workspaceId` (not `id`). For each workspace, check if the source user is a member:
+Workspace items use `id` (not `workspaceId`). For each workspace, check if the source user is a member:
 
 ```
 tool: workspace-list-users
 args:
-  workspaceId: <workspace.workspaceId>
+  workspaceId: <workspace.id>
 ```
 
-Collect all workspaces where `sourceId` appears in the member list. Store as `sourceWorkspaces` (each entry retaining its `workspaceId` value).
+Collect all workspaces where `sourceId` appears in the member list. Store as `sourceWorkspaces` (each entry retaining its `id` value — this is the value you pass as the `workspaceId` argument elsewhere).
 
 ---
 
@@ -101,7 +102,7 @@ args:
     pageSize: 100
 ```
 
-Response shape: `{results: [{teamId, name, workspaceId, members}]}`. Items use `teamId` (not `id`); `members` is an array of user ID strings. Store as `sourceTeams` (each entry retaining its `teamId` value).
+Response shape: `{results: [{id, name, workspaceId, members, metadata}], total}`. The team identifier is `id` (not `teamId`); `members` is an array of user ID strings. Store as `sourceTeams` (each entry retaining its `id` value — this is the value you pass as the `teamId` argument to `team-add-users`).
 
 ---
 
@@ -153,7 +154,7 @@ For each workspace marked `ADD`:
 ```
 tool: workspace-add-users
 args:
-  workspaceId: <sourceWorkspaces[N].workspaceId>
+  workspaceId: <sourceWorkspaces[N].id>
   userIds: [<targetId>]
 ```
 
@@ -162,7 +163,7 @@ For each team marked `ADD`:
 ```
 tool: team-add-users
 args:
-  teamId: <sourceTeams[N].teamId>
+  teamId: <sourceTeams[N].id>
   userIds: [<targetId>]
 ```
 
