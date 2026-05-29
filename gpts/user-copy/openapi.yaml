@@ -1,196 +1,936 @@
-openapi: 3.0.0
+# Generated from the Chili Piper Edge API OpenAPI spec by
+# .github/scripts/generate_gpt_openapi.py — do not edit by hand.
+openapi: 3.1.0
 info:
   title: Chili Piper — User Copy Actions
-  description: Endpoints used by the User Copy GPT to read and replicate workspace/team memberships.
-  version: 0.1.0
+  version: 1.230.0
+  description: GPT Actions for the user-copy GPT — a subset of the Chili Piper Edge API. Authenticate
+    with a Bearer API key (Admin Center → API Keys).
 servers:
-  - url: https://api.chilipiper.com
-    description: Chili Piper API
-
+- url: https://fire.chilipiper.com/api/fire-edge
+  description: Production
 security:
-  - bearerAuth: []
-
+- apiKeyAuth: []
 paths:
-  /users/search:
+  /v1/org/user/find:
     get:
-      operationId: findUsers
-      summary: Search for users by email or name
-      parameters:
-        - name: q
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Matching users
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/UserSummary'
+      tags:
+      - user
+      summary: Finds user
+      description: '[operation: user-find]
 
-  /workspaces:
-    get:
-      operationId: listWorkspaces
-      summary: List all workspaces
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 0
-        - name: pageSize
-          in: query
-          schema:
-            type: integer
-            default: 100
-      responses:
-        "200":
-          description: Workspaces
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Workspace'
 
-  /workspaces/{workspaceId}/users:
-    get:
-      operationId: listWorkspaceUsers
-      summary: List users in a workspace
+
+
+        READ-ONLY
+
+
+
+
+        Searches users by free-text query matched against email and name (partial matches supported).
+        Paginated.
+
+
+        - query (req): partial email or name
+
+
+        - page (opt), pageSize (opt, default 200)
+
+
+        → paginated list of users, each with: {id, name, email, isSuperAdmin, licenses, workspaces, salesforce
+        (opt), hubspot (opt), slug (opt), managedWorkspaces, managedTeams}
+
+
+        see: user-read (full profile), user-find-by-ids (batch by ID), user-find-by-filter (advanced multi-field
+        filtering)'
+      operationId: userFind
       parameters:
-        - name: workspaceId
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Users in workspace
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/UserSummary'
-    post:
-      operationId: addWorkspaceUsers
-      summary: Add users to a workspace
-      parameters:
-        - name: workspaceId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
+      - name: query
+        in: query
+        description: Search by email or name
         required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [userIds]
-              properties:
-                userIds:
-                  type: array
-                  items:
-                    type: string
+        schema:
+          type: string
+      - name: page
+        in: query
+        description: Page number. First page has index 0.
+        required: false
+        schema:
+          default: 0
+          type: integer
+          format: int64
+          minimum: 0
+        example: 0
+      - name: pageSize
+        in: query
+        description: Number of items per page. Maximum is 50
+        required: false
+        schema:
+          default: 10
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        example: 10
       responses:
-        "200":
-          description: Users added
-
-  /teams/list:
-    post:
-      operationId: listTeams
-      summary: List all teams
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                page:
-                  type: integer
-                  default: 0
-                pageSize:
-                  type: integer
-                  default: 100
-      responses:
-        "200":
-          description: Teams
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResult_User'
+        '400':
+          description: 'Invalid value for: query parameter query, Invalid value for: query parameter page,
+            Invalid value for: query parameter pageSize'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 type: object
+                required:
+                - errorCode
+                - errorMessage
                 properties:
-                  results:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Team'
-
-  /teams/{teamId}/users:
-    post:
-      operationId: addTeamUsers
-      summary: Add users to a team
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - user.read
+  /v1/org/workspace:
+    get:
+      tags:
+      - workspace
+      summary: Read all workspaces
+      description: "[operation: workspace-list]\n\n\n\nREAD-ONLY\n\n\n\nReturns all workspaces in the\
+        \ org. Hierarchy: Tenant → Workspaces → Teams → Users.\n\n- page (opt), pageSize (opt, default\
+        \ 200)\n\n→\n\n    [{workspaceId, name, settings}]\n\nsee: workspace-list-users (members), workspace-add/remove-users\
+        \ (manage membership), meeting-list/export (filter by workspaceId), concierge-logs (filter by\
+        \ workspaceId)"
+      operationId: workspaceList
       parameters:
-        - name: teamId
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: page
+        in: query
+        description: Page number. First page has index 0.
+        required: false
+        schema:
+          default: 0
+          type: integer
+          format: int64
+          minimum: 0
+        example: 0
+      - name: pageSize
+        in: query
+        description: Number of items per page. Maximum is 50
+        required: false
+        schema:
+          default: 10
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        example: 10
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResult_Workspace'
+        '400':
+          description: 'Invalid value for: query parameter page, Invalid value for: query parameter pageSize'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - workspace.read
+  /v1/org/workspace/users:
+    get:
+      tags:
+      - workspace
+      summary: Read all users (or in a workspace)
+      description: "[operation: workspace-list-users]\n\n\n\nREAD-ONLY\n\n\n\nReturns users in a workspace,\
+        \ or all org users if no workspaceId given.\n\n- workspaceId (opt): use workspace-list; omit for\
+        \ org-wide listing\n\n- page (opt), pageSize (opt, default 200)\n\n→\n\n    {results: [{userId,\
+        \ email, name, roles, licenses, workspaceMemberships}]}\n\nsee: workspace-add/remove-users (manage\
+        \ membership), user-find-by-filter (advanced multi-field filtering)"
+      operationId: workspaceListUsers
+      parameters:
+      - name: workspaceId
+        in: query
+        required: false
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      - name: page
+        in: query
+        description: Page number. First page has index 0.
+        required: false
+        schema:
+          default: 0
+          type: integer
+          format: int64
+          minimum: 0
+        example: 0
+      - name: pageSize
+        in: query
+        description: Number of items per page. Maximum is 50
+        required: false
+        schema:
+          default: 10
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        example: 10
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResult_User'
+        '400':
+          description: 'Invalid value for: query parameter workspaceId, Invalid value for: query parameter
+            page, Invalid value for: query parameter pageSize'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - workspace.read
+  /v2/org/team:
+    put:
+      tags:
+      - team
+      summary: Read all teams (PUT)
+      description: "[operation: team-list-put]\n\n\n\nREAD-ONLY\n\n\n\nReturns all teams in the org. Accepts\
+        \ filter params in request body to avoid query-string length limits.\n\n- body.workspaceIds (opt):\
+        \ filter by workspace\n\n- body.name (opt): filter by team name (substring match)\n\n- body.member\
+        \ (opt): filter to teams containing all specified user IDs; use user-find to resolve emails to\
+        \ IDs\n\n- body.page (opt), body.pageSize (opt, default 200)\n\n→\n\n    {results: [{teamId, name,\
+        \ members}]}\n\nsee: team-list (GET equivalent), user-find (resolve email → userId for member\
+        \ filter)"
+      operationId: teamListPut
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [userIds]
-              properties:
-                userIds:
-                  type: array
-                  items:
-                    type: string
+              $ref: '#/components/schemas/FindAllRequest'
+        required: true
       responses:
-        "200":
-          description: Users added
-
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResult_Team'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - team.read
+  /v1/org/workspace/users/add:
+    post:
+      tags:
+      - workspace
+      summary: Add users to a workspace
+      description: "[operation: workspace-add-users]\n\n\n\nMUTATING — IDEMPOTENT\n\n\n\nAdds users to\
+        \ a workspace. Already-members are silently skipped.\n\n- workspaceId (req): use workspace-list\n\
+        \n- userIds (req): non-empty list; use user-find\n\n→\n\n    {}\n\nsee: workspace-list (find workspaceId),\
+        \ user-find (resolve userIds), workspace-list-users (verify after)"
+      operationId: workspaceAddUsers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddUsersToWorkspaceRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - workspace.modify
+  /v1/org/team/users/add:
+    post:
+      tags:
+      - team
+      summary: Add users to a team
+      description: "[operation: team-add-users]\n\n\n\nMUTATING — IDEMPOTENT\n\n\n\nAdds users to a team.\
+        \ Already-members are silently skipped.\n\n- teamId (req): use team-list\n\n- userIds (req): non-empty\
+        \ list; use user-find\n\n→\n\n    {id, workspaceId, name, members, metadata} — updated team record\n\
+        \nsee: team-list (find teamId and verify after), user-find (resolve userIds)"
+      operationId: teamAddUsers
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddUsersToTeamRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - team.modify
+  /v2/org/team/create:
+    post:
+      tags:
+      - team
+      summary: Create team
+      description: "[operation: team-create]\n\n\n\nMUTATING\n\n\n\nCreates a new team in the given workspace.\n\
+        \n- workspaceId (req): workspace to create the team in; use workspace-list\n\n- name (req): team\
+        \ name\n\n- members (opt): initial member user IDs; use user-find to resolve emails to IDs\n\n\
+        →\n\n    {id, workspaceId, name, members, metadata}\n\nsee: team-list (verify after), user-find\
+        \ (resolve userIds), workspace-list (resolve workspaceId), team-add-users (add more members later)"
+      operationId: teamCreate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTeamRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Team'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - team.create
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-
+    apiKeyAuth:
+      type: apiKey
+      description: 'API key in Authorization header. Format: ''Authorization: Bearer <api-key>'' — the
+        word ''Bearer'' followed by a space and the key is required. Sending the key without the Bearer
+        prefix returns 401.'
+      name: Authorization
+      in: header
   schemas:
-    UserSummary:
+    Team:
+      title: Team
       type: object
+      required:
+      - id
+      - workspaceId
+      - name
+      - metadata
       properties:
         id:
-          type: string
-        email:
-          type: string
-        name:
-          type: string
-
-    Workspace:
-      type: object
-      properties:
+          $ref: '#/components/schemas/TeamId'
         workspaceId:
-          type: string
+          $ref: '#/components/schemas/WorkspaceId'
         name:
-          type: string
-
-    Team:
-      type: object
-      properties:
-        teamId:
-          type: string
-        name:
-          type: string
-        workspaceId:
           type: string
         members:
           type: array
           items:
             type: string
-          description: Array of user ID strings
+            pattern: '[^\s\\/]+'
+        metadata: {}
+    PaginatedResult_Workspace:
+      title: PaginatedResult_Workspace
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workspace'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    PaginatedResult_User:
+      title: PaginatedResult_User
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    Email:
+      title: Email
+      examples:
+      - john.doe@acme.com
+      type: string
+      pattern: .+@.+
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
+    FindAllRequest:
+      title: FindAllRequest
+      type: object
+      properties:
+        workspaceIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        name:
+          type: string
+        member:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+    UserLicenses:
+      title: UserLicenses
+      type: object
+      required:
+      - distro
+      - chiliCalOrg
+      - concierge
+      - conciergeLive
+      - chat
+      - handoff
+      properties:
+        distro:
+          type: boolean
+        chiliCalOrg:
+          type: boolean
+        concierge:
+          type: boolean
+        conciergeLive:
+          type: boolean
+        chat:
+          type: boolean
+        handoff:
+          type: boolean
+    SalesforceUser:
+      title: SalesforceUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        id:
+          type: string
+          pattern: '[^\s\\/]+'
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+    SimpleMetadata:
+      title: SimpleMetadata
+      type: object
+      required:
+      - createdAt
+      - createdBy
+      - updatedAt
+      - updatedBy
+      - revision
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: '#/components/schemas/CallerRef'
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: '#/components/schemas/CallerRef'
+        revision:
+          type: integer
+          format: int32
+    AddUsersToTeamRequest:
+      title: AddUsersToTeamRequest
+      type: object
+      required:
+      - teamId
+      - userIds
+      properties:
+        teamId:
+          $ref: '#/components/schemas/TeamId'
+        userIds:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/UserId'
+    TeamId:
+      title: TeamId
+      examples:
+      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
+      type: string
+      pattern: '[^\s\\/]+'
+    Workspace:
+      title: Workspace
+      type: object
+      required:
+      - id
+      - name
+      - metadata
+      properties:
+        id:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+        emoji:
+          type: string
+        logo:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+    AddUsersToWorkspaceRequest:
+      title: AddUsersToWorkspaceRequest
+      type: object
+      required:
+      - workspaceId
+      - userIds
+      properties:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        userIds:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/UserId'
+    User:
+      title: User
+      type: object
+      required:
+      - id
+      - name
+      - email
+      - isSuperAdmin
+      - licenses
+      properties:
+        id:
+          $ref: '#/components/schemas/UserId'
+        name:
+          type: string
+          minLength: 1
+        email:
+          $ref: '#/components/schemas/Email'
+        isSuperAdmin:
+          type: boolean
+        managedWorkspaces:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        managedTeams:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        licenses:
+          $ref: '#/components/schemas/UserLicenses'
+        salesforce:
+          $ref: '#/components/schemas/SalesforceUser'
+        hubspot:
+          $ref: '#/components/schemas/HubspotUser'
+        slug:
+          type: string
+          pattern: '[-0-9a-z_]+'
+        workspaces:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        personalWorkspaceId:
+          type: string
+          pattern: '[^\s\\/]+'
+    HubspotUser:
+      title: HubspotUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        id:
+          type: integer
+          format: int64
+    PaginatedResult_Team:
+      title: PaginatedResult_Team
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Team'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string
+    CreateTeamRequest:
+      title: CreateTeamRequest
+      type: object
+      required:
+      - workspaceId
+      - name
+      properties:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+        members:
+          type: array
+          items:
+            type: string
+            pattern: '[^\s\\/]+'

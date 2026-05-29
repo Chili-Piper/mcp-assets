@@ -1,7 +1,7 @@
 ---
 name: Concierge Debugger
 description: Debugs why a specific lead did not book — traces the concierge routing session, identifies the rule that fired (or why none did), and recommends a targeted fix.
-version: 0.1.0
+version: 0.2.0
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Why didn't guest@company.com book after submitting the form?"

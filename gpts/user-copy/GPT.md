@@ -1,7 +1,7 @@
 ---
 name: User Copy
 description: Copies a user's Chili Piper workspace and team memberships to a new or existing user — eliminating manual re-configuration when onboarding a rep onto an existing territory or replacing a departing rep.
-version: 0.1.0
+version: 0.1.3
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Copy workspace and team memberships from alice@company.com to bob@company.com"

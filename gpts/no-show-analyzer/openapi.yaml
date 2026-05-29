@@ -1,258 +1,2874 @@
-openapi: 3.0.0
+# Generated from the Chili Piper Edge API OpenAPI spec by
+# .github/scripts/generate_gpt_openapi.py — do not edit by hand.
+openapi: 3.1.0
 info:
   title: Chili Piper — No-Show Analyzer Actions
-  description: Endpoints used by the No-Show Analyzer GPT to calculate no-show patterns across meetings and routing logs.
-  version: 0.3.0
+  version: 1.230.0
+  description: GPT Actions for the no-show-analyzer GPT — a subset of the Chili Piper Edge API. Authenticate
+    with a Bearer API key (Admin Center → API Keys).
 servers:
-  - url: https://api.chilipiper.com
-    description: Chili Piper API
-
+- url: https://fire.chilipiper.com/api/fire-edge
+  description: Production
 security:
-  - bearerAuth: []
-
+- apiKeyAuth: []
 paths:
-  /meetings/list:
-    post:
-      operationId: listMeetings
-      summary: List meetings in a date range (max 7-day window per call)
+  /v2/org/meetings/meetings:
+    put:
+      tags:
+      - meetings
+      summary: Meetings (PUT)
+      description: "[operation: meeting-list-put]\n\n\n\nREAD-ONLY\n\n\n\nReturns paginated meetings in\
+        \ a time range. Accepts all filter params in request body to avoid query-string length limits.\n\
+        \n- body.start, body.end (req): ISO-8601; start < end; max 7-day span\n\n- body.workspaceIds (opt):\
+        \ filter by workspace\n\n- body.status (opt): filter by meeting status; array of \"Active\"|\"\
+        Canceled\"|\"NoShow\"|\"Completed\"\n\n- body.page (opt, default 1), body.pageSize (opt, default\
+        \ 200)\n\n→\n\n    {results: [{meetingId, status, scheduledAt, attendees, assignedUserId, workspaceId}],\
+        \ pagination}\n\nsee: meeting-list (GET equivalent), meeting-export-v2-put (export with richer\
+        \ filters incl. host/assignee/booker)"
+      operationId: meetingListPut
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [start, end]
-              properties:
-                start:
-                  type: string
-                  format: date-time
-                end:
-                  type: string
-                  format: date-time
-                pagination:
-                  type: object
-                  properties:
-                    page:
-                      type: integer
-                      default: 0
-                    pageSize:
-                      type: integer
-                      default: 200
+              $ref: '#/components/schemas/QueryMeetingsRequest'
+        required: true
       responses:
-        "200":
-          description: Paginated meeting list
+        '200':
+          description: List of meetings. Payload structure might change.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpQueryResponse_A'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 type: object
+                required:
+                - errorCode
+                - errorMessage
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      list:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/MeetingListItem'
-                  hasMore:
+                  errorCode:
                     type: string
-                    enum: ["Yes", "No"]
-
-  /workspaces:
-    get:
-      operationId: listWorkspaces
-      summary: List all workspaces
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 0
-        - name: pageSize
-          in: query
-          schema:
-            type: integer
-            default: 100
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - meeting.read
+  /v1/org/concierge/routers/concierge/list:
+    post:
+      tags:
+      - concierge
+      summary: Lists all concierge routers
+      description: "[operation: concierge-list-routers]\n\n\n\nREAD-ONLY\n\n\n\nReturns all Concierge\
+        \ routers in the org. A router evaluates inbound lead data and routes to teams/users via rules.\n\
+        \n- workspaceId (opt): restrict to one workspace\n\n→\n\n    {routers: [{router: {id (routerId),\
+        \ name, slug, formMapping, settings, routing, meta}, dataFields: [...], workspaceId}]}\n\n  Note:\
+        \ routerId is at routers[N].router.id; slug is at routers[N].router.slug\n\nsee: concierge-logs\
+        \ (audit decisions, needs routerId+workspaceId), concierge-route-by-slug (execute routing, needs\
+        \ slug)"
+      operationId: conciergeListRouters
       responses:
-        "200":
-          description: Workspaces
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Workspace'
-
-  /concierge/routers:
-    get:
-      operationId: listRouters
-      summary: List concierge routers
-      parameters:
-        - name: workspaceId
-          in: query
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Routers
+                $ref: '#/components/schemas/ConciergeRoutersListResponse'
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 type: object
+                required:
+                - errorCode
+                - errorMessage
                 properties:
-                  routers:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/RouterEntry'
-
-  /concierge/routers/{routerId}/logs:
-    post:
-      operationId: getRoutingLogs
-      summary: Get routing decision logs for a router (max 30-day window)
-      parameters:
-        - name: routerId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [workspaceId, start, end]
-              properties:
-                workspaceId:
-                  type: string
-                start:
-                  type: string
-                  format: date-time
-                end:
-                  type: string
-                  format: date-time
-      responses:
-        "200":
-          description: Routing log entries
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RoutingLogEntry'
-
-  /users/batch:
-    post:
-      operationId: getUsersByIds
-      summary: Resolve multiple user IDs to names/emails
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                userIds:
-                  type: array
-                  items:
+                  errorCode:
                     type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - concierge.read
+  /v1/org/concierge/logs:
+    post:
+      tags:
+      - concierge
+      summary: Reads Concierge Logs
+      description: '[operation: concierge-logs]
+
+
+
+
+        READ-ONLY
+
+
+
+
+        Fetches aggregated Concierge routing decision logs for a router in a time window (parallelism=4).
+        Max window: 30 days.
+
+
+        - workspaceId (req): query param; use workspace-list or concierge-list-routers
+
+
+        - routerId (req): query param; use concierge-list-routers (routers[N].router.id)
+
+
+        - start, end (req): query params; ISO-8601; max 30-day span
+
+
+        → array of log entries, each with fields: id, status, trigger, assignments, triggeredAt, crmUrl,
+        guestEmail, actionsStatus, sourceUrl, meetingId, routing, matchedPath (payload structure may change)
+
+
+        see: concierge-list-routers (find routerId+workspaceId)'
+      operationId: conciergeLogs
+      parameters:
+      - name: workspaceId
+        in: query
+        description: Id of the workspace
+        required: true
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      - name: routerId
+        in: query
+        description: Concierge Router Id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: start
+        in: query
+        description: time of start such as 2025-01-08T13:46:18.681Z (ISO8601 format)
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: end
+        in: query
+        description: time of end such as 2025-01-14T13:46:18.681Z (ISO8601 format)
+        required: true
+        schema:
+          type: string
+          format: date-time
       responses:
-        "200":
-          description: User records
+        '200':
+          description: Concierge logs. Payload structure might change.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema: {}
+        '400':
+          description: 'Invalid value for: query parameter workspaceId, Invalid value for: query parameter
+            routerId, Invalid value for: query parameter start, Invalid value for: query parameter end'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/UserSummary'
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - logs.read
+  /v1/org/workspace:
+    get:
+      tags:
+      - workspace
+      summary: Read all workspaces
+      description: "[operation: workspace-list]\n\n\n\nREAD-ONLY\n\n\n\nReturns all workspaces in the\
+        \ org. Hierarchy: Tenant → Workspaces → Teams → Users.\n\n- page (opt), pageSize (opt, default\
+        \ 200)\n\n→\n\n    [{workspaceId, name, settings}]\n\nsee: workspace-list-users (members), workspace-add/remove-users\
+        \ (manage membership), meeting-list/export (filter by workspaceId), concierge-logs (filter by\
+        \ workspaceId)"
+      operationId: workspaceList
+      parameters:
+      - name: page
+        in: query
+        description: Page number. First page has index 0.
+        required: false
+        schema:
+          default: 0
+          type: integer
+          format: int64
+          minimum: 0
+        example: 0
+      - name: pageSize
+        in: query
+        description: Number of items per page. Maximum is 50
+        required: false
+        schema:
+          default: 10
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        example: 10
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResult_Workspace'
+        '400':
+          description: 'Invalid value for: query parameter page, Invalid value for: query parameter pageSize'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - workspace.read
+  /v1/org/user/find-by-id:
+    post:
+      tags:
+      - user
+      summary: Finds users by IDs
+      description: '[operation: user-find-by-ids]
 
+
+
+
+        READ-ONLY
+
+
+
+
+        Batch-fetches profiles for multiple users by ID in a single request.
+
+
+        - body (req): JSON array of userId UUIDs directly (e.g. ["uuid1", "uuid2"]) — not wrapped in an
+        object
+
+
+        → paginated list of users, each with: {id, name, email, isSuperAdmin, licenses, workspaces, salesforce:
+        {email, id} (opt), hubspot: {email, id} (opt), slug (opt), managedWorkspaces, managedTeams}
+
+
+        see: user-find/find-by-filter (look up userIds), user-update-licenses/team-add-users/workspace-add-users
+        (act on results)'
+      operationId: userFindByIds
+      parameters:
+      - name: page
+        in: query
+        description: Page number. First page has index 0.
+        required: false
+        schema:
+          default: 0
+          type: integer
+          format: int64
+          minimum: 0
+        example: 0
+      - name: pageSize
+        in: query
+        description: Number of items per page. Maximum is 50
+        required: false
+        schema:
+          default: 10
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        example: 10
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                pattern: '[^\s\\/]+'
+        required: false
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResult_User'
+        '400':
+          description: 'Invalid value for: query parameter page, Invalid value for: query parameter pageSize,
+            Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - user.read
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-
+    apiKeyAuth:
+      type: apiKey
+      description: 'API key in Authorization header. Format: ''Authorization: Bearer <api-key>'' — the
+        word ''Bearer'' followed by a space and the key is required. Sending the key without the Bearer
+        prefix returns 401.'
+      name: Authorization
+      in: header
   schemas:
-    MeetingListItem:
+    ProcessedRouterLinkTrigger:
+      title: ProcessedRouterLinkTrigger
       type: object
+      required:
+      - mapping
+      - email
+      - type
       properties:
-        meetingId:
+        mapping:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ProcessedRouterLinkMapping'
+        email:
+          $ref: '#/components/schemas/DataFieldRef'
+        phone:
           type: string
-        status:
+          pattern: '[^\s\\/]+'
+        type:
           type: string
-          enum: [Scheduled, Completed, NoShow, Cancelled]
-        scheduledAt:
+          const: ProcessedRouterLinkTrigger
+    AttendeeId:
+      title: AttendeeId
+      oneOf:
+      - $ref: '#/components/schemas/ExternalAttendeeId'
+      - $ref: '#/components/schemas/UserAttendeeId'
+      discriminator:
+        propertyName: type
+        mapping:
+          ExternalAttendeeId: '#/components/schemas/ExternalAttendeeId'
+          UserAttendeeId: '#/components/schemas/UserAttendeeId'
+    InternalDataFieldRef:
+      title: InternalDataFieldRef
+      type: object
+      required:
+      - value
+      - type
+      properties:
+        value:
+          $ref: '#/components/schemas/InternalDataFieldId'
+        type:
+          type: string
+          const: InternalDataFieldRef
+    ProcessedTriggers:
+      title: ProcessedTriggers
+      type: object
+      required:
+      - get
+      - type
+      properties:
+        get:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ProcessedRouterTrigger'
+        type:
+          type: string
+          const: ProcessedTriggers
+    Redirect:
+      title: Redirect
+      oneOf:
+      - $ref: '#/components/schemas/Landing'
+      - $ref: '#/components/schemas/NoRedirect1'
+      - $ref: '#/components/schemas/Url'
+      discriminator:
+        propertyName: type
+        mapping:
+          Landing: '#/components/schemas/Landing'
+          NoRedirect: '#/components/schemas/NoRedirect1'
+          Url: '#/components/schemas/Url'
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
+    NoMatchBehaviour:
+      title: NoMatchBehaviour
+      oneOf:
+      - $ref: '#/components/schemas/AlwaysCreateLead'
+      - $ref: '#/components/schemas/CreateContactOrLead'
+      - $ref: '#/components/schemas/CreateLead'
+      - $ref: '#/components/schemas/DoNothing'
+      discriminator:
+        propertyName: type
+        mapping:
+          AlwaysCreateLead: '#/components/schemas/AlwaysCreateLead'
+          CreateContactOrLead: '#/components/schemas/CreateContactOrLead'
+          CreateLead: '#/components/schemas/CreateLead'
+          DoNothing: '#/components/schemas/DoNothing'
+    GuestsBehavior:
+      title: GuestsBehavior
+      oneOf:
+      - $ref: '#/components/schemas/CreateEvents'
+      - $ref: '#/components/schemas/DoNothing3'
+      discriminator:
+        propertyName: type
+        mapping:
+          CreateEvents: '#/components/schemas/CreateEvents'
+          DoNothing: '#/components/schemas/DoNothing3'
+    ProcessedThirdPartyFormTrigger:
+      title: ProcessedThirdPartyFormTrigger
+      type: object
+      required:
+      - mapping
+      - email
+      - type
+      properties:
+        mapping:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ConciergeFormMappingEntry'
+        email:
+          $ref: '#/components/schemas/DataFieldRef'
+        phone:
+          type: string
+          pattern: '[^\s\\/]+'
+        type:
+          type: string
+          const: ProcessedThirdPartyFormTrigger
+    RelativeMonth1:
+      title: RelativeMonth
+      type: object
+      required:
+      - length
+      - offset
+      - timeZone
+      - type
+      properties:
+        length:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        offset:
+          type: integer
+          format: int32
+        timeZone:
+          type: string
+        type:
+          type: string
+          const: RelativeMonth
+    Account:
+      title: Account
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Account
+    CrmUpdateContactField:
+      title: CrmUpdateContactField
+      type: object
+      required:
+      - object
+      - field
+      - value
+      properties:
+        object:
+          $ref: '#/components/schemas/CrmUpdateContactFieldTarget'
+        field:
+          type: string
+          pattern: '[^\s\\/]+'
+        value:
+          $ref: '#/components/schemas/UpdateFieldValue'
+    CrudMeta:
+      title: CrudMeta
+      type: object
+      required:
+      - createdBy
+      - updatedBy
+      - createdOn
+      - updatedOn
+      properties:
+        createdBy:
+          $ref: '#/components/schemas/UserId'
+        updatedBy:
+          $ref: '#/components/schemas/UserId'
+        createdOn:
           type: string
           format: date-time
-        assignedUserId:
+        updatedOn:
           type: string
-        workspaceId:
-          type: string
-        attendees:
-          type: array
-          items:
-            type: object
-            properties:
-              email:
-                type: string
-
-    Workspace:
+          format: date-time
+    RuleId:
+      title: RuleId
+      examples:
+      - 3b4c5d6e-7f8a-4b9c-9d0e-1f2a3b4c5d6e
+      type: string
+      pattern: '[^\s\\/]+'
+    CrmUpsertRecord1:
+      title: CrmUpsertRecord
       type: object
+      required:
+      - settings
+      - type
       properties:
-        workspaceId:
+        settings:
+          $ref: '#/components/schemas/LeadOrContactSettings'
+        type:
           type: string
+          const: CrmUpsertRecord
+    UserLicenses:
+      title: UserLicenses
+      type: object
+      required:
+      - distro
+      - chiliCalOrg
+      - concierge
+      - conciergeLive
+      - chat
+      - handoff
+      properties:
+        distro:
+          type: boolean
+        chiliCalOrg:
+          type: boolean
+        concierge:
+          type: boolean
+        conciergeLive:
+          type: boolean
+        chat:
+          type: boolean
+        handoff:
+          type: boolean
+    ProcessedChiliFormMapping:
+      title: ProcessedChiliFormMapping
+      type: object
+      required:
+      - dataField
+      - label
+      - description
+      - required
+      properties:
+        dataField:
+          $ref: '#/components/schemas/DataFieldRef'
+        label:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        required:
+          type: boolean
+        hidden:
+          type: string
+    ProcessedRouterTrigger:
+      title: ProcessedRouterTrigger
+      oneOf:
+      - $ref: '#/components/schemas/ProcessedChiliFormTrigger'
+      - $ref: '#/components/schemas/ProcessedInAppButtonTrigger'
+      - $ref: '#/components/schemas/ProcessedRouterLinkTrigger'
+      - $ref: '#/components/schemas/ProcessedThirdPartyFormTrigger'
+      discriminator:
+        propertyName: type
+        mapping:
+          ProcessedChiliFormTrigger: '#/components/schemas/ProcessedChiliFormTrigger'
+          ProcessedInAppButtonTrigger: '#/components/schemas/ProcessedInAppButtonTrigger'
+          ProcessedRouterLinkTrigger: '#/components/schemas/ProcessedRouterLinkTrigger'
+          ProcessedThirdPartyFormTrigger: '#/components/schemas/ProcessedThirdPartyFormTrigger'
+    SendSlack:
+      title: SendSlack
+      type: object
+      required:
+      - type
+      properties:
+        channel:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          const: SendSlack
+    Campaign:
+      title: Campaign
+      type: object
+      required:
+      - campaignId
+      - type
+      properties:
+        campaignId:
+          $ref: '#/components/schemas/CampaignId'
+        type:
+          type: string
+          const: Campaign
+    CreateContactIfCompanyExists:
+      title: CreateContactIfCompanyExists
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: CreateContactIfCompanyExists
+    ExecutableAction:
+      title: ExecutableAction
+      oneOf:
+      - $ref: '#/components/schemas/CrmAddToCampaign'
+      - $ref: '#/components/schemas/CrmConvertLead'
+      - $ref: '#/components/schemas/CrmCreateEvent'
+      - $ref: '#/components/schemas/CrmMultiUpdateField'
+      - $ref: '#/components/schemas/CrmMultiUpdateOwnership'
+      - $ref: '#/components/schemas/CrmUpsertRecord1'
+      - $ref: '#/components/schemas/HubspotCreateEngagement'
+      - $ref: '#/components/schemas/HubspotMultiUpdateField'
+      - $ref: '#/components/schemas/HubspotMultiUpdateOwnership'
+      - $ref: '#/components/schemas/HubspotUpsertRecord'
+      - $ref: '#/components/schemas/Notify'
+      discriminator:
+        propertyName: type
+        mapping:
+          CrmAddToCampaign: '#/components/schemas/CrmAddToCampaign'
+          CrmConvertLead: '#/components/schemas/CrmConvertLead'
+          CrmCreateEvent: '#/components/schemas/CrmCreateEvent'
+          CrmMultiUpdateField: '#/components/schemas/CrmMultiUpdateField'
+          CrmMultiUpdateOwnership: '#/components/schemas/CrmMultiUpdateOwnership'
+          CrmUpsertRecord: '#/components/schemas/CrmUpsertRecord1'
+          HubspotCreateEngagement: '#/components/schemas/HubspotCreateEngagement'
+          HubspotMultiUpdateField: '#/components/schemas/HubspotMultiUpdateField'
+          HubspotMultiUpdateOwnership: '#/components/schemas/HubspotMultiUpdateOwnership'
+          HubspotUpsertRecord: '#/components/schemas/HubspotUpsertRecord'
+          Notify: '#/components/schemas/Notify'
+    DefaultDataFieldRef:
+      title: DefaultDataFieldRef
+      type: object
+      required:
+      - value
+      - type
+      properties:
+        value:
+          $ref: '#/components/schemas/DefaultDataFieldId'
+        type:
+          type: string
+          const: DefaultDataFieldRef
+    Workspace:
+      title: Workspace
+      type: object
+      required:
+      - id
+      - name
+      - metadata
+      properties:
+        id:
+          $ref: '#/components/schemas/WorkspaceId'
         name:
           type: string
-
-    RouterEntry:
+        emoji:
+          type: string
+        logo:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+    HubspotMultiUpdateOwnership:
+      title: HubspotMultiUpdateOwnership
       type: object
+      required:
+      - assignTo
+      - type
       properties:
-        router:
-          type: object
-          properties:
-            id:
-              type: string
-            name:
-              type: string
-            slug:
-              type: string
-        workspaceId:
-          type: string
-
-    RoutingLogEntry:
-      type: object
-      properties:
-        status:
-          type: string
-          enum: [Booked, Offered, NoMatch, NotQualified, Timeout, Error]
-        trigger:
-          type: string
-        guestEmail:
-          type: string
-        triggeredAt:
-          type: string
-          format: date-time
-        matchedPath:
-          type: string
-        assignments:
+        contact:
           type: array
           items:
-            type: object
-            properties:
-              name:
-                type: string
-              userId:
-                type: string
-        meetingId:
+            $ref: '#/components/schemas/HubspotUpdateContactOwnership'
+        assignTo:
+          $ref: '#/components/schemas/AssignTo'
+          deprecated: true
+        type:
           type: string
-        sourceUrl:
-          type: string
-
-    UserSummary:
+          const: HubspotMultiUpdateOwnership
+    YesActions:
+      title: YesActions
+      oneOf:
+      - $ref: '#/components/schemas/CallRepSettings'
+      - $ref: '#/components/schemas/DisplayContactSettings'
+      - $ref: '#/components/schemas/RedirectActions'
+      - $ref: '#/components/schemas/SchedulingSettings1'
+      discriminator:
+        propertyName: type
+        mapping:
+          CallRepSettings: '#/components/schemas/CallRepSettings'
+          DisplayContactSettings: '#/components/schemas/DisplayContactSettings'
+          RedirectActions: '#/components/schemas/RedirectActions'
+          SchedulingSettings: '#/components/schemas/SchedulingSettings1'
+    HubspotUpdateContactOwnership:
+      title: HubspotUpdateContactOwnership
       type: object
+      required:
+      - object
+      - field
+      properties:
+        object:
+          $ref: '#/components/schemas/HubspotUpdateContactOwnershipTarget'
+        field:
+          type: string
+          pattern: '[^\s\\/]+'
+        assignTo:
+          $ref: '#/components/schemas/AssignTo'
+    Map_String_String:
+      title: Map_String_String
+      type: object
+      additionalProperties:
+        type: string
+    Assignee2:
+      title: Assignee
+      type: object
+      required:
+      - index
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+          minimum: 0
+        type:
+          type: string
+          const: Assignee
+    HubspotUpdateContactField:
+      title: HubspotUpdateContactField
+      type: object
+      required:
+      - object
+      - field
+      - value
+      properties:
+        object:
+          $ref: '#/components/schemas/HubspotUpdateContactFieldTarget'
+        field:
+          type: string
+          pattern: '[^\s\\/]+'
+        value:
+          $ref: '#/components/schemas/UpdateFieldValue'
+    ThisPathUser:
+      title: ThisPathUser
+      type: object
+      required:
+      - id
+      - type
+      properties:
+        id:
+          $ref: '#/components/schemas/UserId'
+        type:
+          type: string
+          const: ThisPathUser
+    RelativeYear1:
+      title: RelativeYear
+      type: object
+      required:
+      - length
+      - offset
+      - timeZone
+      - type
+      properties:
+        length:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        offset:
+          type: integer
+          format: int32
+        timeZone:
+          type: string
+        type:
+          type: string
+          const: RelativeYear
+    Assignment:
+      title: Assignment
+      oneOf:
+      - $ref: '#/components/schemas/DistributionV3'
+      - $ref: '#/components/schemas/UseRule'
+      - $ref: '#/components/schemas/User3'
+      discriminator:
+        propertyName: type
+        mapping:
+          DistributionV3: '#/components/schemas/DistributionV3'
+          UseRule: '#/components/schemas/UseRule'
+          User: '#/components/schemas/User3'
+    CallSucceededActions:
+      title: CallSucceededActions
+      type: object
+      required:
+      - redirect
+      properties:
+        redirect:
+          $ref: '#/components/schemas/CallSucceededRedirect'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExecutableAction'
+    ThisPathRuleUser:
+      title: ThisPathRuleUser
+      type: object
+      required:
+      - type
       properties:
         id:
           type: string
-        email:
+          pattern: '[^\s\\/]+'
+        type:
           type: string
+          const: ThisPathRuleUser
+    DistributionV3:
+      title: DistributionV3
+      type: object
+      required:
+      - id
+      - required
+      - type
+      properties:
+        id:
+          $ref: '#/components/schemas/DistributionId'
+        required:
+          type: boolean
+        type:
+          type: string
+          const: DistributionV3
+    Salesforce:
+      title: Salesforce
+      type: object
+      required:
+      - object
+      - field
+      - overwrite
+      - type
+      properties:
+        object:
+          type: string
+          pattern: '[^\s\\/]+'
+        field:
+          type: string
+          pattern: '[^\s\\/]+'
+        overwrite:
+          type: boolean
+        type:
+          type: string
+          const: Salesforce
+    HasMore:
+      title: HasMore
+      type: string
+      enum:
+      - 'Yes'
+      - 'No'
+    CrmUpdateContactOwnership:
+      title: CrmUpdateContactOwnership
+      type: object
+      required:
+      - object
+      - field
+      properties:
+        object:
+          $ref: '#/components/schemas/CrmUpdateContactOwnershipTarget'
+        field:
+          type: string
+          pattern: '[^\s\\/]+'
+        assignTo:
+          $ref: '#/components/schemas/AssignTo'
+    UpdateLeadOnly:
+      title: UpdateLeadOnly
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: UpdateLeadOnly
+    StaticValue1:
+      title: StaticValue
+      type: object
+      required:
+      - value
+      - type
+      properties:
+        value: {}
+        type:
+          type: string
+          const: StaticValue
+    DistributionId:
+      title: DistributionId
+      examples:
+      - 7f8a1b2c-3d4e-4f5a-8b9c-0d1e2f3a4b5c
+      type: string
+      pattern: '[^\s\\/]+'
+    BookerNotInvited:
+      title: BookerNotInvited
+      deprecated: true
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: BookerNotInvited
+    PaginatedResult_Workspace:
+      title: PaginatedResult_Workspace
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workspace'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    ProcessedInAppButtonMapping:
+      title: ProcessedInAppButtonMapping
+      type: object
+      required:
+      - dataField
+      properties:
+        dataField:
+          $ref: '#/components/schemas/DataFieldRef'
+    Email:
+      title: Email
+      examples:
+      - john.doe@acme.com
+      type: string
+      pattern: .+@.+
+    AssignToTarget:
+      title: AssignToTarget
+      oneOf:
+      - $ref: '#/components/schemas/AnotherDistributionV2'
+      - $ref: '#/components/schemas/ThisPathRuleUser'
+      - $ref: '#/components/schemas/ThisPathTeam'
+      - $ref: '#/components/schemas/ThisPathUser'
+      discriminator:
+        propertyName: type
+        mapping:
+          AnotherDistributionV2: '#/components/schemas/AnotherDistributionV2'
+          ThisPathRuleUser: '#/components/schemas/ThisPathRuleUser'
+          ThisPathTeam: '#/components/schemas/ThisPathTeam'
+          ThisPathUser: '#/components/schemas/ThisPathUser'
+    LeadOrContactSettings:
+      title: LeadOrContactSettings
+      type: object
+      required:
+      - noMatch
+      - whenMatch
+      properties:
+        noMatch:
+          $ref: '#/components/schemas/NoMatchBehaviour'
+        whenMatch:
+          $ref: '#/components/schemas/WhenMatchBehaviour'
+    SpamCheckSettings:
+      title: SpamCheckSettings
+      type: object
+      required:
+      - writeToDataField
+      properties:
+        writeToDataField:
+          type: boolean
+    DefaultDataFieldId:
+      title: DefaultDataFieldId
+      type: string
+      enum:
+      - PersonCity
+      - PersonCountry
+      - PersonEmail
+      - PersonFirstName
+      - PersonJobTitle
+      - PersonLastName
+      - PersonLinkedIn
+      - Phone
+      - PersonSeniority
+      - PersonState
+      - CompanyCity
+      - CompanyCountry
+      - CompanyDescription
+      - CompanyDomain
+      - CompanyIndustry
+      - CompanyEmployees
+      - CompanyEmployeesRange
+      - CompanyLatestFundingAmount
+      - CompanyTotalFundingAmount
+      - CompanyLatestFundingDate
+      - CompanyLinkedIn
+      - CompanyName
+      - CompanyPhone
+      - CompanyRevenue
+      - CompanyWebsite
+      - RecentUtmCampaign
+      - RecentUtmContent
+      - RecentUtmMedium
+      - RecentUtmSource
+      - RecentUtmTerm
+      - UtmCampaign
+      - UtmContent
+      - UtmMedium
+      - UtmSource
+      - UtmTerm
+      - WebsiteSessionCount
+      - SpamScore
+      - DeanonymizedCompanyName
+      - DeanonymizedCompanyDomain
+      - DeanonymizedCompanyIndustry
+      - DeanonymizedCompanySizeRange
+      - DeanonymizedRevenueRange
+      - DeanonymizedCountry
+      - DeanonymizedConfidence
+      - PersonPreferredLanguage
+      - ChatWidgetRecentTargetedUrl
+      - ChatWidgetRecentRespondedUrl
+    UseRule:
+      title: UseRule
+      type: object
+      required:
+      - required
+      - type
+      properties:
+        id:
+          type: string
+          pattern: '[^\s\\/]+'
+        required:
+          type: boolean
+        type:
+          type: string
+          const: UseRule
+    DoNothing2:
+      title: DoNothing
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: DoNothing
+    DisplayContactSettings:
+      title: DisplayContactSettings
+      type: object
+      required:
+      - call
+      - meeting
+      - timeoutDuration
+      - type
+      properties:
+        call:
+          $ref: '#/components/schemas/CallRepSettings1'
+        meeting:
+          $ref: '#/components/schemas/SchedulingSettings'
+        timeoutDuration:
+          type: string
+        type:
+          type: string
+          const: DisplayContactSettings
+    RuleType:
+      title: RuleType
+      type: string
+      enum:
+      - Boolean
+      - Ownership
+    CreateContact:
+      title: CreateContact
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: CreateContact
+    Case:
+      title: Case
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Case
+    CallRepSettings1:
+      title: CallRepSettings
+      type: object
+      required:
+      - meetingTypeIds
+      - routeCallTo
+      - pickUpTime
+      - maximumCallAttempts
+      - callSuccess
+      - callMissed
+      properties:
+        meetingTypeIds:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/MeetingTypeId'
+        routeCallTo:
+          $ref: '#/components/schemas/Assignment'
+        pickUpTime:
+          type: string
+        maximumCallAttempts:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        callSuccess:
+          $ref: '#/components/schemas/CallSucceededActions'
+        callMissed:
+          $ref: '#/components/schemas/CallMissedActions'
+    UserAttendeeId:
+      title: UserAttendeeId
+      type: object
+      required:
+      - userId
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        type:
+          type: string
+          const: UserAttendeeId
+    Map_Locale_Map_String_String:
+      title: Map_Locale_Map_String_String
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Map_String_String'
+    ProcessedInAppButtonTrigger:
+      title: ProcessedInAppButtonTrigger
+      type: object
+      required:
+      - mapping
+      - email
+      - type
+      properties:
+        mapping:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ProcessedInAppButtonMapping'
+        email:
+          $ref: '#/components/schemas/DataFieldRef'
+        phone:
+          type: string
+          pattern: '[^\s\\/]+'
+        type:
+          type: string
+          const: ProcessedInAppButtonTrigger
+    ConciergeFormMappingProcessed:
+      title: ConciergeFormMappingProcessed
+      oneOf:
+      - $ref: '#/components/schemas/ConciergeFormMappingProcessedV1'
+      - $ref: '#/components/schemas/ProcessedTriggers'
+      discriminator:
+        propertyName: type
+        mapping:
+          ConciergeFormMappingProcessedV1: '#/components/schemas/ConciergeFormMappingProcessedV1'
+          ProcessedTriggers: '#/components/schemas/ProcessedTriggers'
+    SchedulingActions:
+      title: SchedulingActions
+      type: object
+      required:
+      - redirect
+      properties:
+        redirect:
+          $ref: '#/components/schemas/Redirect'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExecutableAction'
+    DoNothing5:
+      title: DoNothing
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: DoNothing
+    DataFieldMappingsDto:
+      title: DataFieldMappingsDto
+      type: object
+      required:
+      - reference
+      properties:
+        reference:
+          $ref: '#/components/schemas/DataFieldReference'
+        mappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataFieldMapping'
+    DataFieldRef:
+      title: DataFieldRef
+      type: string
+      pattern: '[^\s\\/]+'
+    NoRedirect1:
+      title: NoRedirect
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: NoRedirect
+    MeetingHost:
+      title: MeetingHost
+      oneOf:
+      - $ref: '#/components/schemas/Assignee2'
+      - $ref: '#/components/schemas/Booker1'
+      discriminator:
+        propertyName: type
+        mapping:
+          Assignee: '#/components/schemas/Assignee2'
+          Booker: '#/components/schemas/Booker1'
+    MeetingStatus:
+      title: MeetingStatus
+      type: string
+      enum:
+      - Active
+      - Canceled
+      - NoShow
+      - Completed
+    HubspotNoMatchBehaviour:
+      title: HubspotNoMatchBehaviour
+      oneOf:
+      - $ref: '#/components/schemas/CreateContact'
+      - $ref: '#/components/schemas/CreateContactIfCompanyExists'
+      - $ref: '#/components/schemas/DoNothing4'
+      discriminator:
+        propertyName: type
+        mapping:
+          CreateContact: '#/components/schemas/CreateContact'
+          CreateContactIfCompanyExists: '#/components/schemas/CreateContactIfCompanyExists'
+          DoNothing: '#/components/schemas/DoNothing4'
+    ConciergeRouterId:
+      title: ConciergeRouterId
+      examples:
+      - a2b9c4d5-e8f7-4b2a-9c3d-5e6f7a8b9c0d
+      type: string
+      format: uuid
+    HubspotUpsertRecordSettings:
+      title: HubspotUpsertRecordSettings
+      type: object
+      required:
+      - noMatch
+      - whenMatch
+      properties:
+        noMatch:
+          $ref: '#/components/schemas/HubspotNoMatchBehaviour'
+        whenMatch:
+          $ref: '#/components/schemas/HubspotWhenMatchBehaviour'
+    SpamCheckRoute:
+      title: SpamCheckRoute
+      type: object
+      required:
+      - 'yes'
+      - type
+      properties:
+        'yes':
+          $ref: '#/components/schemas/YesActions'
+        settings:
+          $ref: '#/components/schemas/SpamCheckSettings'
+        type:
+          type: string
+          const: SpamCheckRoute
+    AssignTo:
+      title: AssignTo
+      type: object
+      required:
+      - target
+      properties:
+        target:
+          $ref: '#/components/schemas/AssignToTarget'
+    ExternalAttendeeId:
+      title: ExternalAttendeeId
+      type: object
+      required:
+      - email
+      - type
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        type:
+          type: string
+          const: ExternalAttendeeId
+    Opportunity:
+      title: Opportunity
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Opportunity
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
+    HubspotWhenMatchBehaviour:
+      title: HubspotWhenMatchBehaviour
+      oneOf:
+      - $ref: '#/components/schemas/DoNothing5'
+      - $ref: '#/components/schemas/UpdateContact'
+      discriminator:
+        propertyName: type
+        mapping:
+          DoNothing: '#/components/schemas/DoNothing5'
+          UpdateContact: '#/components/schemas/UpdateContact'
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string
+    DoNothing4:
+      title: DoNothing
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: DoNothing
+    HubspotUpdateContactFieldTarget:
+      title: HubspotUpdateContactFieldTarget
+      type: string
+      enum:
+      - Contact
+      - Company
+      - Deal
+      - Ticket
+    CallRepSettings:
+      title: CallRepSettings
+      type: object
+      required:
+      - meetingTypeIds
+      - routeCallTo
+      - pickUpTime
+      - maximumCallAttempts
+      - callSuccess
+      - callMissed
+      - type
+      properties:
+        meetingTypeIds:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/MeetingTypeId'
+        routeCallTo:
+          $ref: '#/components/schemas/Assignment'
+        pickUpTime:
+          type: string
+        maximumCallAttempts:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        callSuccess:
+          $ref: '#/components/schemas/CallSucceededActions'
+        callMissed:
+          $ref: '#/components/schemas/CallMissedActions'
+        type:
+          type: string
+          const: CallRepSettings
+    Scheduling:
+      title: Scheduling
+      type: object
+      required:
+      - scheduling
+      - type
+      properties:
+        scheduling:
+          $ref: '#/components/schemas/SchedulingSettings'
+        type:
+          type: string
+          const: Scheduling
+    BookerInvitedIfExist:
+      title: BookerInvitedIfExist
+      deprecated: true
+      type: object
+      required:
+      - autoDeclineOnBookersBehalf
+      - required
+      - type
+      properties:
+        autoDeclineOnBookersBehalf:
+          type: boolean
+        required:
+          type: boolean
+        type:
+          type: string
+          const: BookerInvitedIfExist
+    StaticDate:
+      title: StaticDate
+      type: object
+      required:
+      - value
+      - type
+      properties:
+        value:
+          type: string
+          format: date-time
+        type:
+          type: string
+          const: StaticDate
+    CatchAllRoute:
+      title: CatchAllRoute
+      type: object
+      required:
+      - 'yes'
+      properties:
+        'yes':
+          $ref: '#/components/schemas/YesActions'
+    DataFieldMapping:
+      title: DataFieldMapping
+      oneOf:
+      - $ref: '#/components/schemas/Hubspot'
+      - $ref: '#/components/schemas/Marketo'
+      - $ref: '#/components/schemas/Salesforce'
+      discriminator:
+        propertyName: type
+        mapping:
+          Hubspot: '#/components/schemas/Hubspot'
+          Marketo: '#/components/schemas/Marketo'
+          Salesforce: '#/components/schemas/Salesforce'
+    SchedulingSettings:
+      title: SchedulingSettings
+      type: object
+      required:
+      - assignments
+      - meetingTypeIds
+      - meetingHost
+      - scheduling
+      - timeout
+      properties:
+        assignments:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Assignment'
+        meetingTypeIds:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/MeetingTypeId'
+        meetingCreatedTarget:
+          $ref: '#/components/schemas/MeetingCreatedTarget'
+        bookerInviteSettings:
+          $ref: '#/components/schemas/BookerInviteSettings'
+        meetingHost:
+          $ref: '#/components/schemas/MeetingHost'
+        additionalAttendees:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/AdditionalAttendee'
+        additionalNotificationRecipients:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        scheduling:
+          $ref: '#/components/schemas/SchedulingActions'
+        timeout:
+          $ref: '#/components/schemas/TimeoutActions'
+    Assignee1:
+      title: Assignee
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Assignee
+    TimeoutActions:
+      title: TimeoutActions
+      type: object
+      required:
+      - timeout
+      - redirect
+      properties:
+        timeout:
+          type: string
+        redirect:
+          $ref: '#/components/schemas/Redirect'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExecutableAction'
+    Deal:
+      title: Deal
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Deal
+    CreateLead:
+      title: CreateLead
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: CreateLead
+    ConciergeRoutersListResponse:
+      title: ConciergeRoutersListResponse
+      type: object
+      properties:
+        routers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExpandedRouterWithDataFields'
+    RelativeWeek1:
+      title: RelativeWeek
+      type: object
+      required:
+      - length
+      - offset
+      - timeZone
+      - type
+      properties:
+        length:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        offset:
+          type: integer
+          format: int32
+        timeZone:
+          type: string
+        type:
+          type: string
+          const: RelativeWeek
+    Company:
+      title: Company
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Company
+    DoNothing3:
+      title: DoNothing
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: DoNothing
+    InternalDataFieldId:
+      title: InternalDataFieldId
+      type: string
+      enum:
+      - Timezone
+      - RecentPageViewed
+    OnHangUp:
+      title: OnHangUp
+      type: object
+      required:
+      - redirect
+      - type
+      properties:
+        redirect:
+          $ref: '#/components/schemas/Redirect'
+        type:
+          type: string
+          const: OnHangUp
+    CrmUpdateLeadField:
+      title: CrmUpdateLeadField
+      type: object
+      required:
+      - field
+      - value
+      properties:
+        field:
+          type: string
+          pattern: '[^\s\\/]+'
+        value:
+          $ref: '#/components/schemas/UpdateFieldValue'
+    ExpandedRouterWithDataFields:
+      title: ExpandedRouterWithDataFields
+      type: object
+      required:
+      - router
+      - workspaceId
+      properties:
+        router:
+          $ref: '#/components/schemas/ExpandedRouter'
+        dataFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataFieldMappingsDto'
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+    OnPickUp:
+      title: OnPickUp
+      type: object
+      required:
+      - redirect
+      - type
+      properties:
+        redirect:
+          $ref: '#/components/schemas/Redirect'
+        type:
+          type: string
+          const: OnPickUp
+    BookerInviteSettings:
+      title: BookerInviteSettings
+      type: object
+      required:
+      - autoDeclineOnBookersBehalf
+      - required
+      properties:
+        autoDeclineOnBookersBehalf:
+          type: boolean
+        required:
+          type: boolean
+    ExpandedRoutes:
+      title: ExpandedRoutes
+      type: object
+      required:
+      - catchAll
+      properties:
+        sharedCrmUpsertRecord:
+          $ref: '#/components/schemas/CrmUpsertRecord'
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/NonCatchAllRoute'
+        catchAll:
+          $ref: '#/components/schemas/CatchAllRoute'
+    HubspotCreateEngagement:
+      title: HubspotCreateEngagement
+      type: object
+      required:
+      - relatedTo
+      - owner
+      - meetingCancellationBehavior
+      - type
+      properties:
+        relatedTo:
+          $ref: '#/components/schemas/EngagementRelatedTo'
+        owner:
+          $ref: '#/components/schemas/EngagementOwner'
+        meetingCancellationBehavior:
+          $ref: '#/components/schemas/MeetingCancellationBehavior'
+        type:
+          type: string
+          const: HubspotCreateEngagement
+    EngagementRelatedTo:
+      title: EngagementRelatedTo
+      oneOf:
+      - $ref: '#/components/schemas/Company'
+      - $ref: '#/components/schemas/Deal'
+      - $ref: '#/components/schemas/Ticket'
+      discriminator:
+        propertyName: type
+        mapping:
+          Company: '#/components/schemas/Company'
+          Deal: '#/components/schemas/Deal'
+          Ticket: '#/components/schemas/Ticket'
+    HttpQueryResponse_A:
+      title: HttpQueryResponse_A
+      type: object
+      required:
+      - data
+      - hasMore
+      properties:
+        data: {}
+        hasMore:
+          $ref: '#/components/schemas/HasMore'
+    EngagementOwner:
+      title: EngagementOwner
+      oneOf:
+      - $ref: '#/components/schemas/Assignee1'
+      - $ref: '#/components/schemas/Booker'
+      discriminator:
+        propertyName: type
+        mapping:
+          Assignee: '#/components/schemas/Assignee1'
+          Booker: '#/components/schemas/Booker'
+    NoRelationNeeded:
+      title: NoRelationNeeded
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: NoRelationNeeded
+    Landing:
+      title: Landing
+      type: object
+      required:
+      - type
+      properties:
+        forwardFormDataAsQueryParams:
+          type: boolean
+        delayBeforeRedirect:
+          type: string
+        type:
+          type: string
+          const: Landing
+    SimpleMetadata:
+      title: SimpleMetadata
+      type: object
+      required:
+      - createdAt
+      - createdBy
+      - updatedAt
+      - updatedBy
+      - revision
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: '#/components/schemas/CallerRef'
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: '#/components/schemas/CallerRef'
+        revision:
+          type: integer
+          format: int32
+    CrmMultiUpdateOwnership:
+      title: CrmMultiUpdateOwnership
+      type: object
+      required:
+      - assignTo
+      - type
+      properties:
+        contact:
+          type: array
+          items:
+            $ref: '#/components/schemas/CrmUpdateContactOwnership'
+        lead:
+          type: array
+          items:
+            $ref: '#/components/schemas/CrmUpdateLeadOwnership'
+        assignTo:
+          $ref: '#/components/schemas/AssignTo'
+          deprecated: true
+        type:
+          type: string
+          const: CrmMultiUpdateOwnership
+    DoNothing:
+      title: DoNothing
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: DoNothing
+    Notify:
+      title: Notify
+      type: object
+      required:
+      - channels
+      - assignTo
+      - type
+      properties:
+        channels:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ConciergeNotificationChannel'
+        assignTo:
+          $ref: '#/components/schemas/AssignTo'
+        type:
+          type: string
+          const: Notify
+    RelationDisabled:
+      title: RelationDisabled
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: RelationDisabled
+    Hubspot:
+      title: Hubspot
+      type: object
+      required:
+      - object
+      - property
+      - overwrite
+      - type
+      properties:
+        object:
+          type: string
+          pattern: '[^\s\\/]+'
+        property:
+          type: string
+          pattern: '[^\s\\/]+'
+        overwrite:
+          type: boolean
+        type:
+          type: string
+          const: Hubspot
+    CrmUpdateLeadOwnership:
+      title: CrmUpdateLeadOwnership
+      type: object
+      required:
+      - field
+      properties:
+        field:
+          type: string
+          pattern: '[^\s\\/]+'
+        assignTo:
+          $ref: '#/components/schemas/AssignTo'
+    SendEmail:
+      title: SendEmail
+      type: object
+      required:
+      - type
+      properties:
+        cc:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: .+@.+
+        type:
+          type: string
+          const: SendEmail
+    User:
+      title: User
+      type: object
+      required:
+      - id
+      - name
+      - email
+      - isSuperAdmin
+      - licenses
+      properties:
+        id:
+          $ref: '#/components/schemas/UserId'
         name:
           type: string
+          minLength: 1
+        email:
+          $ref: '#/components/schemas/Email'
+        isSuperAdmin:
+          type: boolean
+        managedWorkspaces:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        managedTeams:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        licenses:
+          $ref: '#/components/schemas/UserLicenses'
+        salesforce:
+          $ref: '#/components/schemas/SalesforceUser'
+        hubspot:
+          $ref: '#/components/schemas/HubspotUser'
+        slug:
+          type: string
+          pattern: '[-0-9a-z_]+'
+        workspaces:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        personalWorkspaceId:
+          type: string
+          pattern: '[^\s\\/]+'
+    UpdateContactOrLead:
+      title: UpdateContactOrLead
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: UpdateContactOrLead
+    CrmConvertLead:
+      title: CrmConvertLead
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: CrmConvertLead
+    MeetingCreatedTarget:
+      title: MeetingCreatedTarget
+      description: use bookerInviteSettings and meetingHost
+      deprecated: true
+      oneOf:
+      - $ref: '#/components/schemas/BookerCalendarIfExist'
+      - $ref: '#/components/schemas/BookerInvitedIfExist'
+      - $ref: '#/components/schemas/BookerNotInvited'
+      discriminator:
+        propertyName: type
+        mapping:
+          BookerCalendarIfExist: '#/components/schemas/BookerCalendarIfExist'
+          BookerInvitedIfExist: '#/components/schemas/BookerInvitedIfExist'
+          BookerNotInvited: '#/components/schemas/BookerNotInvited'
+    ExplicitObject:
+      title: ExplicitObject
+      type: object
+      required:
+      - id
+      - type
+      properties:
+        id:
+          $ref: '#/components/schemas/GenericSalesforceId'
+        type:
+          type: string
+          const: ExplicitObject
+    Booker:
+      title: Booker
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Booker
+    CrmAddToCampaign:
+      title: CrmAddToCampaign
+      type: object
+      required:
+      - campaignId
+      - memberStatus
+      - type
+      properties:
+        campaignId:
+          $ref: '#/components/schemas/CampaignId'
+        memberStatus:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          const: CrmAddToCampaign
+    ProcessedChiliFormTrigger:
+      title: ProcessedChiliFormTrigger
+      type: object
+      required:
+      - mapping
+      - email
+      - type
+      properties:
+        mapping:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ProcessedChiliFormMapping'
+        email:
+          $ref: '#/components/schemas/DataFieldRef'
+        phone:
+          type: string
+          pattern: '[^\s\\/]+'
+        type:
+          type: string
+          const: ProcessedChiliFormTrigger
+    NonCatchAllRoute:
+      title: NonCatchAllRoute
+      oneOf:
+      - $ref: '#/components/schemas/RuleRoute'
+      - $ref: '#/components/schemas/SpamCheckRoute'
+      discriminator:
+        propertyName: type
+        mapping:
+          RuleRoute: '#/components/schemas/RuleRoute'
+          SpamCheckRoute: '#/components/schemas/SpamCheckRoute'
+    HubspotUpsertRecord:
+      title: HubspotUpsertRecord
+      type: object
+      required:
+      - settings
+      - type
+      properties:
+        settings:
+          $ref: '#/components/schemas/HubspotUpsertRecordSettings'
+        type:
+          type: string
+          const: HubspotUpsertRecord
+    ConciergeRouterSettings:
+      title: ConciergeRouterSettings
+      type: object
+      properties:
+        headerImage:
+          type: string
+        headingText:
+          type: string
+          minLength: 1
+        language:
+          type: string
+          minLength: 1
+        localizations:
+          $ref: '#/components/schemas/Map_Locale_Map_String_String'
+    HubspotUpdateContactOwnershipTarget:
+      title: HubspotUpdateContactOwnershipTarget
+      type: string
+      enum:
+      - Contact
+      - Company
+    GenericSalesforceId:
+      title: GenericSalesforceId
+      type: string
+      pattern: ^[a-zA-Z0-9]{18}
+    Booker1:
+      title: Booker
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Booker
+    ConciergeFormMappingEntry:
+      title: ConciergeFormMappingEntry
+      type: object
+      required:
+      - name
+      - dataFieldRef
+      properties:
+        name:
+          type: string
+          minLength: 1
+        dataFieldRef:
+          $ref: '#/components/schemas/DataFieldRef'
+        label:
+          type: string
+          minLength: 1
+        waterfallId:
+          type: string
+          pattern: '[^\s\\/]+'
+    NoRedirect:
+      title: NoRedirect
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: NoRedirect
+    DataFieldReference:
+      title: DataFieldReference
+      oneOf:
+      - $ref: '#/components/schemas/CustomDataFieldRef'
+      - $ref: '#/components/schemas/DefaultDataFieldRef'
+      - $ref: '#/components/schemas/InternalDataFieldRef'
+      discriminator:
+        propertyName: type
+        mapping:
+          CustomDataFieldRef: '#/components/schemas/CustomDataFieldRef'
+          DefaultDataFieldRef: '#/components/schemas/DefaultDataFieldRef'
+          InternalDataFieldRef: '#/components/schemas/InternalDataFieldRef'
+    DoNothing1:
+      title: DoNothing
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: DoNothing
+    PaginatedResult_User:
+      title: PaginatedResult_User
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    CrmUpsertRecord:
+      title: CrmUpsertRecord
+      type: object
+      required:
+      - settings
+      properties:
+        settings:
+          $ref: '#/components/schemas/LeadOrContactSettings'
+    RuleRoute:
+      title: RuleRoute
+      type: object
+      required:
+      - id
+      - ruleIds
+      - ruleType
+      - 'yes'
+      - type
+      properties:
+        id:
+          $ref: '#/components/schemas/RuleId'
+        ruleIds:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/RuleId'
+        ruleType:
+          $ref: '#/components/schemas/RuleType'
+        'yes':
+          $ref: '#/components/schemas/YesActions'
+        type:
+          type: string
+          const: RuleRoute
+    UpdateFieldValue:
+      title: UpdateFieldValue
+      oneOf:
+      - $ref: '#/components/schemas/RelativeDay1'
+      - $ref: '#/components/schemas/RelativeMonth1'
+      - $ref: '#/components/schemas/RelativeWeek1'
+      - $ref: '#/components/schemas/RelativeYear1'
+      - $ref: '#/components/schemas/StaticDate'
+      - $ref: '#/components/schemas/StaticValue1'
+      discriminator:
+        propertyName: type
+        mapping:
+          RelativeDay: '#/components/schemas/RelativeDay1'
+          RelativeMonth: '#/components/schemas/RelativeMonth1'
+          RelativeWeek: '#/components/schemas/RelativeWeek1'
+          RelativeYear: '#/components/schemas/RelativeYear1'
+          StaticDate: '#/components/schemas/StaticDate'
+          StaticValue: '#/components/schemas/StaticValue1'
+    CallMissedActions:
+      title: CallMissedActions
+      oneOf:
+      - $ref: '#/components/schemas/Actions'
+      - $ref: '#/components/schemas/Scheduling'
+      discriminator:
+        propertyName: type
+        mapping:
+          Actions: '#/components/schemas/Actions'
+          Scheduling: '#/components/schemas/Scheduling'
+    User3:
+      title: User
+      type: object
+      required:
+      - id
+      - required
+      - type
+      properties:
+        id:
+          $ref: '#/components/schemas/UserId'
+        required:
+          type: boolean
+        type:
+          type: string
+          const: User
+    SchedulingSettings1:
+      title: SchedulingSettings
+      type: object
+      required:
+      - assignments
+      - meetingTypeIds
+      - meetingHost
+      - scheduling
+      - timeout
+      - type
+      properties:
+        assignments:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Assignment'
+        meetingTypeIds:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/MeetingTypeId'
+        meetingCreatedTarget:
+          $ref: '#/components/schemas/MeetingCreatedTarget'
+        bookerInviteSettings:
+          $ref: '#/components/schemas/BookerInviteSettings'
+        meetingHost:
+          $ref: '#/components/schemas/MeetingHost'
+        additionalAttendees:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/AdditionalAttendee'
+        additionalNotificationRecipients:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        scheduling:
+          $ref: '#/components/schemas/SchedulingActions'
+        timeout:
+          $ref: '#/components/schemas/TimeoutActions'
+        type:
+          type: string
+          const: SchedulingSettings
+    QueryMeetingsRequest:
+      title: QueryMeetingsRequest
+      type: object
+      required:
+      - start
+      - end
+      properties:
+        workspaceIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        status:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/MeetingStatus'
+    CallSucceededRedirect:
+      title: CallSucceededRedirect
+      oneOf:
+      - $ref: '#/components/schemas/NoRedirect'
+      - $ref: '#/components/schemas/OnHangUp'
+      - $ref: '#/components/schemas/OnPickUp'
+      discriminator:
+        propertyName: type
+        mapping:
+          NoRedirect: '#/components/schemas/NoRedirect'
+          OnHangUp: '#/components/schemas/OnHangUp'
+          OnPickUp: '#/components/schemas/OnPickUp'
+    MeetingTypeId:
+      title: MeetingTypeId
+      examples:
+      - 4a8f2b3c-7d1e-4f9b-8a2c-3d5e6f789012
+      type: string
+      format: uuid
+    RedirectActions:
+      title: RedirectActions
+      type: object
+      required:
+      - redirect
+      - type
+      properties:
+        redirect:
+          $ref: '#/components/schemas/Redirect'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExecutableAction'
+        type:
+          type: string
+          const: RedirectActions
+    CustomDataFieldRef:
+      title: CustomDataFieldRef
+      type: object
+      required:
+      - value
+      - type
+      properties:
+        value:
+          type: string
+          format: uuid
+        type:
+          type: string
+          const: CustomDataFieldRef
+    SalesforceUser:
+      title: SalesforceUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        id:
+          type: string
+          pattern: '[^\s\\/]+'
+    Actions:
+      title: Actions
+      type: object
+      required:
+      - redirect
+      - type
+      properties:
+        redirect:
+          $ref: '#/components/schemas/Redirect'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExecutableAction'
+        type:
+          type: string
+          const: Actions
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+    Url:
+      title: Url
+      type: object
+      required:
+      - url
+      - type
+      properties:
+        url:
+          type: string
+        forwardFormDataAsQueryParams:
+          type: boolean
+        delayBeforeRedirect:
+          type: string
+        type:
+          type: string
+          const: Url
+    CrmMultiUpdateField:
+      title: CrmMultiUpdateField
+      type: object
+      required:
+      - type
+      properties:
+        contact:
+          type: array
+          items:
+            $ref: '#/components/schemas/CrmUpdateContactField'
+        lead:
+          type: array
+          items:
+            $ref: '#/components/schemas/CrmUpdateLeadField'
+        type:
+          type: string
+          const: CrmMultiUpdateField
+    UpdateContact:
+      title: UpdateContact
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: UpdateContact
+    Ticket:
+      title: Ticket
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Ticket
+    ThisPathTeam:
+      title: ThisPathTeam
+      type: object
+      required:
+      - id
+      - type
+      properties:
+        id:
+          $ref: '#/components/schemas/DistributionId'
+        type:
+          type: string
+          const: ThisPathTeam
+    CrmCreateEvent:
+      title: CrmCreateEvent
+      type: object
+      required:
+      - relatedTo
+      - meetingCancellationBehavior
+      - guestsBehavior
+      - type
+      properties:
+        relatedTo:
+          $ref: '#/components/schemas/EventRelatedTo'
+        meetingCancellationBehavior:
+          $ref: '#/components/schemas/MeetingCancellationBehavior'
+        guestsBehavior:
+          $ref: '#/components/schemas/GuestsBehavior'
+        type:
+          type: string
+          const: CrmCreateEvent
+    ConciergeNotificationChannel:
+      title: ConciergeNotificationChannel
+      oneOf:
+      - $ref: '#/components/schemas/SendEmail'
+      - $ref: '#/components/schemas/SendSlack'
+      discriminator:
+        propertyName: type
+        mapping:
+          SendEmail: '#/components/schemas/SendEmail'
+          SendSlack: '#/components/schemas/SendSlack'
+    DeleteEvent:
+      title: DeleteEvent
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: DeleteEvent
+    WhenMatchBehaviour:
+      title: WhenMatchBehaviour
+      oneOf:
+      - $ref: '#/components/schemas/DoNothing1'
+      - $ref: '#/components/schemas/UpdateContactOrLead'
+      - $ref: '#/components/schemas/UpdateLeadOnly'
+      discriminator:
+        propertyName: type
+        mapping:
+          DoNothing: '#/components/schemas/DoNothing1'
+          UpdateContactOrLead: '#/components/schemas/UpdateContactOrLead'
+          UpdateLeadOnly: '#/components/schemas/UpdateLeadOnly'
+    EventRelatedTo:
+      title: EventRelatedTo
+      oneOf:
+      - $ref: '#/components/schemas/Account'
+      - $ref: '#/components/schemas/Campaign'
+      - $ref: '#/components/schemas/Case'
+      - $ref: '#/components/schemas/ExplicitObject'
+      - $ref: '#/components/schemas/NoRelationNeeded'
+      - $ref: '#/components/schemas/Opportunity'
+      - $ref: '#/components/schemas/RelationDisabled'
+      discriminator:
+        propertyName: type
+        mapping:
+          Account: '#/components/schemas/Account'
+          Campaign: '#/components/schemas/Campaign'
+          Case: '#/components/schemas/Case'
+          ExplicitObject: '#/components/schemas/ExplicitObject'
+          NoRelationNeeded: '#/components/schemas/NoRelationNeeded'
+          Opportunity: '#/components/schemas/Opportunity'
+          RelationDisabled: '#/components/schemas/RelationDisabled'
+    CampaignId:
+      title: CampaignId
+      type: string
+      pattern: ^(701)[a-zA-Z0-9]{15}
+    BookerCalendarIfExist:
+      title: BookerCalendarIfExist
+      deprecated: true
+      type: object
+      required:
+      - autoDeclineOnBookersBehalf
+      - required
+      - type
+      properties:
+        autoDeclineOnBookersBehalf:
+          type: boolean
+        required:
+          type: boolean
+        type:
+          type: string
+          const: BookerCalendarIfExist
+    CrmUpdateContactFieldTarget:
+      title: CrmUpdateContactFieldTarget
+      type: string
+      enum:
+      - Contact
+      - Account
+      - Opportunity
+      - Case
+    ConciergeFormMappingProcessedV1:
+      title: ConciergeFormMappingProcessedV1
+      type: object
+      required:
+      - fields
+      - emailField
+      - type
+      properties:
+        fields:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ConciergeFormMappingEntry'
+        emailField:
+          $ref: '#/components/schemas/ConciergeFormMappingEntry'
+        phoneField:
+          $ref: '#/components/schemas/ConciergeFormMappingEntry'
+        type:
+          type: string
+          const: ConciergeFormMappingProcessedV1
+    HubspotUser:
+      title: HubspotUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        id:
+          type: integer
+          format: int64
+    CreateContactOrLead:
+      title: CreateContactOrLead
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: CreateContactOrLead
+    AnotherDistributionV2:
+      title: AnotherDistributionV2
+      type: object
+      required:
+      - id
+      - type
+      properties:
+        id:
+          $ref: '#/components/schemas/DistributionId'
+        type:
+          type: string
+          const: AnotherDistributionV2
+    CrmUpdateContactOwnershipTarget:
+      title: CrmUpdateContactOwnershipTarget
+      type: string
+      enum:
+      - Contact
+      - Account
+      - Opportunity
+      - Case
+    Marketo:
+      title: Marketo
+      type: object
+      required:
+      - object
+      - field
+      - overwrite
+      - type
+      properties:
+        object:
+          type: string
+          pattern: '[^\s\\/]+'
+        field:
+          type: string
+          pattern: '[^\s\\/]+'
+        overwrite:
+          type: boolean
+        type:
+          type: string
+          const: Marketo
+    AlwaysCreateLead:
+      title: AlwaysCreateLead
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: AlwaysCreateLead
+    MeetingCancellationBehavior:
+      title: MeetingCancellationBehavior
+      oneOf:
+      - $ref: '#/components/schemas/DeleteEvent'
+      - $ref: '#/components/schemas/DoNothing2'
+      discriminator:
+        propertyName: type
+        mapping:
+          DeleteEvent: '#/components/schemas/DeleteEvent'
+          DoNothing: '#/components/schemas/DoNothing2'
+    CreateEvents:
+      title: CreateEvents
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: CreateEvents
+    AdditionalAttendee:
+      title: AdditionalAttendee
+      type: object
+      required:
+      - id
+      - required
+      properties:
+        id:
+          $ref: '#/components/schemas/AttendeeId'
+        required:
+          type: boolean
+    RelativeDay1:
+      title: RelativeDay
+      type: object
+      required:
+      - length
+      - offset
+      - timeZone
+      - type
+      properties:
+        length:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        offset:
+          type: integer
+          format: int32
+        timeZone:
+          type: string
+        type:
+          type: string
+          const: RelativeDay
+    ProcessedRouterLinkMapping:
+      title: ProcessedRouterLinkMapping
+      type: object
+      required:
+      - dataField
+      - label
+      - required
+      properties:
+        dataField:
+          $ref: '#/components/schemas/DataFieldRef'
+        label:
+          type: string
+          minLength: 1
+        required:
+          type: boolean
+        hidden:
+          type: string
+        waterfallId:
+          type: string
+          pattern: '[^\s\\/]+'
+    HubspotMultiUpdateField:
+      title: HubspotMultiUpdateField
+      type: object
+      required:
+      - type
+      properties:
+        contact:
+          type: array
+          items:
+            $ref: '#/components/schemas/HubspotUpdateContactField'
+        type:
+          type: string
+          const: HubspotMultiUpdateField
+    ExpandedRouter:
+      title: ExpandedRouter
+      type: object
+      required:
+      - id
+      - name
+      - slug
+      - formMapping
+      - acceptsRouting
+      - routing
+      - meta
+      properties:
+        id:
+          $ref: '#/components/schemas/ConciergeRouterId'
+        name:
+          type: string
+          pattern: '[^\n]{1,240}'
+        slug:
+          type: string
+          pattern: '[-0-9a-z_]+'
+        formMapping:
+          $ref: '#/components/schemas/ConciergeFormMappingProcessed'
+        settings:
+          $ref: '#/components/schemas/ConciergeRouterSettings'
+        acceptsRouting:
+          type: boolean
+        routing:
+          $ref: '#/components/schemas/ExpandedRoutes'
+        meta:
+          $ref: '#/components/schemas/CrudMeta'

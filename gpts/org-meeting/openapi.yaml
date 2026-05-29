@@ -1,156 +1,569 @@
-openapi: 3.0.0
+# Generated from the Chili Piper Edge API OpenAPI spec by
+# .github/scripts/generate_gpt_openapi.py — do not edit by hand.
+openapi: 3.1.0
 info:
   title: Chili Piper — Org Meeting Snapshot Actions
-  description: Endpoints used by the Org Meeting Snapshot GPT.
-  version: 0.1.0
+  version: 1.230.0
+  description: GPT Actions for the org-meeting GPT — a subset of the Chili Piper Edge API. Authenticate
+    with a Bearer API key (Admin Center → API Keys).
 servers:
-  - url: https://api.chilipiper.com
-    description: Chili Piper API
-
+- url: https://fire.chilipiper.com/api/fire-edge
+  description: Production
 security:
-  - bearerAuth: []
-
+- apiKeyAuth: []
 paths:
-  /meetings/list:
-    post:
-      operationId: listMeetings
-      summary: List meetings in a date range (max 7-day window per call)
+  /v2/org/meetings/meetings:
+    put:
+      tags:
+      - meetings
+      summary: Meetings (PUT)
+      description: "[operation: meeting-list-put]\n\n\n\nREAD-ONLY\n\n\n\nReturns paginated meetings in\
+        \ a time range. Accepts all filter params in request body to avoid query-string length limits.\n\
+        \n- body.start, body.end (req): ISO-8601; start < end; max 7-day span\n\n- body.workspaceIds (opt):\
+        \ filter by workspace\n\n- body.status (opt): filter by meeting status; array of \"Active\"|\"\
+        Canceled\"|\"NoShow\"|\"Completed\"\n\n- body.page (opt, default 1), body.pageSize (opt, default\
+        \ 200)\n\n→\n\n    {results: [{meetingId, status, scheduledAt, attendees, assignedUserId, workspaceId}],\
+        \ pagination}\n\nsee: meeting-list (GET equivalent), meeting-export-v2-put (export with richer\
+        \ filters incl. host/assignee/booker)"
+      operationId: meetingListPut
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [start, end]
-              properties:
-                start:
-                  type: string
-                  format: date-time
-                end:
-                  type: string
-                  format: date-time
-                pagination:
-                  type: object
-                  properties:
-                    page:
-                      type: integer
-                      default: 0
-                    pageSize:
-                      type: integer
-                      default: 200
+              $ref: '#/components/schemas/QueryMeetingsRequest'
+        required: true
       responses:
-        "200":
-          description: Paginated meeting list
+        '200':
+          description: List of meetings. Payload structure might change.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpQueryResponse_A'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 type: object
+                required:
+                - errorCode
+                - errorMessage
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      list:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/MeetingListItem'
-                  hasMore:
+                  errorCode:
                     type: string
-                    enum: ["Yes", "No"]
-
-  /workspaces:
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - meeting.read
+  /v1/org/workspace:
     get:
-      operationId: listWorkspaces
-      summary: List all workspaces
+      tags:
+      - workspace
+      summary: Read all workspaces
+      description: "[operation: workspace-list]\n\n\n\nREAD-ONLY\n\n\n\nReturns all workspaces in the\
+        \ org. Hierarchy: Tenant → Workspaces → Teams → Users.\n\n- page (opt), pageSize (opt, default\
+        \ 200)\n\n→\n\n    [{workspaceId, name, settings}]\n\nsee: workspace-list-users (members), workspace-add/remove-users\
+        \ (manage membership), meeting-list/export (filter by workspaceId), concierge-logs (filter by\
+        \ workspaceId)"
+      operationId: workspaceList
       parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 0
-        - name: pageSize
-          in: query
-          schema:
-            type: integer
-            default: 100
+      - name: page
+        in: query
+        description: Page number. First page has index 0.
+        required: false
+        schema:
+          default: 0
+          type: integer
+          format: int64
+          minimum: 0
+        example: 0
+      - name: pageSize
+        in: query
+        description: Number of items per page. Maximum is 50
+        required: false
+        schema:
+          default: 10
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        example: 10
       responses:
-        "200":
-          description: Workspaces
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Workspace'
-
-  /users/batch:
+                $ref: '#/components/schemas/PaginatedResult_Workspace'
+        '400':
+          description: 'Invalid value for: query parameter page, Invalid value for: query parameter pageSize'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - workspace.read
+  /v1/org/user/find-by-id:
     post:
-      operationId: getUsersByIds
-      summary: Resolve multiple user IDs to names and emails
+      tags:
+      - user
+      summary: Finds users by IDs
+      description: '[operation: user-find-by-ids]
+
+
+
+
+        READ-ONLY
+
+
+
+
+        Batch-fetches profiles for multiple users by ID in a single request.
+
+
+        - body (req): JSON array of userId UUIDs directly (e.g. ["uuid1", "uuid2"]) — not wrapped in an
+        object
+
+
+        → paginated list of users, each with: {id, name, email, isSuperAdmin, licenses, workspaces, salesforce:
+        {email, id} (opt), hubspot: {email, id} (opt), slug (opt), managedWorkspaces, managedTeams}
+
+
+        see: user-find/find-by-filter (look up userIds), user-update-licenses/team-add-users/workspace-add-users
+        (act on results)'
+      operationId: userFindByIds
+      parameters:
+      - name: page
+        in: query
+        description: Page number. First page has index 0.
+        required: false
+        schema:
+          default: 0
+          type: integer
+          format: int64
+          minimum: 0
+        example: 0
+      - name: pageSize
+        in: query
+        description: Number of items per page. Maximum is 50
+        required: false
+        schema:
+          default: 10
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        example: 10
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                userIds:
-                  type: array
-                  items:
-                    type: string
+              type: array
+              items:
+                type: string
+                pattern: '[^\s\\/]+'
+        required: false
       responses:
-        "200":
-          description: User records
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/UserSummary'
-
+                $ref: '#/components/schemas/PaginatedResult_User'
+        '400':
+          description: 'Invalid value for: query parameter page, Invalid value for: query parameter pageSize,
+            Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - user.read
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-
+    apiKeyAuth:
+      type: apiKey
+      description: 'API key in Authorization header. Format: ''Authorization: Bearer <api-key>'' — the
+        word ''Bearer'' followed by a space and the key is required. Sending the key without the Bearer
+        prefix returns 401.'
+      name: Authorization
+      in: header
   schemas:
-    MeetingListItem:
+    QueryMeetingsRequest:
+      title: QueryMeetingsRequest
       type: object
+      required:
+      - start
+      - end
       properties:
-        meetingId:
-          type: string
-        status:
-          type: string
-          enum: [Scheduled, Completed, NoShow, Cancelled]
-        scheduledAt:
+        workspaceIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        start:
           type: string
           format: date-time
-        assignedUserId:
+        end:
           type: string
-        workspaceId:
-          type: string
-        attendees:
+          format: date-time
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        status:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/MeetingStatus'
+    PaginatedResult_Workspace:
+      title: PaginatedResult_Workspace
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
           type: array
           items:
-            type: object
-            properties:
-              email:
-                type: string
-
-    Workspace:
+            $ref: '#/components/schemas/Workspace'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    Map_String:
+      title: Map_String
       type: object
+      additionalProperties:
+        type: string
+    PaginatedResult_User:
+      title: PaginatedResult_User
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
       properties:
-        workspaceId:
-          type: string
-        name:
-          type: string
-
-    UserSummary:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    HubspotUser:
+      title: HubspotUser
       type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        id:
+          type: integer
+          format: int64
+    Email:
+      title: Email
+      examples:
+      - john.doe@acme.com
+      type: string
+      pattern: .+@.+
+    SimpleMetadata:
+      title: SimpleMetadata
+      type: object
+      required:
+      - createdAt
+      - createdBy
+      - updatedAt
+      - updatedBy
+      - revision
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: '#/components/schemas/CallerRef'
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: '#/components/schemas/CallerRef'
+        revision:
+          type: integer
+          format: int32
+    Workspace:
+      title: Workspace
+      type: object
+      required:
+      - id
+      - name
+      - metadata
       properties:
         id:
-          type: string
-        email:
-          type: string
+          $ref: '#/components/schemas/WorkspaceId'
         name:
           type: string
+        emoji:
+          type: string
+        logo:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
+    HasMore:
+      title: HasMore
+      type: string
+      enum:
+      - 'Yes'
+      - 'No'
+    UserLicenses:
+      title: UserLicenses
+      type: object
+      required:
+      - distro
+      - chiliCalOrg
+      - concierge
+      - conciergeLive
+      - chat
+      - handoff
+      properties:
+        distro:
+          type: boolean
+        chiliCalOrg:
+          type: boolean
+        concierge:
+          type: boolean
+        conciergeLive:
+          type: boolean
+        chat:
+          type: boolean
+        handoff:
+          type: boolean
+    HttpQueryResponse_A:
+      title: HttpQueryResponse_A
+      type: object
+      required:
+      - data
+      - hasMore
+      properties:
+        data: {}
+        hasMore:
+          $ref: '#/components/schemas/HasMore'
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string
+    MeetingStatus:
+      title: MeetingStatus
+      type: string
+      enum:
+      - Active
+      - Canceled
+      - NoShow
+      - Completed
+    User:
+      title: User
+      type: object
+      required:
+      - id
+      - name
+      - email
+      - isSuperAdmin
+      - licenses
+      properties:
+        id:
+          $ref: '#/components/schemas/UserId'
+        name:
+          type: string
+          minLength: 1
+        email:
+          $ref: '#/components/schemas/Email'
+        isSuperAdmin:
+          type: boolean
+        managedWorkspaces:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        managedTeams:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        licenses:
+          $ref: '#/components/schemas/UserLicenses'
+        salesforce:
+          $ref: '#/components/schemas/SalesforceUser'
+        hubspot:
+          $ref: '#/components/schemas/HubspotUser'
+        slug:
+          type: string
+          pattern: '[-0-9a-z_]+'
+        workspaces:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        personalWorkspaceId:
+          type: string
+          pattern: '[^\s\\/]+'
+    SalesforceUser:
+      title: SalesforceUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        id:
+          type: string
+          pattern: '[^\s\\/]+'

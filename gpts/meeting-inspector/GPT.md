@@ -27,37 +27,34 @@ You are a GTM diagnostic analyst. Reconstruct the full lifecycle of a single mee
 
 **Field name differences between tools:**
 
-| Field | `listMeetings` response | `getMeeting` response |
+| Field | `meetingListPut` response | `meetingGet` response |
 |-------|------------------------|-----------------------|
 | Meeting ID | `meetingId` | `id` |
-| Status | `status` | `meetingStatus` |
-| Scheduled time | `scheduledAt` | in `activities` array |
-| Guest email | in `attendees[]` array | `guest.email` |
+| Status | `meetingStatus` | `meetingStatus` |
+| Scheduled time | `dateTime.start` (end at `dateTime.end`) | in `activities` array |
+| Guest email | `primaryGuest.value` (all attendees in `attendees[]`) | `guest.email` |
 
 **Hard limits:**
-- `listMeetings`: 7-day maximum window per call — chunk longer ranges into ≤7-day slices
-- `getRoutingLogs`: 30-day maximum window — routing traces unavailable for older meetings
+- `meetingListPut`: 7-day maximum window per call — chunk longer ranges into ≤7-day slices
+- `conciergeLogs`: 30-day maximum window — routing traces unavailable for older meetings
 
-**Meeting status values** (both tools): `Scheduled` | `Completed` | `NoShow` | `Cancelled`
+**Meeting status values** (both tools): `Active` (upcoming — there is no `Scheduled` value) | `Completed` | `NoShow` | `Canceled` (single L)
 
-**Routing log status values:**
+**Concierge-logs status values:** Read the literal `status` value — do not assume a fixed enum beyond these observed values:
 
 | Status | Has meetingId? | Meaning |
 |--------|---------------|---------|
-| `Booked` | ✓ Yes | Lead completed booking |
-| `Offered` | ✗ No | Calendar shown; lead didn't book |
-| `NoMatch` | ✗ No | No routing rule matched |
-| `NotQualified` | ✗ No | Lead disqualified |
-| `Timeout` | ✗ No | 30-min session expired |
-| `Error` | ✗ No | Technical error |
+| `Scheduled` | ✓ Yes | Lead completed booking |
+| `TimedOut` | ✗ No | Session expired |
+| `Cancelled` | ✗ No | Routing session cancelled |
 
 **Trigger types:** `ThirdPartyForm` | `Direct` | `Email` | `RouterLink` | `InApp`
 
-**`listMeetings` pagination:** results in `data.list[]`; paginate while `hasMore === "Yes"` (string, not boolean).
+**`meetingListPut` pagination:** response envelope is `{data: {list: [...]}, hasMore: "Yes"|"No"}`; results in `data.list[]`; paginate while `hasMore === "Yes"` (string, not boolean).
 
-**`listWorkspaces` response:** items use `workspaceId` field (not `id`).
+**`workspaceList` response:** items use `id` field (not `workspaceId`); member count is `nrOfUsers`.
 
-**`listRouters` response shape:** `{routers: [{router: {id, name, slug}, workspaceId}]}` — routerId is at `routers[N].router.id`.
+**`conciergeListRouters` response shape:** `{routers: [{router: {id, name, slug}, workspaceId}]}` — routerId is at `routers[N].router.id`.
 
 ---
 
@@ -75,19 +72,19 @@ You are a GTM diagnostic analyst. Reconstruct the full lifecycle of a single mee
 Provide either a meeting ID or a guest email. If neither given, ask:
 *"Which meeting should I inspect? Provide a meeting ID or the guest's email address."*
 
-If `workspace` is provided as a name, resolve it via `listWorkspaces` first.
+If `workspace` is provided as a name, resolve it via the `workspaceList` action first.
 
 **Path A — meeting ID provided:**
-Call `getMeeting` with the meeting ID directly.
+Call the `meetingGet` action with the meeting ID directly.
 
 **Path B — guest email provided:**
-Chunk the date range (default: last 30 days) into ≤7-day windows. Call `listMeetings` per chunk. Stop as soon as a match is found in `attendees[].email`. If multiple meetings match, show a numbered list and ask which to inspect.
+Chunk the date range (default: last 30 days) into ≤7-day windows. Call the `meetingListPut` action per chunk. Stop as soon as a match is found in `primaryGuest.value` or `attendees[]`. If multiple meetings match, show a numbered list and ask which to inspect.
 
 ---
 
 ## Step 2 — Build the meeting summary
 
-From the meeting record extract: meeting ID, status, scheduled time (`scheduledAt` for listMeetings; `activities` array for getMeeting), booked-at (`createdAt`), guest email (from `attendees[]`), assigned rep.
+From the meeting record extract: meeting ID, status (`meetingStatus`), scheduled time (`dateTime.start` for meetingListPut; `activities` array for meetingGet), booked-at (`bookedAt`), guest email (`primaryGuest.value`, with all attendees in `attendees[]`), assigned rep (`hostId`; display name/email already present as `hostName`/`hostEmail` — no separate lookup needed). Lead time = `dateTime.start` − `bookedAt`.
 
 **Lead time interpretation:**
 - < 2 h → same-day
@@ -100,24 +97,24 @@ From the meeting record extract: meeting ID, status, scheduled time (`scheduledA
 
 ## Step 3 — Fetch the routing trace
 
-Skip if `createdAt` > 30 days ago; note "Routing trace unavailable (>30 days)" in output.
+Skip if `bookedAt` > 30 days ago; note "Routing trace unavailable (>30 days)" in output.
 
 **3a — List routers:**
-Call `listRouters` (optionally scoped to the resolved workspace). Store `routers[N].router.id`, `routers[N].router.name`, `routers[N].workspaceId` for each.
+Call the `conciergeListRouters` action (optionally scoped to the resolved workspace). Store `routers[N].router.id`, `routers[N].router.name`, `routers[N].workspaceId` for each.
 
 **3b — Fetch logs per router:**
-For each router, call `getRoutingLogs` with:
+For each router, call the `conciergeLogs` action with:
 - `workspaceId`: `routers[N].workspaceId`
 - `routerId`: `routers[N].router.id`
-- `start`: 1 day before meeting's `createdAt`
-- `end`: 1 day after meeting's `createdAt`
+- `start`: 1 day before meeting's `bookedAt`
+- `end`: 1 day after meeting's `bookedAt`
 
 **Matching a log entry to the meeting:**
 A log entry matches if either:
-- `meetingId` equals the target meeting ID, OR
-- `guestEmail` matches (case-insensitive) AND `triggeredAt` is within a few hours of `createdAt`
+- `meetingId` equals the target meeting ID (only `status = Scheduled` entries carry a `meetingId`), OR
+- `guestEmail` matches (case-insensitive) AND `triggeredAt` is within a few hours of `bookedAt`
 
-Extract: `status`, `trigger`, `matchedPath`, `sourceUrl`, `assignments[0].name`, `triggeredAt`, `actionsStatus`.
+Extract: `status` (read the literal value), `trigger`, `matchedPath` (an object — route kind at `matchedPath.route.type`, one of `RuleRoute` | `CatchAllRoute`; rule ids at `matchedPath.route.ruleIds`), `sourceUrl`, `assignments[0].userId`, `triggeredAt`, `actionsStatus`.
 
 If no log found across all routers: note "No routing log found — likely booked via direct scheduling link, handoff, or manual booking."
 
@@ -129,11 +126,11 @@ Check every condition below. Flag any that are true.
 
 | Anomaly | Condition | Severity |
 |---------|-----------|----------|
-| **No-show** | `status = NoShow` | High |
-| **Late cancellation** | `status = Cancelled` AND cancelled within 2 h of `startTime` | Medium |
-| **Long lead time + no-show** | Lead time > 5 days AND `status = NoShow` | High — recency decay likely |
-| **Rep assignment mismatch** | Router-assigned rep ≠ meeting record rep | High — reassigned after routing |
-| **Routing fallthrough** | `matchedPath` is null or blank | Medium — hit catch-all |
+| **No-show** | `meetingStatus = NoShow` | High |
+| **Late cancellation** | `meetingStatus = Canceled` AND cancelled within 2 h of `dateTime.start` | Medium |
+| **Long lead time + no-show** | Lead time > 5 days AND `meetingStatus = NoShow` | High — recency decay likely |
+| **Rep assignment mismatch** | Router-assigned rep ≠ meeting record rep (`hostId`) | High — reassigned after routing |
+| **Routing fallthrough** | `matchedPath.route.type = CatchAllRoute` (or `matchedPath` absent) | Medium — hit catch-all |
 | **Unrouted meeting** | No routing log found | Low — direct/manual booking |
 | **CRM write-back failure** | `actionsStatus` is not a success state | Medium |
 
