@@ -90,7 +90,8 @@ Every skill carries a QA maturity level (tracked in [`../docs/QA.md`](../docs/QA
 | [routing-audit](routing-audit/SKILL.md) | Audits all concierge routers for coverage gaps and stale rules | `tested` |
 | [availability-inspector](availability-inspector/SKILL.md) | Diagnoses why a rep or team has no available slots | `tested` |
 | [concierge-debugger](concierge-debugger/SKILL.md) | Traces why a specific lead didn't book | `tested` |
-| [org-meeting](org-meeting/SKILL.md) | Org-wide meeting volume and health snapshot | `tested` |
+| [org-meeting](org-meeting/SKILL.md) | Org-wide (and single-tenant) meeting volume and health snapshot | `tested` |
+| [distribution-analysis](distribution-analysis/SKILL.md) | Analyzes a round-robin distribution — meeting counts by rep, imbalance vs. weights, skew, cancellations | `tested` |
 
 ### User & org operations
 

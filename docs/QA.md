@@ -38,12 +38,12 @@ _Last updated: 2026-05-29. Static-review fixes applied on branch `repurpose-offi
 
 All ten skills are now `tested` (static review complete, no known correctness bugs against the live MCP). The next step for `verified` is an end-to-end read-only live run per skill, logged in the verification log below. The two write skills (`user-copy`, `user-offboarding`) stay at static-review only — never executed for QA.
 
-**New skills to build (rebuilt on the public MCP, replacing the internal bo-sql versions):**
+**New skills (rebuilt on the public MCP, replacing the internal bo-sql versions):**
 
-| Skill | Status | Notes |
-|-------|:---:|---|
-| tenant-meetings (public) | ⬜ to build | Build on `meeting-list-put` + `workspace-list`. Overlaps `org-meeting` — scope as single-tenant volume. |
-| distribution-analysis (public) | ⬜ to build | Build on `distribution-list-put` + `meeting-list-put`. Note: public MCP has no config-history endpoint, so drop the bo-sql "config history" section. |
+| Skill | Version | Static review | Live run | Maturity | Notes |
+|-------|:---:|:---:|:---:|:---:|---|
+| distribution-analysis (public) | 0.1.0 | ✅ built | ⬜ | `tested` | Built on `distribution-list-put` + `meeting-list-put` + `user-find-by-ids`. No bo-sql, no config-history; attributes meetings by host rep (caveat documented in-skill). |
+| ~~tenant-meetings~~ | — | — | — | dropped | Not added — `org-meeting` already covers tenant/org meeting volume via the public MCP, and the bo-sql version was internal-only. |
 
 ---
 
