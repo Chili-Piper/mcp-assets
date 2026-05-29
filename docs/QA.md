@@ -28,7 +28,7 @@ _Last updated: 2026-05-29. Static-review fixes applied on branch `repurpose-offi
 | meeting-inspector | 0.3.0 | ✅ | ✅ fixed | ⬜ | `tested` | meeting-list-put drift, status values, `startTime`, `matchedPath` corrected |
 | no-show-analyzer | 0.3.3 | ✅ | ✅ fixed | ⬜ | `tested` | meeting-list-put drift + `workspace-list` `nrOfUsers` + concierge status `Scheduled` corrected |
 | org-meeting | 0.1.3 | ✅ | ✅ fixed | ⬜ | `tested` | meeting-list-put drift + group-by `hostId` + workspace `id` join corrected |
-| user-meetings | 0.3.1 | ✅ | ✅ done | ⬜ | `tested` | Uses CSV export — no JSON drift. Verify export CSV header against a real export. |
+| user-meetings | 0.4.0 | ✅ | ✅ done | ⬜ | `tested` | Uses CSV export — no JSON drift. Updated for DISTRO-4483 (bookedAt + meetingId CSV columns). Verify exact CSV header strings against a real export. |
 | routing-audit | 0.2.0 | ✅ | ✅ fixed | ⬜ | `tested` | `rule-list` workspace-scoped, router rules from `router.routing`, `distribution-list-put` array shape, workspace `id` |
 | concierge-debugger | 0.2.0 | ✅ | ✅ fixed | ⬜ | `tested` | invented status enum removed; diagnose via `matchedPath.route.type` + `meetingId`; `assignments[].userId` |
 | availability-inspector | 0.1.0 | ✅ | ✅ fixed | ⬜ | `tested` | `availability-slots` request shape corrected; failure-reason strings read literally |
@@ -106,8 +106,17 @@ All ten skills are now `tested` (static review complete, no known correctness bu
 
 ---
 
+## Recent API changes to track
+
+Endpoint changes that affect these skills — note them here so skills stay in sync and so we can add CHANGELOG entries at release.
+
+| Date | Change | JIRA | Affected skills | Status |
+|------|--------|------|-----------------|--------|
+| 2026-05-29 | `meeting-export-v2-put` CSV now includes **`bookedAt`** and **`meetingId`** columns | [DISTRO-4483](https://floatingapps.atlassian.net/browse/DISTRO-4483) (Production) | user-meetings (now uses both; was stubbing `bookedAt`), user-details & user-offboarding (dedupe on `meetingId` now valid) | ✅ user-meetings updated v0.4.0; verify exact header strings against a live export |
+| 2026-05-21 | `meeting-export-v2-put` + `meeting-list-put` server-side `status` filter; `team-list-put` `member` filter | DISTRO-4472 | no-show-analyzer, org-meeting, user-details, user-meetings, user-copy, user-offboarding | ✅ reflected in skills |
+
 ## Items still needing a live read-only call before fixing
 - `team-list-put` `id` (vs `teamId`) — observed by audit; re-confirm with one direct call.
 - `availability-slots` `failures` reason strings.
-- `meeting-export-v2-put` CSV header columns (user-meetings, user-details).
+- `meeting-export-v2-put` CSV header columns — including the new `bookedAt` / `meetingId` columns from DISTRO-4483 (confirm exact header strings) — used by user-meetings, user-details, user-offboarding.
 - concierge-logs full `status` value set (only `Scheduled`/`TimedOut`/`Cancelled` observed so far).
