@@ -21,7 +21,7 @@ This file tracks the quality of every skill in this repo so we (and clients) alw
 
 ## Status matrix
 
-_Last updated: 2026-05-29. Static-review fixes applied on branch `repurpose-official-skills` (commits "fix meeting-list-put field drift", "fix routing, concierge, and availability skills", "fix user/org skills"). Read-only live run = end-to-end execution against tenant `floatingapps.com` — pending for `verified`._
+_Last updated: 2026-05-29. Static-review fixes applied across the skills (see git history). Read-only live run = end-to-end execution against a connected test tenant — pending for `verified`._
 
 | Skill | Version | Read-only? | Static review | Live run | Maturity | Notes |
 |-------|:------:|:---:|:---:|:---:|:---:|---|
@@ -38,16 +38,16 @@ _Last updated: 2026-05-29. Static-review fixes applied on branch `repurpose-offi
 
 All ten skills are now `tested` (static review complete, no known correctness bugs against the live MCP). The next step for `verified` is an end-to-end read-only live run per skill, logged in the verification log below. The two write skills (`user-copy`, `user-offboarding`) stay at static-review only — never executed for QA.
 
-**New skills (rebuilt on the public MCP, replacing the internal bo-sql versions):**
+**New skills (rebuilt on the public MCP, replacing earlier internal database-backed versions):**
 
 | Skill | Version | Static review | Live run | Maturity | Notes |
 |-------|:---:|:---:|:---:|:---:|---|
-| distribution-analysis (public) | 0.1.0 | ✅ built | ⬜ | `tested` | Built on `distribution-list-put` + `meeting-list-put` + `user-find-by-ids`. No bo-sql, no config-history; attributes meetings by host rep (caveat documented in-skill). |
-| ~~tenant-meetings~~ | — | — | — | dropped | Not added — `org-meeting` already covers tenant/org meeting volume via the public MCP, and the bo-sql version was internal-only. |
+| distribution-analysis (public) | 0.1.0 | ✅ built | ⬜ | `tested` | Built on `distribution-list-put` + `meeting-list-put` + `user-find-by-ids`. No internal DB tooling, no config-history; attributes meetings by host rep (caveat documented in-skill). |
+| ~~tenant-meetings~~ | — | — | — | dropped | Not added — `org-meeting` already covers tenant/org meeting volume via the public MCP, and the earlier internal version was internal-only. |
 
 ---
 
-## Verified ground truth (live read-only calls, 2026-05-29, tenant `floatingapps.com`)
+## Verified ground truth (live read-only calls, 2026-05-29, connected test tenant)
 
 > **The MCP tools' own text descriptions are unreliable.** Each of the following was confirmed against a real payload, and differed from what the tool advertised.
 
@@ -112,7 +112,7 @@ Endpoint changes that affect these skills — note them here so skills stay in s
 
 | Date | Change | JIRA | Affected skills | Status |
 |------|--------|------|-----------------|--------|
-| 2026-05-29 | `meeting-export-v2-put` CSV now includes **`bookedAt`** and **`meetingId`** columns | [DISTRO-4483](https://floatingapps.atlassian.net/browse/DISTRO-4483) (Production) | user-meetings (now uses both; was stubbing `bookedAt`), user-details & user-offboarding (dedupe on `meetingId` now valid) | ✅ user-meetings updated v0.4.0; verify exact header strings against a live export |
+| 2026-05-29 | `meeting-export-v2-put` CSV now includes **`bookedAt`** and **`meetingId`** columns | DISTRO-4483 (Production) | user-meetings (now uses both; was stubbing `bookedAt`), user-details & user-offboarding (dedupe on `meetingId` now valid) | ✅ user-meetings updated v0.4.0; verify exact header strings against a live export |
 | 2026-05-21 | `meeting-export-v2-put` + `meeting-list-put` server-side `status` filter; `team-list-put` `member` filter | DISTRO-4472 | no-show-analyzer, org-meeting, user-details, user-meetings, user-copy, user-offboarding | ✅ reflected in skills |
 
 ## Items still needing a live read-only call before fixing
