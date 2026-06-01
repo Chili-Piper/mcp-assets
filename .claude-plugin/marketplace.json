@@ -12,7 +12,10 @@
   "plugins": [
     {
       "name": "chili-piper-skills",
-      "source": ".",
+      "source": {
+        "source": "github",
+        "repo": "Chili-Piper/mcp-assets"
+      },
       "description": "Official Chili Piper Skills — meeting diagnostics, routing audits, no-show analysis, availability checks, and user onboarding/offboarding. Includes the Chili Piper MCP config and slash commands.",
       "category": "sales",
       "version": "1.0.0"
