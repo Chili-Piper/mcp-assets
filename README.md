@@ -51,13 +51,20 @@ Every skill talks to your Chili Piper account through the official MCP server. S
 In the standalone Claude Code terminal CLI:
 
 ```
-/plugin marketplace add Chili-Piper/mcp-assets
-/plugin install chili-piper-skills@chili-piper-skills
+/plugin marketplace add https://github.com/Chili-Piper/mcp-assets
+/plugin install chili-piper-skills@Chili-Piper-mcp-assets
 ```
 
 This installs every skill, the bundled slash commands, and the Chili Piper MCP config in one step. Updating later is a single command (see [Staying up to date](#staying-up-to-date)).
 
 > **Note:** `/plugin` is **only** available in the Claude Code **terminal CLI** — not in the Claude Desktop app or claude.ai. If you're on Desktop/web, use Option B.
+>
+> The marketplace registers under the name **`Chili-Piper-mcp-assets`** (derived from the repo), so the install is `chili-piper-skills@Chili-Piper-mcp-assets`. You can also run `/plugin` and pick it from the **Marketplaces** menu instead of typing the name.
+>
+> **See a `git@github.com: Permission denied` / SSH error?** Your git is cloning over SSH. For this public repo no key is needed — tell git to use HTTPS and retry:
+> ```
+> git config --global url."https://github.com/".insteadOf "git@github.com:"
+> ```
 
 **Option B — Claude Desktop / claude.ai (upload a skill):**
 
@@ -94,7 +101,7 @@ A single admin can roll these skills out to an entire team or org so everyone ge
 
 We actively improve these skills, fix correctness issues, and add new ones. To stay current:
 
-- **Claude Code plugin:** run `/plugin update chili-piper-skills@chili-piper-skills` (or enable auto-update).
+- **Claude Code plugin:** run `/plugin update chili-piper-skills@Chili-Piper-mcp-assets` (or enable auto-update).
 - **Claude Desktop / claude.ai:** re-download the skill `.zip` from the [latest release](https://github.com/Chili-Piper/mcp-assets/releases/latest) and re-upload it in Customize → Skills.
 - **Manual install:** `git pull`, or re-download the skill folder.
 - **Watch releases:** click **Watch → Custom → Releases** on this repo to be notified of every versioned update.
