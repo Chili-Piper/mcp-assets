@@ -1,3 +1,8 @@
+# === BUILD ARTIFACTS ===
+# Packaged skill zips for Claude Desktop / claude.ai upload — built by
+# .github/scripts/package_skills.py and attached to GitHub Releases, not committed.
+dist/
+
 # === SECRETS & CREDENTIALS ===
 .env
 .env.*

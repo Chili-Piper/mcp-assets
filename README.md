@@ -44,9 +44,11 @@ See [`skills/README.md`](skills/README.md) for the full index with QA/maturity s
 
 Every skill talks to your Chili Piper account through the official MCP server. Set it up once — **API key** or **OAuth** — following [`mcp-servers/chili-piper/README.md`](mcp-servers/chili-piper/README.md).
 
-### 2. Install the skills — two ways
+### 2. Install the skills — pick your surface
 
-**Option A — Claude Code plugin (recommended; auto-updates):**
+**Option A — Claude Code CLI (plugin; auto-updates):**
+
+In the standalone Claude Code terminal CLI:
 
 ```
 /plugin marketplace add Chili-Piper/mcp-assets
@@ -55,9 +57,19 @@ Every skill talks to your Chili Piper account through the official MCP server. S
 
 This installs every skill, the bundled slash commands, and the Chili Piper MCP config in one step. Updating later is a single command (see [Staying up to date](#staying-up-to-date)).
 
-**Option B — Manual download (any agent, including ChatGPT):**
+> **Note:** `/plugin` is **only** available in the Claude Code **terminal CLI** — not in the Claude Desktop app or claude.ai. If you're on Desktop/web, use Option B.
 
-Browse [`skills/`](skills/), open the skill you want, and copy its folder into your agent's skills directory — or follow [`gpts/README.md`](gpts/README.md) to deploy the ChatGPT version.
+**Option B — Claude Desktop / claude.ai (upload a skill):**
+
+Skills install through Claude's **Customize → Skills** panel (no `/plugin` needed):
+
+1. Download the skill's `.zip` from the [latest release](https://github.com/Chili-Piper/mcp-assets/releases/latest) — e.g. [`meeting-inspector.zip`](https://github.com/Chili-Piper/mcp-assets/releases/latest/download/meeting-inspector.zip). Each skill is a separate `.zip`.
+2. Open **Customize → Skills → ＋** and upload the `.zip`. It's added as a **Personal skill** (just you — local to your account).
+3. Make sure the **Chili Piper MCP** connector is connected with your own API key or OAuth ([setup](mcp-servers/chili-piper/README.md)).
+
+> **Org admins:** to roll a skill out to your whole team, upload it under **Organization skills** and turn on **Share**. Personal (local) and Organization (org-wide) are both supported — users can self-serve either way.
+
+**Option C — ChatGPT:** deploy the matching Custom GPT — see [`gpts/README.md`](gpts/README.md).
 
 ### 3. Run a skill
 
@@ -83,6 +95,7 @@ A single admin can roll these skills out to an entire team or org so everyone ge
 We actively improve these skills, fix correctness issues, and add new ones. To stay current:
 
 - **Claude Code plugin:** run `/plugin update chili-piper-skills@chili-piper-skills` (or enable auto-update).
+- **Claude Desktop / claude.ai:** re-download the skill `.zip` from the [latest release](https://github.com/Chili-Piper/mcp-assets/releases/latest) and re-upload it in Customize → Skills.
 - **Manual install:** `git pull`, or re-download the skill folder.
 - **Watch releases:** click **Watch → Custom → Releases** on this repo to be notified of every versioned update.
 - **Changelog:** every release is logged in [`CHANGELOG.md`](CHANGELOG.md).
