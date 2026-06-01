@@ -1,0 +1,74 @@
+# === SECRETS & CREDENTIALS ===
+.env
+.env.*
+*.env
+# .mcp.json is intentionally committed at repo root — it uses ${ENV_VAR} references,
+# not real secrets. Personal override files belong in ~/.claude.json, not here.
+**/secrets/
+**/.secrets/
+**/credentials/
+**/.credentials/
+
+# === LOCAL DATA (never commit real data) ===
+**/local/
+**/.local/
+
+# Root-level data files (use synthetic fixtures in fixtures/ instead)
+# Note: .mcp.json and .secrets.baseline are excluded from this pattern via negation
+/*.csv
+/*.parquet
+/*.json
+!/.mcp.json
+!/.secrets.baseline
+/*.xlsx
+/*.xls
+
+# Nested data files — recipes must put real data in their /local/ subfolder
+**/data/real/
+**/data/live/
+
+# === OS & EDITOR ===
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# === PYTHON ===
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+.pytest_cache/
+
+# === NODE ===
+node_modules/
+.npm
+.pnpm-store/
+dist/
+.next/
+.nuxt/
+
+# === LOGS ===
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+
+# === DEPENDENCY LOCK FILES (keep these) ===
+# package-lock.json — keep
+# yarn.lock — keep
+# uv.lock — keep
+
+# === MCP CONFIG ===
+# The repo-level .mcp.json uses ${ENV_VAR} references and is intentionally committed.
+# claude_desktop_config.json is personal and must never be committed.
+claude_desktop_config.json

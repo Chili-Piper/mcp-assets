@@ -1,0 +1,794 @@
+# Generated from the Chili Piper Edge API OpenAPI spec by
+# .github/scripts/generate_gpt_openapi.py — do not edit by hand.
+openapi: 3.1.0
+info:
+  title: Chili Piper — Availability Inspector Actions
+  version: 1.230.0
+  description: GPT Actions for the availability-inspector GPT — a subset of the Chili Piper Edge API.
+    Authenticate with a Bearer API key (Admin Center → API Keys).
+servers:
+- url: https://fire.chilipiper.com/api/fire-edge
+  description: Production
+security:
+- apiKeyAuth: []
+paths:
+  /v1/org/user/find:
+    get:
+      tags:
+      - user
+      summary: Finds user
+      description: '[operation: user-find]
+
+
+
+
+        READ-ONLY
+
+
+
+
+        Searches users by free-text query matched against email and name (partial matches supported).
+        Paginated.
+
+
+        - query (req): partial email or name
+
+
+        - page (opt), pageSize (opt, default 200)
+
+
+        → paginated list of users, each with: {id, name, email, isSuperAdmin, licenses, workspaces, salesforce
+        (opt), hubspot (opt), slug (opt), managedWorkspaces, managedTeams}
+
+
+        see: user-read (full profile), user-find-by-ids (batch by ID), user-find-by-filter (advanced multi-field
+        filtering)'
+      operationId: userFind
+      parameters:
+      - name: query
+        in: query
+        description: Search by email or name
+        required: true
+        schema:
+          type: string
+      - name: page
+        in: query
+        description: Page number. First page has index 0.
+        required: false
+        schema:
+          default: 0
+          type: integer
+          format: int64
+          minimum: 0
+        example: 0
+      - name: pageSize
+        in: query
+        description: Number of items per page. Maximum is 50
+        required: false
+        schema:
+          default: 10
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        example: 10
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResult_User'
+        '400':
+          description: 'Invalid value for: query parameter query, Invalid value for: query parameter page,
+            Invalid value for: query parameter pageSize'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - user.read
+  /v1/org/user/read/{userId}:
+    get:
+      tags:
+      - user
+      summary: Reads user information
+      description: "[operation: user-read]\n\n\n\nREAD-ONLY\n\n\n\nFetches full profile for a single user\
+        \ by userId.\n\n- userId (req): UUID\n\n→\n\n    {id, name, email, isSuperAdmin, licenses, workspaces\
+        \ (set of workspaceIds), salesforce: {email, id} (opt), hubspot: {email, id} (opt), slug (opt),\
+        \ managedWorkspaces, managedTeams}\n\n  Note: top-level field is id (not userId); workspaces (not\
+        \ workspaceMemberships); salesforce is an object {email, id} (not a string salesforceId)\n\nsee:\
+        \ user-find (look up userId by email/name), user-find-by-ids (batch fetch), user-update-licenses/workspace-add-users/team-add-users\
+        \ (act on user)"
+      operationId: userRead
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: 'Invalid value for: path parameter userId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - user.read
+  /v1/org/availability/slots:
+    post:
+      tags:
+      - availability
+      summary: Get available meeting time slots for any attendee configuration
+      description: "[operation: availability-slots]\n\n\n\nREAD-ONLY\n\n\n\nUnified availability endpoint\
+        \ — returns slots for any attendee mix (round-robin, manual, team-assigned, additional).\n\n-\
+        \ expectedHost (req): {type: \"User\", userId} or {type: \"AssigneeFromDistribution\", distributionId}\n\
+        \n- attendees (req): non-empty list; each item requires a `type` discriminator and a `required`\
+        \ field (boolean: true = slot hidden if attendee unavailable):\n\n    {type: \"ManuallyAssigned\"\
+        , userId, required: true|false}\n    {type: \"DistributionAssignee\", distributionId, required:\
+        \ true|false, userIds (opt): ranked list}\n    {type: \"AssignedViaTeam\", userId, teamId, required:\
+        \ true|false}\n    {type: \"AdditionalAttendee\", userId, required: true|false}\n\n  Note: `required`\
+        \ must always be present — omitting it returns 400\n\n- meetingTypeRef (req): {id, timestamp}\
+        \ — identifies meeting type and version\n\n- meetingTypeOverride (opt): inline duration/buffer\
+        \ overrides; omit or pass null to use meeting-type defaults;\n\n    fields (all optional): {meetingDurationOverride,\
+        \ beforeBufferDurationOverride, afterBufferDurationOverride, availabilityIncrementOverride}\n\n\
+        - interval (req): {startsAt: ISO-8601, duration: \"7 days\"/\"P7D\"/etc.}\n\n→\n\n    {meetingTypeRef,\
+        \ startTimes: [{startTime, attendees}], failures: {userId: failure}}\n\nsee: distribution-list,\
+        \ user-find"
+      operationId: availabilitySlots
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MeetingStartTimesRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeetingStartTimes'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - availability.read
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      description: 'API key in Authorization header. Format: ''Authorization: Bearer <api-key>'' — the
+        word ''Bearer'' followed by a space and the key is required. Sending the key without the Bearer
+        prefix returns 401.'
+      name: Authorization
+      in: header
+  schemas:
+    RequestedAttendee_FlexibleRoundRobinAssignee:
+      title: RequestedAttendee_FlexibleRoundRobinAssignee
+      type: object
+      required:
+      - distributionId
+      - userIds
+      - required
+      - type
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        userIds:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/UserId'
+        required:
+          type: boolean
+        type:
+          type: string
+    PaginatedResult_User:
+      title: PaginatedResult_User
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    MeetingStartTime:
+      title: MeetingStartTime
+      type: object
+      required:
+      - startTime
+      - attendees
+      properties:
+        startTime:
+          type: string
+          format: date-time
+        attendees:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/RequestedAttendee'
+    Email:
+      title: Email
+      examples:
+      - john.doe@acme.com
+      type: string
+      pattern: .+@.+
+    RequestAttendee:
+      title: RequestAttendee
+      oneOf:
+      - $ref: '#/components/schemas/RequestAttendee_AdditionalAttendee'
+      - $ref: '#/components/schemas/RequestAttendee_AssignedViaTeam'
+      - $ref: '#/components/schemas/RequestAttendee_DistributionAssignee'
+      - $ref: '#/components/schemas/RequestAttendee_ManuallyAssigned'
+      discriminator:
+        propertyName: type
+        mapping:
+          AdditionalAttendee: com.chilipiper.edge.api.endpoint.model.EdgeRequestAttendee.AdditionalAttendee
+          AssignedViaTeam: com.chilipiper.edge.api.endpoint.model.EdgeRequestAttendee.AssignedViaTeam
+          DistributionAssignee: com.chilipiper.edge.api.endpoint.model.EdgeRequestAttendee.DistributionAssignee
+          ManuallyAssigned: com.chilipiper.edge.api.endpoint.model.EdgeRequestAttendee.ManuallyAssigned
+    RequestAttendee_ManuallyAssigned:
+      title: RequestAttendee_ManuallyAssigned
+      type: object
+      required:
+      - userId
+      - required
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        required:
+          type: boolean
+        type:
+          type: string
+    MeetingTypeOverrides:
+      title: MeetingTypeOverrides
+      type: object
+      properties:
+        meetingDurationOverride:
+          type: string
+        beforeBufferDurationOverride:
+          type: string
+        afterBufferDurationOverride:
+          type: string
+        availabilityIncrementOverride:
+          type: string
+    MeetingTypeRef:
+      title: MeetingTypeRef
+      type: object
+      required:
+      - id
+      - timestamp
+      properties:
+        id:
+          $ref: '#/components/schemas/MeetingTypeId'
+        timestamp:
+          type: string
+          format: date-time
+    NoTimezone:
+      title: NoTimezone
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: NoTimezone
+    RequestedAttendee_AdditionalAttendee:
+      title: RequestedAttendee_AdditionalAttendee
+      type: object
+      required:
+      - userId
+      - required
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        required:
+          type: boolean
+        type:
+          type: string
+    RequestedAttendee_AssignedViaTeam:
+      title: RequestedAttendee_AssignedViaTeam
+      type: object
+      required:
+      - userId
+      - teamId
+      - required
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        teamId:
+          $ref: '#/components/schemas/TeamId'
+        required:
+          type: boolean
+        type:
+          type: string
+    MeetingTypeId:
+      title: MeetingTypeId
+      examples:
+      - 4a8f2b3c-7d1e-4f9b-8a2c-3d5e6f789012
+      type: string
+      format: uuid
+    AvailabilityExpectedHost_User:
+      title: AvailabilityExpectedHost_User
+      type: object
+      required:
+      - userId
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        type:
+          type: string
+    Map_Refined_String_Refinement_V:
+      title: Map_Refined_String_Refinement_V
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/AvailabilityFailure'
+    AvailabilityExpectedHost:
+      title: AvailabilityExpectedHost
+      oneOf:
+      - $ref: '#/components/schemas/AvailabilityExpectedHost_AssigneeFromDistribution'
+      - $ref: '#/components/schemas/AvailabilityExpectedHost_User'
+      discriminator:
+        propertyName: type
+        mapping:
+          AssigneeFromDistribution: com.chilipiper.edge.api.endpoint.model.EdgeAvailabilityExpectedHost.AssigneeFromDistribution
+          User: com.chilipiper.edge.api.endpoint.model.EdgeAvailabilityExpectedHost.User
+    RequestedAttendee_ManuallyAssigned:
+      title: RequestedAttendee_ManuallyAssigned
+      type: object
+      required:
+      - userId
+      - required
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        required:
+          type: boolean
+        type:
+          type: string
+    UserLicenses:
+      title: UserLicenses
+      type: object
+      required:
+      - distro
+      - chiliCalOrg
+      - concierge
+      - conciergeLive
+      - chat
+      - handoff
+      properties:
+        distro:
+          type: boolean
+        chiliCalOrg:
+          type: boolean
+        concierge:
+          type: boolean
+        conciergeLive:
+          type: boolean
+        chat:
+          type: boolean
+        handoff:
+          type: boolean
+    SalesforceUser:
+      title: SalesforceUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        id:
+          type: string
+          pattern: '[^\s\\/]+'
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+    TeamId:
+      title: TeamId
+      examples:
+      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
+      type: string
+      pattern: '[^\s\\/]+'
+    MeetingStartTimesRequest:
+      title: MeetingStartTimesRequest
+      type: object
+      required:
+      - expectedHost
+      - attendees
+      - meetingTypeRef
+      - interval
+      properties:
+        expectedHost:
+          $ref: '#/components/schemas/AvailabilityExpectedHost'
+        attendees:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/RequestAttendee'
+        meetingTypeRef:
+          $ref: '#/components/schemas/MeetingTypeRef'
+        meetingTypeOverride:
+          $ref: '#/components/schemas/MeetingTypeOverrides'
+        interval:
+          $ref: '#/components/schemas/TimeInterval'
+    TimeInterval:
+      title: TimeInterval
+      type: object
+      required:
+      - startsAt
+      - duration
+      properties:
+        startsAt:
+          type: string
+          format: date-time
+        duration:
+          description: Duration of the time interval. Accepts Scala FiniteDuration format (e.g. '7 days',
+            '1 hour', '30 minutes') or ISO 8601 duration format (e.g. 'P7D', 'PT168H', 'PT1H30M').
+          type: string
+    Other:
+      title: Other
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Other
+    RequestedAttendee_StrictRoundRobinAssignee:
+      title: RequestedAttendee_StrictRoundRobinAssignee
+      type: object
+      required:
+      - distributionId
+      - userId
+      - required
+      - type
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        userId:
+          $ref: '#/components/schemas/UserId'
+        required:
+          type: boolean
+        type:
+          type: string
+    User:
+      title: User
+      type: object
+      required:
+      - id
+      - name
+      - email
+      - isSuperAdmin
+      - licenses
+      properties:
+        id:
+          $ref: '#/components/schemas/UserId'
+        name:
+          type: string
+          minLength: 1
+        email:
+          $ref: '#/components/schemas/Email'
+        isSuperAdmin:
+          type: boolean
+        managedWorkspaces:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        managedTeams:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        licenses:
+          $ref: '#/components/schemas/UserLicenses'
+        salesforce:
+          $ref: '#/components/schemas/SalesforceUser'
+        hubspot:
+          $ref: '#/components/schemas/HubspotUser'
+        slug:
+          type: string
+          pattern: '[-0-9a-z_]+'
+        workspaces:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        personalWorkspaceId:
+          type: string
+          pattern: '[^\s\\/]+'
+    RequestAttendee_DistributionAssignee:
+      title: RequestAttendee_DistributionAssignee
+      type: object
+      required:
+      - distributionId
+      - required
+      - type
+      properties:
+        userIds:
+          description: Ranked list of eligible user IDs. If omitted, all distribution members are included.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        required:
+          type: boolean
+        type:
+          type: string
+    ExternalCalendarIntegrationFailure:
+      title: ExternalCalendarIntegrationFailure
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: ExternalCalendarIntegrationFailure
+    HubspotUser:
+      title: HubspotUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        id:
+          type: integer
+          format: int64
+    MeetingStartTimes:
+      title: MeetingStartTimes
+      type: object
+      required:
+      - meetingTypeRef
+      - failures
+      properties:
+        meetingTypeRef:
+          $ref: '#/components/schemas/MeetingTypeRef'
+        startTimes:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeetingStartTime'
+        failures:
+          $ref: '#/components/schemas/Map_Refined_String_Refinement_V'
+    RequestAttendee_AssignedViaTeam:
+      title: RequestAttendee_AssignedViaTeam
+      type: object
+      required:
+      - userId
+      - teamId
+      - required
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        teamId:
+          $ref: '#/components/schemas/TeamId'
+        required:
+          type: boolean
+        type:
+          type: string
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
+    AvailabilityFailure:
+      title: AvailabilityFailure
+      oneOf:
+      - $ref: '#/components/schemas/ExternalCalendarIntegrationFailure'
+      - $ref: '#/components/schemas/NoTimezone'
+      - $ref: '#/components/schemas/Other'
+      discriminator:
+        propertyName: type
+        mapping:
+          ExternalCalendarIntegrationFailure: '#/components/schemas/ExternalCalendarIntegrationFailure'
+          NoTimezone: '#/components/schemas/NoTimezone'
+          Other: '#/components/schemas/Other'
+    RequestAttendee_AdditionalAttendee:
+      title: RequestAttendee_AdditionalAttendee
+      type: object
+      required:
+      - userId
+      - required
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        required:
+          type: boolean
+        type:
+          type: string
+    DistributionId:
+      title: DistributionId
+      examples:
+      - 7f8a1b2c-3d4e-4f5a-8b9c-0d1e2f3a4b5c
+      type: string
+      pattern: '[^\s\\/]+'
+    AvailabilityExpectedHost_AssigneeFromDistribution:
+      title: AvailabilityExpectedHost_AssigneeFromDistribution
+      type: object
+      required:
+      - distributionId
+      - type
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        type:
+          type: string
+    RequestedAttendee:
+      title: RequestedAttendee
+      oneOf:
+      - $ref: '#/components/schemas/RequestedAttendee_AdditionalAttendee'
+      - $ref: '#/components/schemas/RequestedAttendee_AssignedViaTeam'
+      - $ref: '#/components/schemas/RequestedAttendee_FlexibleRoundRobinAssignee'
+      - $ref: '#/components/schemas/RequestedAttendee_ManuallyAssigned'
+      - $ref: '#/components/schemas/RequestedAttendee_StrictRoundRobinAssignee'
+      discriminator:
+        propertyName: type
+        mapping:
+          AdditionalAttendee: com.chilipiper.edge.api.model.availability.EdgeRequestedAttendee.AdditionalAttendee
+          AssignedViaTeam: com.chilipiper.edge.api.model.availability.EdgeRequestedAttendee.AssignedViaTeam
+          FlexibleRoundRobinAssignee: com.chilipiper.edge.api.model.availability.EdgeRequestedAttendee.FlexibleRoundRobinAssignee
+          ManuallyAssigned: com.chilipiper.edge.api.model.availability.EdgeRequestedAttendee.ManuallyAssigned
+          StrictRoundRobinAssignee: com.chilipiper.edge.api.model.availability.EdgeRequestedAttendee.StrictRoundRobinAssignee

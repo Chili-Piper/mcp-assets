@@ -1,0 +1,11 @@
+{
+  "name": "chili-piper-skills",
+  "version": "1.0.0",
+  "description": "Official Chili Piper Skills for the Chili Piper MCP — meeting diagnostics, routing audits, no-show analysis, availability checks, and user onboarding/offboarding.",
+  "author": {
+    "name": "Chili Piper",
+    "url": "https://github.com/Chili-Piper/mcp-assets"
+  },
+  "homepage": "https://github.com/Chili-Piper/mcp-assets",
+  "license": "MIT"
+}
