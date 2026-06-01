@@ -8,9 +8,22 @@ API OpenAPI document so the GPTs never drift from reality.
 Source of truth (public): https://fire.chilipiper.com/api/fire-edge/public/org/docs/swagger/docs.yaml
 Run:  python .github/scripts/generate_gpt_openapi.py [path-to-local-docs.yaml]
 
-The Edge spec tags every operation with `[operation: <name>]` in its description; this script
-keys off those operation names (which match the Chili Piper MCP tool names). Keep GPT_OPERATIONS
-in sync with each skill's tools_required.
+WHY THIS EXISTS
+  ChatGPT GPT Actions call the REST API directly with an API key, so each GPT needs a real,
+  accurate OpenAPI spec. This script produces those specs from the canonical Edge API document,
+  so the GPT Actions always reflect the real endpoints, request bodies, and response schemas —
+  no hand-editing, no placeholder URLs, no drift from the API.
+
+  This keeps the GPTs in sync with the *API*. Keeping the GPTs in sync with the *Claude skills*
+  is a separate concern, enforced in CI by check_gpt_sync.py (every skill must have a paired GPT
+  at a matching version). This script does NOT touch the Claude skills in skills/.
+
+WHEN TO RE-RUN
+  - The Edge API changes (new/renamed fields, schemas, or endpoints) → re-run to refresh specs.
+  - A GPT should start (or stop) using an operation → first edit GPT_OPERATIONS below, then re-run.
+    GPT_OPERATIONS is the one manual step: it maps each GPT to the Edge operations it uses, and
+    should mirror the matching skill's `tools_required`. The Edge spec tags every operation with
+    `[operation: <name>]` (matching the Chili Piper MCP tool names); use those names here.
 """
 
 import os

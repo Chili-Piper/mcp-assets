@@ -39,9 +39,12 @@ python .github/scripts/generate_gpt_openapi.py          # fetches the live spec
 python .github/scripts/generate_gpt_openapi.py path/to/docs.yaml
 ```
 
-The generator (`/.github/scripts/generate_gpt_openapi.py`) holds, per GPT, the list of Edge operations it uses (mirroring each skill's `tools_required`) and emits a self-contained spec with the transitive closure of referenced schemas.
+Two separate mechanisms keep things aligned — don't confuse them:
 
-When a skill changes, mirror the change in its paired `GPT.md`, bump the `GPT.md` `version` to match the `SKILL.md` `version`, and regenerate the `openapi.yaml`. CI enforces this with `/.github/scripts/check_gpt_sync.py` (paired GPT exists + version parity).
+- **GPTs ↔ the API** — `generate_gpt_openapi.py` builds each `openapi.yaml` from the live Edge spec, so the GPT Actions always reflect real endpoints/schemas. Re-run it whenever the Edge API changes. It holds, per GPT, the Edge operations that GPT uses (in the `GPT_OPERATIONS` map) and emits a self-contained spec with the transitive closure of referenced schemas. **The one manual step:** if a GPT should start or stop using an operation, edit `GPT_OPERATIONS` (mirror the matching skill's `tools_required`) *before* regenerating.
+- **GPTs ↔ the skills** — `check_gpt_sync.py` (run in CI) enforces that every skill has a paired GPT at a matching `version`. When a skill changes, mirror the change in its paired `GPT.md`, bump the `GPT.md` `version` to match `SKILL.md`, and regenerate the `openapi.yaml`.
+
+Neither script touches the Claude skills in `../skills/` — they only produce/validate the ChatGPT-side artifacts.
 
 ## Key differences from Claude skills
 
