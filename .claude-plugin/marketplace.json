@@ -1,10 +1,14 @@
 {
+  "name": "chili-piper-skills",
+  "owner": {
+    "name": "Chili Piper",
+    "url": "https://github.com/Chili-Piper"
+  },
   "metadata": {
     "description": "Official Chili Piper Skills for the Chili Piper MCP server.",
     "version": "1.0.0",
     "homepage": "https://github.com/Chili-Piper/mcp-assets"
   },
-  "name": "chili-piper-skills",
   "plugins": [
     {
       "name": "chili-piper-skills",
