@@ -13,8 +13,9 @@
     {
       "name": "chili-piper-skills",
       "source": {
-        "source": "github",
-        "repo": "Chili-Piper/mcp-assets"
+        "source": "url",
+        "url": "https://github.com/Chili-Piper/mcp-assets.git",
+        "ref": "main"
       },
       "description": "Official Chili Piper Skills — meeting diagnostics, routing audits, no-show analysis, availability checks, and user onboarding/offboarding. Includes the Chili Piper MCP config and slash commands.",
       "category": "sales",
