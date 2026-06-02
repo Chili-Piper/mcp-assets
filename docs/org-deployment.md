@@ -2,7 +2,7 @@
 
 These skills ship as a Claude Code **plugin** (`chili-piper-skills`) served from this repo's marketplace. A single admin can roll them out to an entire team so individual users don't each install by hand. There are three approaches, from lightest to most locked-down.
 
-> **Names to know:** the marketplace lives in this repo, `Chili-Piper/mcp-assets`. The plugin is `chili-piper-skills`. So the fully-qualified plugin ref is `chili-piper-skills@Chili-Piper-mcp-assets`.
+> **Names to know:** the marketplace lives in this repo, `Chili-Piper/mcp-assets`. The plugin is `chili-piper-skills`. So the fully-qualified plugin ref is `chili-piper-skills@chili-piper-skills`.
 
 ---
 
@@ -12,7 +12,7 @@ Two commands in Claude Code:
 
 ```
 /plugin marketplace add https://github.com/Chili-Piper/mcp-assets
-/plugin install chili-piper-skills@Chili-Piper-mcp-assets
+/plugin install chili-piper-skills@chili-piper-skills
 ```
 
 Good for trying it out or small teams. Everyone runs it once; updates via `/plugin update` (see below).
@@ -33,13 +33,13 @@ Commit the marketplace + plugin into a shared repository's `.claude/settings.jso
 ```json
 {
   "extraKnownMarketplaces": {
-    "Chili-Piper-mcp-assets": {
-      "source": { "source": "url", "url": "https://github.com/Chili-Piper/mcp-assets.git", "ref": "main" },
+    "chili-piper-skills": {
+      "source": { "source": "github", "repo": "Chili-Piper/mcp-assets" },
       "autoUpdate": true
     }
   },
   "enabledPlugins": {
-    "chili-piper-skills@Chili-Piper-mcp-assets": true
+    "chili-piper-skills@chili-piper-skills": true
   }
 }
 ```
@@ -58,13 +58,13 @@ For centrally-managed fleets, IT can place the same config in Claude Code's **ma
 ```json
 {
   "extraKnownMarketplaces": {
-    "Chili-Piper-mcp-assets": {
-      "source": { "source": "url", "url": "https://github.com/Chili-Piper/mcp-assets.git", "ref": "main" },
+    "chili-piper-skills": {
+      "source": { "source": "github", "repo": "Chili-Piper/mcp-assets" },
       "autoUpdate": true
     }
   },
   "enabledPlugins": {
-    "chili-piper-skills@Chili-Piper-mcp-assets": true
+    "chili-piper-skills@chili-piper-skills": true
   }
 }
 ```
@@ -78,7 +78,7 @@ Deploy this file via your MDM / configuration management. Managed settings take 
 ## Staying up to date
 
 - With `"autoUpdate": true` (above), clients pull new plugin versions on startup.
-- Otherwise, users run `/plugin update chili-piper-skills@Chili-Piper-mcp-assets` (or `/plugin marketplace update Chili-Piper-mcp-assets`).
+- Otherwise, users run `/plugin update chili-piper-skills@chili-piper-skills` (or `/plugin marketplace update chili-piper-skills`).
 - Each skill carries a `version`; releases are listed in [`../CHANGELOG.md`](../CHANGELOG.md). Watch this repo (**Watch → Custom → Releases**) for notifications.
 
 ---
