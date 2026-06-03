@@ -1,7 +1,7 @@
 ---
 name: User Offboarding
 description: Safely removes a departing Chili Piper rep — surfaces open meetings that need reassignment, removes them from workspaces and teams, and produces an audit trail — making rep offboarding repeatable and zero-leak.
-version: 0.1.4
+version: 0.1.5
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Offboard departing rep john@company.com — show me the plan first"
@@ -81,7 +81,7 @@ Call `teamListPut`. Each result has `id` (NOT `teamId`), `name`, `workspaceId`, 
 
 ## Step 4 — Find distribution memberships (flag only)
 
-Call `distributionListPut`, passing the workspaces via `workspaceIds` (an ARRAY, not a singular `workspaceId`). The response is a top-level array of distributions. There is no `assignees`/`members` field to filter on — instead, a user's membership lives in each distribution's `published.weights[]` and `state.userStates[]` (each `userStates` entry has a `type` of `Active` or `Removed`). Flag distributions where this user appears as an `Active` member in `state.userStates[]`. These cannot be updated via API — flag them for manual removal in the router builder.
+Call `distributionListPut`, passing the workspaces via `workspaceIds` (an ARRAY, not a singular `workspaceId`). The response is a top-level array of distributions. There is no `assignees`/`members` field to filter on — instead, a user's membership lives in each distribution's `published.weights[]` and `state.userStates[]` (each `userStates` entry has a `type` of `Active`/`Capped`/`Disabled`/`Removed`/`NoLicense`, plus a `statistics` object `{assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}`). Flag distributions where this user appears with an active-side `type` (`Active`/`Capped`/`Disabled`) in `state.userStates[]`; their `statistics.assigned` indicates how much live volume will need rebalancing after they leave. These cannot be updated via API — flag them for manual removal in the router builder.
 
 ---
 
