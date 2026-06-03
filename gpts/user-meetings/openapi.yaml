@@ -310,6 +310,71 @@ components:
       name: Authorization
       in: header
   schemas:
+    HubspotUser:
+      title: HubspotUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        id:
+          type: integer
+          format: int64
+    ExportMeetingsRequest:
+      title: ExportMeetingsRequest
+      type: object
+      required:
+      - start
+      - end
+      properties:
+        workspaceIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        assigneeIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        hostIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        bookerIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        meetingTypeIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+        status:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/MeetingStatus'
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
     PaginatedResult_Workspace:
       title: PaginatedResult_Workspace
       type: object
@@ -333,11 +398,6 @@ components:
           type: integer
           format: int64
           exclusiveMinimum: 0
-    Map_String:
-      title: Map_String
-      type: object
-      additionalProperties:
-        type: string
     PaginatedResult_User:
       title: PaginatedResult_User
       type: object
@@ -361,8 +421,8 @@ components:
           type: integer
           format: int64
           exclusiveMinimum: 0
-    HubspotUser:
-      title: HubspotUser
+    SalesforceUser:
+      title: SalesforceUser
       type: object
       required:
       - email
@@ -371,14 +431,8 @@ components:
         email:
           $ref: '#/components/schemas/Email'
         id:
-          type: integer
-          format: int64
-    Email:
-      title: Email
-      examples:
-      - john.doe@acme.com
-      type: string
-      pattern: .+@.+
+          type: string
+          pattern: '[^\s\\/]+'
     SimpleMetadata:
       title: SimpleMetadata
       type: object
@@ -402,6 +456,12 @@ components:
         revision:
           type: integer
           format: int32
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string
     Workspace:
       title: Workspace
       type: object
@@ -428,47 +488,6 @@ components:
       - Canceled
       - NoShow
       - Completed
-    UserId:
-      title: UserId
-      examples:
-      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
-      type: string
-      pattern: '[^\s\\/]+'
-    UserLicenses:
-      title: UserLicenses
-      type: object
-      required:
-      - distro
-      - chiliCalOrg
-      - concierge
-      - conciergeLive
-      - chat
-      - handoff
-      properties:
-        distro:
-          type: boolean
-        chiliCalOrg:
-          type: boolean
-        concierge:
-          type: boolean
-        conciergeLive:
-          type: boolean
-        chat:
-          type: boolean
-        handoff:
-          type: boolean
-    WorkspaceId:
-      title: WorkspaceId
-      examples:
-      - b7263a5d-89cb-4f50-a532-ea4aff74688e
-      type: string
-      pattern: '[^\s\\/]+'
-    CallerRef:
-      title: CallerRef
-      description: stringified caller reference in format $type/$id
-      examples:
-      - user/17a3d4563d5a67a3d456ad635
-      type: string
     User:
       title: User
       type: object
@@ -518,63 +537,44 @@ components:
         personalWorkspaceId:
           type: string
           pattern: '[^\s\\/]+'
-    SalesforceUser:
-      title: SalesforceUser
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
+    UserLicenses:
+      title: UserLicenses
       type: object
       required:
-      - email
-      - id
+      - distro
+      - chiliCalOrg
+      - concierge
+      - conciergeLive
+      - chat
+      - handoff
       properties:
-        email:
-          $ref: '#/components/schemas/Email'
-        id:
-          type: string
-          pattern: '[^\s\\/]+'
-    ExportMeetingsRequest:
-      title: ExportMeetingsRequest
-      type: object
-      required:
-      - start
-      - end
-      properties:
-        workspaceIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        start:
-          type: string
-          format: date-time
-        end:
-          type: string
-          format: date-time
-        assigneeIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        hostIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        bookerIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        meetingTypeIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            format: uuid
-        status:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/MeetingStatus'
+        distro:
+          type: boolean
+        chiliCalOrg:
+          type: boolean
+        concierge:
+          type: boolean
+        conciergeLive:
+          type: boolean
+        chat:
+          type: boolean
+        handoff:
+          type: boolean
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
+    Email:
+      title: Email
+      examples:
+      - john.doe@acme.com
+      type: string
+      pattern: .+@.+
