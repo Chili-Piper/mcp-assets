@@ -1,0 +1,67 @@
+name: 💡 Skill idea
+description: Float an idea for a skill you may not build yourself — including ones that might need new or changed Chili Piper APIs. Others can view, discuss, and pick it up.
+title: "[Idea] "
+labels: ["skill-idea", "source:community"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Got an idea for a Chili Piper skill but aren't building it right now? Drop it here. This is the **idea inbox** — ideas live as issues so anyone can view them, comment, and build one once it's ready. No code required.
+
+        > Looking for something specific instead?
+        > • A skill is broken → [skill bug report](https://github.com/Chili-Piper/mcp-assets/issues/new?template=skill-bug.yml)
+        > • You have a concrete spec / are ready to build → [skill request](https://github.com/Chili-Piper/mcp-assets/issues/new?template=skill-request.yml)
+
+  - type: input
+    id: idea
+    attributes:
+      label: The idea in one line
+      placeholder: "e.g. distribution-rebalancer — even out a round-robin queue automatically"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would it solve?
+      description: Who's it for, and what painful/manual task would it replace? Rough is fine.
+    validations:
+      required: true
+
+  - type: textarea
+    id: shape
+    attributes:
+      label: Rough shape (optional)
+      description: Any thoughts on inputs, outputs, or which Chili Piper MCP tools / Edge API endpoints it might use.
+      placeholder: "Inputs: workspace, distribution. Uses: distribution-list-put, distribution-adjust-v3 …"
+
+  - type: dropdown
+    id: api_readiness
+    attributes:
+      label: Is the API for this available today?
+      description: If you're not sure, pick "Not sure" — a maintainer will confirm and label it.
+      options:
+        - "Yes — the Chili Piper MCP / Edge API already exposes everything it needs"
+        - "No — it would need a new or changed API first"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: input
+    id: api_link
+    attributes:
+      label: Related API work (optional)
+      description: If a new/changed API is needed and there's a tracking issue or ticket, link it here.
+      placeholder: "e.g. DISTRO-1234, or an edge-fire-service issue URL"
+
+  - type: checkboxes
+    id: writes
+    attributes:
+      label: Would it modify data?
+      options:
+        - label: This skill would write/modify Chili Piper data (not read-only)
+
+  - type: markdown
+    attributes:
+      value: |
+        **What happens next:** a maintainer triages with a `status:` label — `needs-api` (blocked on API work), `ready-to-build` (go for it), `in-progress`, `built`, or `declined`. Anyone is welcome to comment or volunteer to build a `ready-to-build` idea.

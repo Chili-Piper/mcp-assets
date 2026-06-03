@@ -2,10 +2,29 @@
 
 These are Chili Piper's official skills, maintained by Chili Piper. We welcome bug reports, fixes, and new skill ideas from the community.
 
-## Report a bug or request a skill
+## Report a bug, request a skill, or float an idea
 
 - **Something broken or returning wrong data?** Open a [skill bug report](https://github.com/Chili-Piper/mcp-assets/issues/new?template=skill-bug.yml).
-- **Want a new skill or an improvement?** Open a [skill request](https://github.com/Chili-Piper/mcp-assets/issues/new?template=skill-request.yml).
+- **Want a new skill or an improvement (concrete spec)?** Open a [skill request](https://github.com/Chili-Piper/mcp-assets/issues/new?template=skill-request.yml).
+- **Have a rough idea you may not build yourself?** Open a [skill idea](https://github.com/Chili-Piper/mcp-assets/issues/new?template=skill-idea.yml).
+
+## The skill idea inbox
+
+Ideas live as **GitHub issues**, not as half-built files in the repo — so anyone can view them, comment, react with 👍, and pick one up when it's ready to build. Browse the inbox here: **[open skill ideas](https://github.com/Chili-Piper/mcp-assets/issues?q=is%3Aissue+label%3Askill-idea)**.
+
+Both people and our automated `edge-api-skill-sync` routine file ideas into the same inbox. A maintainer triages each with a status label:
+
+| Label | Meaning |
+|-------|---------|
+| `skill-idea` | It's a proposal to discuss, not yet committed work |
+| `source:community` / `source:auto` | Submitted by a person vs. surfaced by the sync routine |
+| `status:needs-api` | Blocked — needs a new or changed Edge API before it can be built |
+| `status:ready-to-build` | The API exists; anyone is welcome to pick it up |
+| `status:in-progress` | Someone is actively building it |
+| `status:built` | Shipped — a skill now exists; the issue is closed and links the PR |
+| `status:declined` | Not moving forward (out of scope, duplicate, or low value) |
+
+When you build a `status:ready-to-build` idea, open a PR that closes its issue (`Closes #NN`) so the idea and the delivered skill stay linked.
 
 ## Submitting a change
 
