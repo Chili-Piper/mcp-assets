@@ -1007,300 +1007,6 @@ components:
       name: Authorization
       in: header
   schemas:
-    Weekly1:
-      title: Weekly
-      type: object
-      required:
-      - timeZone
-      - dayOfWeek
-      - type
-      properties:
-        timeZone:
-          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
-          examples:
-          - America/New_York
-          type: string
-        dayOfWeek:
-          type: integer
-          format: int32
-          minimum: 1
-          maximum: 7
-        type:
-          type: string
-          const: Weekly
-    Team:
-      title: Team
-      type: object
-      required:
-      - id
-      - workspaceId
-      - name
-      - metadata
-      properties:
-        id:
-          $ref: '#/components/schemas/TeamId'
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-        name:
-          type: string
-        members:
-          type: array
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        metadata: {}
-    PaginatedResult_Workspace:
-      title: PaginatedResult_Workspace
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Workspace'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    PaginatedResult_User:
-      title: PaginatedResult_User
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    TeamRef:
-      title: TeamRef
-      type: object
-      required:
-      - id
-      - revision
-      properties:
-        id:
-          $ref: '#/components/schemas/TeamId'
-        revision:
-          type: integer
-          format: int32
-    WorkingHours:
-      title: WorkingHours
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: WorkingHours
-    Email:
-      title: Email
-      examples:
-      - john.doe@acme.com
-      type: string
-      pattern: .+@.+
-    DistributionUserState:
-      title: DistributionUserState
-      oneOf:
-      - $ref: '#/components/schemas/DistributionUserState_Active'
-      - $ref: '#/components/schemas/DistributionUserState_Capped'
-      - $ref: '#/components/schemas/DistributionUserState_Disabled'
-      - $ref: '#/components/schemas/DistributionUserState_NoLicense'
-      - $ref: '#/components/schemas/DistributionUserState_Removed'
-      discriminator:
-        propertyName: type
-        mapping:
-          Active: '#/components/schemas/DistributionUserState_Active'
-          Capped: '#/components/schemas/DistributionUserState_Capped'
-          Disabled: '#/components/schemas/DistributionUserState_Disabled'
-          NoLicense: '#/components/schemas/DistributionUserState_NoLicense'
-          Removed: '#/components/schemas/DistributionUserState_Removed'
-    Monthly:
-      title: Monthly
-      type: object
-      required:
-      - every
-      - startsOn
-      - resetDay
-      - timezone
-      - type
-      properties:
-        every:
-          type: integer
-          format: int32
-          exclusiveMinimum: 0
-        startsOn:
-          type: string
-          format: date
-        resetDay:
-          type: integer
-          format: int32
-          minimum: 1
-          maximum: 28
-        timezone:
-          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
-          examples:
-          - America/New_York
-          type: string
-        type:
-          type: string
-          const: Monthly
-    DistributionUserState_Disabled:
-      title: DistributionUserState_Disabled
-      description: User has been explicitly disabled in this distribution (weight set to 0). Still on
-        the team but won't receive assignments until re-enabled.
-      type: object
-      required:
-      - userId
-      - total
-      - disabledAt
-      - type
-      properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        total:
-          type: integer
-          format: int32
-        disabledAt:
-          type: string
-          format: date-time
-        type:
-          type: string
-          const: Disabled
-    Daily:
-      title: Daily
-      type: object
-      required:
-      - every
-      - startsOn
-      - resetLocalTime
-      - timezone
-      - type
-      properties:
-        every:
-          type: integer
-          format: int32
-          exclusiveMinimum: 0
-        startsOn:
-          type: string
-          format: date
-        resetLocalTime:
-          type: string
-        timezone:
-          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
-          examples:
-          - America/New_York
-          type: string
-        type:
-          type: string
-          const: Daily
-    DistributionAssignmentTypeConfig:
-      title: DistributionAssignmentTypeConfig
-      oneOf:
-      - $ref: '#/components/schemas/Conversation'
-      - $ref: '#/components/schemas/Meeting'
-      - $ref: '#/components/schemas/Record'
-      discriminator:
-        propertyName: type
-        mapping:
-          Conversation: '#/components/schemas/Conversation'
-          Meeting: '#/components/schemas/Meeting'
-          Record: '#/components/schemas/Record'
-    WorkspaceId:
-      title: WorkspaceId
-      examples:
-      - b7263a5d-89cb-4f50-a532-ea4aff74688e
-      type: string
-      pattern: '[^\s\\/]+'
-    MeetingLimitSet:
-      title: MeetingLimitSet
-      type: object
-      required:
-      - resetPeriodicity
-      - type
-      properties:
-        userCaps:
-          type: array
-          uniqueItems: true
-          items:
-            $ref: '#/components/schemas/UserLimit'
-        resetPeriodicity:
-          $ref: '#/components/schemas/MeetingLimitReset'
-        type:
-          type: string
-          const: MeetingLimitSet
-    ListRequest:
-      title: ListRequest
-      type: object
-      properties:
-        workspaceIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-        name:
-          type: string
-        assignmentType:
-          $ref: '#/components/schemas/DistributionAssignmentType'
-    MeetingLimitReset:
-      title: MeetingLimitReset
-      oneOf:
-      - $ref: '#/components/schemas/Daily'
-      - $ref: '#/components/schemas/Monthly'
-      - $ref: '#/components/schemas/Weekly'
-      discriminator:
-        propertyName: type
-        mapping:
-          Daily: '#/components/schemas/Daily'
-          Monthly: '#/components/schemas/Monthly'
-          Weekly: '#/components/schemas/Weekly'
-    Meeting:
-      title: Meeting
-      type: object
-      required:
-      - handling
-      - limits
-      - type
-      properties:
-        handling:
-          $ref: '#/components/schemas/MeetingHandling'
-        limits:
-          $ref: '#/components/schemas/MeetingLimit'
-        type:
-          type: string
-          const: Meeting
     Weekly:
       title: Weekly
       type: object
@@ -1338,15 +1044,110 @@ components:
         type:
           type: string
           const: Weekly
-    DistributionUserState_NoLicense:
-      title: DistributionUserState_NoLicense
-      description: User is still on the team but has lost their license, so they cannot receive assignments.
-        Re-licensing restores them.
+    UserWeight:
+      title: UserWeight
+      type: object
+      required:
+      - userId
+      - weight
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        weight:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 10000
+    DistributionAssignmentTypeConfig:
+      title: DistributionAssignmentTypeConfig
+      oneOf:
+      - $ref: '#/components/schemas/Conversation'
+      - $ref: '#/components/schemas/Meeting'
+      - $ref: '#/components/schemas/Record'
+      discriminator:
+        propertyName: type
+        mapping:
+          Conversation: '#/components/schemas/Conversation'
+          Meeting: '#/components/schemas/Meeting'
+          Record: '#/components/schemas/Record'
+    TeamRef:
+      title: TeamRef
+      type: object
+      required:
+      - id
+      - revision
+      properties:
+        id:
+          $ref: '#/components/schemas/TeamId'
+        revision:
+          type: integer
+          format: int32
+    ReassignmentType:
+      title: ReassignmentType
+      type: string
+      enum:
+      - SameUser
+      - AnyTeamMember
+    MeetingHandling:
+      title: MeetingHandling
+      oneOf:
+      - $ref: '#/components/schemas/Flexible'
+      - $ref: '#/components/schemas/Strict'
+      discriminator:
+        propertyName: type
+        mapping:
+          Flexible: '#/components/schemas/Flexible'
+          Strict: '#/components/schemas/Strict'
+    DistributionState:
+      title: DistributionState
+      type: object
+      properties:
+        userStates:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistributionUserState'
+        lastReset:
+          type: string
+          format: date-time
+    Team:
+      title: Team
+      type: object
+      required:
+      - id
+      - workspaceId
+      - name
+      - metadata
+      properties:
+        id:
+          $ref: '#/components/schemas/TeamId'
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+        members:
+          type: array
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        metadata: {}
+    WorkingHours:
+      title: WorkingHours
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: WorkingHours
+    DistributionUserState_Active:
+      title: DistributionUserState_Active
+      description: User is active in the distribution and eligible for assignments. Carries the user's
+        current level.
       type: object
       required:
       - userId
       - total
-      - licenseRemovedAt
+      - level
       - type
       properties:
         userId:
@@ -1354,12 +1155,331 @@ components:
         total:
           type: integer
           format: int32
-        licenseRemovedAt:
-          type: string
-          format: date-time
+        level:
+          $ref: '#/components/schemas/Levels'
         type:
           type: string
-          const: NoLicense
+          const: Active
+    Daily:
+      title: Daily
+      type: object
+      required:
+      - every
+      - startsOn
+      - resetLocalTime
+      - timezone
+      - type
+      properties:
+        every:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        startsOn:
+          type: string
+          format: date
+        resetLocalTime:
+          type: string
+        timezone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Daily
+    Workspace:
+      title: Workspace
+      type: object
+      required:
+      - id
+      - name
+      - metadata
+      properties:
+        id:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+        emoji:
+          type: string
+        logo:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+    MeetingLimitUnset:
+      title: MeetingLimitUnset
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: MeetingLimitUnset
+    DistributionUserState_Capped:
+      title: DistributionUserState_Capped
+      description: User has reached their assignment cap for the current period and is temporarily excluded
+        until the cap resets.
+      type: object
+      required:
+      - userId
+      - total
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        type:
+          type: string
+          const: Capped
+    HubspotUser:
+      title: HubspotUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        id:
+          type: integer
+          format: int64
+    DistributedAssignmentLimit:
+      title: DistributedAssignmentLimit
+      type: object
+      required:
+      - resetPeriodicity
+      properties:
+        userCaps:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/UserLimit'
+        resetPeriodicity:
+          $ref: '#/components/schemas/DistributedAssignmentLimitReset'
+    ListRequest:
+      title: ListRequest
+      type: object
+      properties:
+        workspaceIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        name:
+          type: string
+        assignmentType:
+          $ref: '#/components/schemas/DistributionAssignmentType'
+    DistributionUserState:
+      title: DistributionUserState
+      oneOf:
+      - $ref: '#/components/schemas/DistributionUserState_Active'
+      - $ref: '#/components/schemas/DistributionUserState_Capped'
+      - $ref: '#/components/schemas/DistributionUserState_Disabled'
+      - $ref: '#/components/schemas/DistributionUserState_NoLicense'
+      - $ref: '#/components/schemas/DistributionUserState_Removed'
+      discriminator:
+        propertyName: type
+        mapping:
+          Active: '#/components/schemas/DistributionUserState_Active'
+          Capped: '#/components/schemas/DistributionUserState_Capped'
+          Disabled: '#/components/schemas/DistributionUserState_Disabled'
+          NoLicense: '#/components/schemas/DistributionUserState_NoLicense'
+          Removed: '#/components/schemas/DistributionUserState_Removed'
+    PaginatedResult_Workspace:
+      title: PaginatedResult_Workspace
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workspace'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    HourlyRolling:
+      title: HourlyRolling
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: HourlyRolling
+    DistributedAssignmentLimitReset:
+      title: DistributedAssignmentLimitReset
+      oneOf:
+      - $ref: '#/components/schemas/Daily1'
+      - $ref: '#/components/schemas/HourlyRolling'
+      - $ref: '#/components/schemas/Monthly1'
+      - $ref: '#/components/schemas/Weekly1'
+      discriminator:
+        propertyName: type
+        mapping:
+          Daily: '#/components/schemas/Daily1'
+          HourlyRolling: '#/components/schemas/HourlyRolling'
+          Monthly: '#/components/schemas/Monthly1'
+          Weekly: '#/components/schemas/Weekly1'
+    SalesforceUser:
+      title: SalesforceUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        id:
+          type: string
+          pattern: '[^\s\\/]+'
+    CreateTeamRequest:
+      title: CreateTeamRequest
+      type: object
+      required:
+      - workspaceId
+      - name
+      properties:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+        members:
+          type: array
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+    MeetingLimitReset:
+      title: MeetingLimitReset
+      oneOf:
+      - $ref: '#/components/schemas/Daily'
+      - $ref: '#/components/schemas/Monthly'
+      - $ref: '#/components/schemas/Weekly'
+      discriminator:
+        propertyName: type
+        mapping:
+          Daily: '#/components/schemas/Daily'
+          Monthly: '#/components/schemas/Monthly'
+          Weekly: '#/components/schemas/Weekly'
+    UserCalibration:
+      title: UserCalibration
+      type: object
+      required:
+      - userId
+      - calibration
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        calibration:
+          type: integer
+          format: int32
+    Record:
+      title: Record
+      type: object
+      required:
+      - handling
+      - type
+      properties:
+        handling:
+          $ref: '#/components/schemas/RecordHandling'
+        type:
+          type: string
+          const: Record
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
+    Daily1:
+      title: Daily
+      type: object
+      required:
+      - timeZone
+      - type
+      properties:
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Daily
+    MeetingStatus:
+      title: MeetingStatus
+      type: string
+      enum:
+      - Active
+      - Canceled
+      - NoShow
+      - Completed
+    RemoveUserFromWorkspaceRequest:
+      title: RemoveUserFromWorkspaceRequest
+      type: object
+      required:
+      - workspaceId
+      - userIds
+      properties:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        userIds:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/UserId'
+    ConfigurationDTO:
+      title: ConfigurationDTO
+      type: object
+      required:
+      - distributionId
+      - workspaceId
+      - assignmentTypeConfig
+      - teamRef
+      - metadata
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        assignmentTypeConfig:
+          $ref: '#/components/schemas/DistributionAssignmentTypeConfig'
+        teamRef:
+          $ref: '#/components/schemas/TeamRef'
+        weights:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserWeight'
+        name:
+          type: string
+        manualCalibration:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserCalibration'
+        capping:
+          $ref: '#/components/schemas/DistributedAssignmentLimit'
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
     Levels:
       title: Levels
       type: object
@@ -1382,6 +1502,116 @@ components:
         total:
           description: Current score with manual calibration applied.
           type: number
+    PaginatedResult_Team:
+      title: PaginatedResult_Team
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Team'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    Strict1:
+      title: Strict
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Strict
+    MeetingLimit:
+      title: MeetingLimit
+      oneOf:
+      - $ref: '#/components/schemas/MeetingLimitSet'
+      - $ref: '#/components/schemas/MeetingLimitUnset'
+      discriminator:
+        propertyName: type
+        mapping:
+          MeetingLimitSet: '#/components/schemas/MeetingLimitSet'
+          MeetingLimitUnset: '#/components/schemas/MeetingLimitUnset'
+    Weekly1:
+      title: Weekly
+      type: object
+      required:
+      - timeZone
+      - dayOfWeek
+      - type
+      properties:
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        dayOfWeek:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 7
+        type:
+          type: string
+          const: Weekly
+    RecordHandling:
+      title: RecordHandling
+      oneOf:
+      - $ref: '#/components/schemas/Strict1'
+      - $ref: '#/components/schemas/WorkingHours'
+      discriminator:
+        propertyName: type
+        mapping:
+          Strict: '#/components/schemas/Strict1'
+          WorkingHours: '#/components/schemas/WorkingHours'
+    RemoveUserFromTeamRequest:
+      title: RemoveUserFromTeamRequest
+      type: object
+      required:
+      - teamId
+      - userIds
+      properties:
+        teamId:
+          $ref: '#/components/schemas/TeamId'
+        userIds:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/UserId'
+    MeetingLimitSet:
+      title: MeetingLimitSet
+      type: object
+      required:
+      - resetPeriodicity
+      - type
+      properties:
+        userCaps:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/UserLimit'
+        resetPeriodicity:
+          $ref: '#/components/schemas/MeetingLimitReset'
+        type:
+          type: string
+          const: MeetingLimitSet
+    DistributionId:
+      title: DistributionId
+      examples:
+      - 7f8a1b2c-3d4e-4f5a-8b9c-0d1e2f3a4b5c
+      type: string
+      pattern: '[^\s\\/]+'
     DistributionUserState_Removed:
       title: DistributionUserState_Removed
       description: User was removed from the team entirely — historical record, no assignments will go
@@ -1404,103 +1634,27 @@ components:
         type:
           type: string
           const: Removed
-    Success1:
-      title: Success
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: Success
-    ReassignmentType:
-      title: ReassignmentType
+    TeamId:
+      title: TeamId
+      examples:
+      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
       type: string
-      enum:
-      - SameUser
-      - AnyTeamMember
-    Strict1:
-      title: Strict
+      pattern: '[^\s\\/]+'
+    Flexible:
+      title: Flexible
       type: object
       required:
+      - reassignmentType
+      - allowPickingAssignee
       - type
       properties:
+        reassignmentType:
+          $ref: '#/components/schemas/ReassignmentType'
+        allowPickingAssignee:
+          type: boolean
         type:
           type: string
-          const: Strict
-    DistributedAssignmentLimitReset:
-      title: DistributedAssignmentLimitReset
-      oneOf:
-      - $ref: '#/components/schemas/Daily1'
-      - $ref: '#/components/schemas/HourlyRolling'
-      - $ref: '#/components/schemas/Monthly1'
-      - $ref: '#/components/schemas/Weekly1'
-      discriminator:
-        propertyName: type
-        mapping:
-          Daily: '#/components/schemas/Daily1'
-          HourlyRolling: '#/components/schemas/HourlyRolling'
-          Monthly: '#/components/schemas/Monthly1'
-          Weekly: '#/components/schemas/Weekly1'
-    FindAllRequest:
-      title: FindAllRequest
-      type: object
-      properties:
-        workspaceIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-        name:
-          type: string
-        member:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-    UserLicenses:
-      title: UserLicenses
-      type: object
-      required:
-      - distro
-      - chiliCalOrg
-      - concierge
-      - conciergeLive
-      - chat
-      - handoff
-      properties:
-        distro:
-          type: boolean
-        chiliCalOrg:
-          type: boolean
-        concierge:
-          type: boolean
-        conciergeLive:
-          type: boolean
-        chat:
-          type: boolean
-        handoff:
-          type: boolean
-    MeetingsEndpointsResponse:
-      title: MeetingsEndpointsResponse
-      oneOf:
-      - $ref: '#/components/schemas/Failure1'
-      - $ref: '#/components/schemas/Success1'
-      discriminator:
-        propertyName: type
-        mapping:
-          Failure: '#/components/schemas/Failure1'
-          Success: '#/components/schemas/Success1'
+          const: Flexible
     Failure1:
       title: Failure
       type: object
@@ -1510,142 +1664,21 @@ components:
         type:
           type: string
           const: Failure
-    DistributionAssignmentType:
-      title: DistributionAssignmentType
-      type: string
-      enum:
-      - Record
-      - Meeting
-      - Conversation
-    SalesforceUser:
-      title: SalesforceUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-        id:
-          type: string
-          pattern: '[^\s\\/]+'
-    Record:
-      title: Record
-      type: object
-      required:
-      - handling
-      - type
-      properties:
-        handling:
-          $ref: '#/components/schemas/RecordHandling'
-        type:
-          type: string
-          const: Record
-    Daily1:
-      title: Daily
-      type: object
-      required:
-      - timeZone
-      - type
-      properties:
-        timeZone:
-          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
-          examples:
-          - America/New_York
-          type: string
-        type:
-          type: string
-          const: Daily
-    DistributionUserState_Active:
-      title: DistributionUserState_Active
-      description: User is active in the distribution and eligible for assignments. Carries the user's
-        current level.
-      type: object
-      required:
-      - userId
-      - total
-      - level
-      - type
-      properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        total:
-          type: integer
-          format: int32
-        level:
-          $ref: '#/components/schemas/Levels'
-        type:
-          type: string
-          const: Active
-    UserLimit:
-      title: UserLimit
-      type: object
-      required:
-      - userId
-      - limit
-      properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        limit:
-          type: integer
-          format: int32
-          minimum: 0
-    Map_String:
-      title: Map_String
-      type: object
-      additionalProperties:
-        type: string
-    RemoveUserFromTeamRequest:
-      title: RemoveUserFromTeamRequest
-      type: object
-      required:
-      - teamId
-      - userIds
-      properties:
-        teamId:
-          $ref: '#/components/schemas/TeamId'
-        userIds:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/UserId'
-    SimpleMetadata:
-      title: SimpleMetadata
-      type: object
-      required:
-      - createdAt
-      - createdBy
-      - updatedAt
-      - updatedBy
-      - revision
-      properties:
-        createdAt:
-          type: string
-          format: date-time
-        createdBy:
-          $ref: '#/components/schemas/CallerRef'
-        updatedAt:
-          type: string
-          format: date-time
-        updatedBy:
-          $ref: '#/components/schemas/CallerRef'
-        revision:
-          type: integer
-          format: int32
-    TeamId:
-      title: TeamId
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
       examples:
-      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
+      - user/17a3d4563d5a67a3d456ad635
       type: string
-      pattern: '[^\s\\/]+'
-    DistributionUserState_Capped:
-      title: DistributionUserState_Capped
-      description: User has reached their assignment cap for the current period and is temporarily excluded
-        until the cap resets.
+    DistributionUserState_NoLicense:
+      title: DistributionUserState_NoLicense
+      description: User is still on the team but has lost their license, so they cannot receive assignments.
+        Re-licensing restores them.
       type: object
       required:
       - userId
       - total
+      - licenseRemovedAt
       - type
       properties:
         userId:
@@ -1653,90 +1686,12 @@ components:
         total:
           type: integer
           format: int32
-        type:
-          type: string
-          const: Capped
-    UserWeight:
-      title: UserWeight
-      type: object
-      required:
-      - userId
-      - weight
-      properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        weight:
-          type: integer
-          format: int32
-          minimum: 0
-          maximum: 10000
-    Workspace:
-      title: Workspace
-      type: object
-      required:
-      - id
-      - name
-      - metadata
-      properties:
-        id:
-          $ref: '#/components/schemas/WorkspaceId'
-        name:
-          type: string
-        emoji:
-          type: string
-        logo:
-          type: string
-        metadata:
-          $ref: '#/components/schemas/SimpleMetadata'
-    MeetingStatus:
-      title: MeetingStatus
-      type: string
-      enum:
-      - Active
-      - Canceled
-      - NoShow
-      - Completed
-    Distribution:
-      title: Distribution
-      type: object
-      required:
-      - id
-      - published
-      - state
-      - prioritization
-      properties:
-        id:
-          $ref: '#/components/schemas/DistributionId'
-        published:
-          $ref: '#/components/schemas/ConfigurationDTO'
-        state:
-          $ref: '#/components/schemas/DistributionState'
-        prioritization:
-          $ref: '#/components/schemas/Prioritization'
-    DistributedAssignmentLimit:
-      title: DistributedAssignmentLimit
-      type: object
-      required:
-      - resetPeriodicity
-      properties:
-        userCaps:
-          type: array
-          uniqueItems: true
-          items:
-            $ref: '#/components/schemas/UserLimit'
-        resetPeriodicity:
-          $ref: '#/components/schemas/DistributedAssignmentLimitReset'
-    DistributionState:
-      title: DistributionState
-      type: object
-      properties:
-        userStates:
-          type: array
-          items:
-            $ref: '#/components/schemas/DistributionUserState'
-        lastReset:
+        licenseRemovedAt:
           type: string
           format: date-time
+        type:
+          type: string
+          const: NoLicense
     Prioritization:
       title: Prioritization
       type: object
@@ -1763,26 +1718,228 @@ components:
           items:
             type: string
             pattern: '[^\s\\/]+'
-    UserCalibration:
-      title: UserCalibration
+    DistributionUserState_Disabled:
+      title: DistributionUserState_Disabled
+      description: User has been explicitly disabled in this distribution (weight set to 0). Still on
+        the team but won't receive assignments until re-enabled.
       type: object
       required:
       - userId
-      - calibration
+      - total
+      - disabledAt
+      - type
       properties:
         userId:
           $ref: '#/components/schemas/UserId'
-        calibration:
+        total:
           type: integer
           format: int32
-    Monthly1:
+        disabledAt:
+          type: string
+          format: date-time
+        type:
+          type: string
+          const: Disabled
+    Meeting:
+      title: Meeting
+      type: object
+      required:
+      - handling
+      - limits
+      - type
+      properties:
+        handling:
+          $ref: '#/components/schemas/MeetingHandling'
+        limits:
+          $ref: '#/components/schemas/MeetingLimit'
+        type:
+          type: string
+          const: Meeting
+    Conversation:
+      title: Conversation
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Conversation
+    MeetingsEndpointsResponse:
+      title: MeetingsEndpointsResponse
+      oneOf:
+      - $ref: '#/components/schemas/Failure1'
+      - $ref: '#/components/schemas/Success1'
+      discriminator:
+        propertyName: type
+        mapping:
+          Failure: '#/components/schemas/Failure1'
+          Success: '#/components/schemas/Success1'
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
+    Email:
+      title: Email
+      examples:
+      - john.doe@acme.com
+      type: string
+      pattern: .+@.+
+    ExportMeetingsRequest:
+      title: ExportMeetingsRequest
+      type: object
+      required:
+      - start
+      - end
+      properties:
+        workspaceIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        assigneeIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        hostIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        bookerIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        meetingTypeIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+        status:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/MeetingStatus'
+    DistributionAssignmentType:
+      title: DistributionAssignmentType
+      type: string
+      enum:
+      - Record
+      - Meeting
+      - Conversation
+    Strict:
+      title: Strict
+      type: object
+      required:
+      - hideAssignee
+      - type
+      properties:
+        hideAssignee:
+          type: boolean
+        type:
+          type: string
+          const: Strict
+    UserLimit:
+      title: UserLimit
+      type: object
+      required:
+      - userId
+      - limit
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        limit:
+          type: integer
+          format: int32
+          minimum: 0
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+    PaginatedResult_User:
+      title: PaginatedResult_User
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    SimpleMetadata:
+      title: SimpleMetadata
+      type: object
+      required:
+      - createdAt
+      - createdBy
+      - updatedAt
+      - updatedBy
+      - revision
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: '#/components/schemas/CallerRef'
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: '#/components/schemas/CallerRef'
+        revision:
+          type: integer
+          format: int32
+    Monthly:
       title: Monthly
       type: object
       required:
-      - timeZone
+      - every
+      - startsOn
+      - resetDay
+      - timezone
       - type
       properties:
-        timeZone:
+        every:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        startsOn:
+          type: string
+          format: date
+        resetDay:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 28
+        timezone:
           description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
           examples:
           - America/New_York
@@ -1790,6 +1947,23 @@ components:
         type:
           type: string
           const: Monthly
+    Distribution:
+      title: Distribution
+      type: object
+      required:
+      - id
+      - published
+      - state
+      - prioritization
+      properties:
+        id:
+          $ref: '#/components/schemas/DistributionId'
+        published:
+          $ref: '#/components/schemas/ConfigurationDTO'
+        state:
+          $ref: '#/components/schemas/DistributionState'
+        prioritization:
+          $ref: '#/components/schemas/Prioritization'
     User:
       title: User
       type: object
@@ -1839,208 +2013,29 @@ components:
         personalWorkspaceId:
           type: string
           pattern: '[^\s\\/]+'
-    ConfigurationDTO:
-      title: ConfigurationDTO
+    UserLicenses:
+      title: UserLicenses
       type: object
       required:
-      - distributionId
-      - workspaceId
-      - assignmentTypeConfig
-      - teamRef
-      - metadata
+      - distro
+      - chiliCalOrg
+      - concierge
+      - conciergeLive
+      - chat
+      - handoff
       properties:
-        distributionId:
-          $ref: '#/components/schemas/DistributionId'
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-        assignmentTypeConfig:
-          $ref: '#/components/schemas/DistributionAssignmentTypeConfig'
-        teamRef:
-          $ref: '#/components/schemas/TeamRef'
-        weights:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserWeight'
-        name:
-          type: string
-        manualCalibration:
-          type: array
-          items:
-            $ref: '#/components/schemas/UserCalibration'
-        capping:
-          $ref: '#/components/schemas/DistributedAssignmentLimit'
-        metadata:
-          $ref: '#/components/schemas/SimpleMetadata'
-    MeetingLimit:
-      title: MeetingLimit
-      oneOf:
-      - $ref: '#/components/schemas/MeetingLimitSet'
-      - $ref: '#/components/schemas/MeetingLimitUnset'
-      discriminator:
-        propertyName: type
-        mapping:
-          MeetingLimitSet: '#/components/schemas/MeetingLimitSet'
-          MeetingLimitUnset: '#/components/schemas/MeetingLimitUnset'
-    MeetingHandling:
-      title: MeetingHandling
-      oneOf:
-      - $ref: '#/components/schemas/Flexible'
-      - $ref: '#/components/schemas/Strict'
-      discriminator:
-        propertyName: type
-        mapping:
-          Flexible: '#/components/schemas/Flexible'
-          Strict: '#/components/schemas/Strict'
-    ExportMeetingsRequest:
-      title: ExportMeetingsRequest
-      type: object
-      required:
-      - start
-      - end
-      properties:
-        workspaceIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        start:
-          type: string
-          format: date-time
-        end:
-          type: string
-          format: date-time
-        assigneeIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        hostIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        bookerIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        meetingTypeIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            format: uuid
-        status:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/MeetingStatus'
-    HourlyRolling:
-      title: HourlyRolling
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: HourlyRolling
-    MeetingLimitUnset:
-      title: MeetingLimitUnset
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: MeetingLimitUnset
-    HubspotUser:
-      title: HubspotUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-        id:
-          type: integer
-          format: int64
-    PaginatedResult_Team:
-      title: PaginatedResult_Team
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Team'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    RecordHandling:
-      title: RecordHandling
-      oneOf:
-      - $ref: '#/components/schemas/Strict1'
-      - $ref: '#/components/schemas/WorkingHours'
-      discriminator:
-        propertyName: type
-        mapping:
-          Strict: '#/components/schemas/Strict1'
-          WorkingHours: '#/components/schemas/WorkingHours'
-    UserId:
-      title: UserId
-      examples:
-      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
-      type: string
-      pattern: '[^\s\\/]+'
-    Strict:
-      title: Strict
-      type: object
-      required:
-      - hideAssignee
-      - type
-      properties:
-        hideAssignee:
+        distro:
           type: boolean
-        type:
-          type: string
-          const: Strict
-    Flexible:
-      title: Flexible
-      type: object
-      required:
-      - reassignmentType
-      - allowPickingAssignee
-      - type
-      properties:
-        reassignmentType:
-          $ref: '#/components/schemas/ReassignmentType'
-        allowPickingAssignee:
+        chiliCalOrg:
           type: boolean
-        type:
-          type: string
-          const: Flexible
-    CallerRef:
-      title: CallerRef
-      description: stringified caller reference in format $type/$id
-      examples:
-      - user/17a3d4563d5a67a3d456ad635
-      type: string
+        concierge:
+          type: boolean
+        conciergeLive:
+          type: boolean
+        chat:
+          type: boolean
+        handoff:
+          type: boolean
     PaginatedResult_Distribution:
       title: PaginatedResult_Distribution
       type: object
@@ -2064,48 +2059,53 @@ components:
           type: integer
           format: int64
           exclusiveMinimum: 0
-    RemoveUserFromWorkspaceRequest:
-      title: RemoveUserFromWorkspaceRequest
+    FindAllRequest:
+      title: FindAllRequest
       type: object
-      required:
-      - workspaceId
-      - userIds
       properties:
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-        userIds:
+        workspaceIds:
           type: array
           minItems: 1
           items:
-            $ref: '#/components/schemas/UserId'
-    Conversation:
-      title: Conversation
+            type: string
+            pattern: '[^\s\\/]+'
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        name:
+          type: string
+        member:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+    Success1:
+      title: Success
       type: object
       required:
       - type
       properties:
         type:
           type: string
-          const: Conversation
-    DistributionId:
-      title: DistributionId
-      examples:
-      - 7f8a1b2c-3d4e-4f5a-8b9c-0d1e2f3a4b5c
-      type: string
-      pattern: '[^\s\\/]+'
-    CreateTeamRequest:
-      title: CreateTeamRequest
+          const: Success
+    Monthly1:
+      title: Monthly
       type: object
       required:
-      - workspaceId
-      - name
+      - timeZone
+      - type
       properties:
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-        name:
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
           type: string
-        members:
-          type: array
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
+        type:
+          type: string
+          const: Monthly
