@@ -1,12 +1,28 @@
 # Deploying Chili Piper Skills to your whole team
 
-These skills ship as a Claude Code **plugin** (`chili-piper-skills`) served from this repo's marketplace. A single admin can roll them out to an entire team so individual users don't each install by hand. There are three approaches, from lightest to most locked-down.
+These skills ship as a **plugin** (`chili-piper-skills`) served from this repo's marketplace — installable in **Claude Desktop, claude.ai, and Claude Code**. A single admin can roll it out to an entire team so individual users don't each install by hand. The approaches below go from the simple in-app **Directory** to centrally-managed enterprise settings.
 
 > **Names to know:** the marketplace lives in this repo, `Chili-Piper/mcp-assets`. The plugin is `chili-piper-skills`. So the fully-qualified plugin ref is `chili-piper-skills@chili-piper-skills`.
 
 ---
 
-## Option 1 — Each user installs (simplest)
+## Option 1 — Add it in the Directory (Claude Desktop / claude.ai — easiest)
+
+No terminal, no settings files — just the in-app Directory:
+
+**For one person (personal):**
+1. **Customize → Plugins** (or **Connectors**) → **＋** next to **Personal plugins** → **Create plugin → Add marketplace**.
+2. Paste `https://github.com/Chili-Piper/mcp-assets` → **Sync**.
+3. **Directory → Plugins → Personal** → open the **mcp-assets** marketplace → click **＋** on **Chili Piper Skills**.
+
+**For the whole org (admin):**
+Do the same but from **＋ next to Organization plugins**. The plugin then appears for everyone under **Directory → Your organization**, so members don't install anything by hand. This is the simplest org-wide path for most teams.
+
+> **Want a controlled/frozen copy?** Some orgs fork `Chili-Piper/mcp-assets` into a **private** repo and add *that* as the marketplace, so updates land on their own schedule and the catalog is locked to what they've vetted. Point the marketplace URL at the private repo instead (members need access to it). Otherwise, pointing at the public repo always serves the latest released version.
+
+---
+
+## Option 2 — Each user installs via Claude Code CLI
 
 Two commands in Claude Code:
 
@@ -24,7 +40,7 @@ Good for trying it out or small teams. Everyone runs it once; updates via `/plug
 
 ---
 
-## Option 2 — Ship it with a team repo (recommended for teams)
+## Option 3 — Ship it with a team repo (Claude Code, settings.json)
 
 Commit the marketplace + plugin into a shared repository's `.claude/settings.json`. When a teammate opens that repo in Claude Code and trusts the folder, they're **prompted to install** automatically — no manual commands.
 
@@ -48,7 +64,7 @@ This is the GitOps path: it's version-controlled, shared with everyone who clone
 
 ---
 
-## Option 3 — Enforce org-wide via managed settings (enterprise)
+## Option 4 — Enforce org-wide via managed settings (enterprise)
 
 For centrally-managed fleets, IT can place the same config in Claude Code's **managed settings**, which users cannot override:
 
