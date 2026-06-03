@@ -129,6 +129,8 @@ This repository contains **zero customer data** — skills are instructions only
 
 Found a bug or want a new skill? Open an [issue](https://github.com/Chili-Piper/mcp-assets/issues). For product/security questions see [SECURITY.md](SECURITY.md).
 
+💡 **Got a rough skill idea?** Drop it in the [skill idea inbox](https://github.com/Chili-Piper/mcp-assets/issues?q=is%3Aissue+label%3Askill-idea) — browse what's proposed, comment, or [add your own](https://github.com/Chili-Piper/mcp-assets/issues/new?template=skill-idea.yml).
+
 **License:** MIT for code · CC-BY 4.0 for content — see [LICENSE](LICENSE).
 
 ---
