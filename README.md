@@ -46,7 +46,17 @@ Every skill talks to your Chili Piper account through the official MCP server. S
 
 ### 2. Install the skills — pick your surface
 
-**Option A — Claude Code CLI (plugin; auto-updates):**
+**Option A — Claude Desktop or claude.ai (plugin, easiest — no terminal):**
+
+Install the whole plugin (every skill + the Chili Piper MCP config) right inside Claude:
+
+1. Open **Customize → Plugins** (or **Connectors**), click **＋** next to **Personal plugins** → **Create plugin → Add marketplace**.
+2. Paste `https://github.com/Chili-Piper/mcp-assets` and click **Sync**.
+3. Go to the **Directory → Plugins** (the **Personal** tab), open the **mcp-assets** marketplace, and click **＋** on **Chili Piper Skills** to install.
+
+> **Admins:** add it under **Organization plugins** instead to make it available to your whole org in one step — see [Deploy for your whole team](#deploy-for-your-whole-team).
+
+**Option B — Claude Code CLI (plugin):**
 
 In the standalone Claude Code terminal CLI:
 
@@ -55,28 +65,20 @@ In the standalone Claude Code terminal CLI:
 /plugin install chili-piper-skills@chili-piper-skills
 ```
 
-This installs every skill, the bundled slash commands, and the Chili Piper MCP config in one step. Updating later is a single command (see [Staying up to date](#staying-up-to-date)).
-
-> **Note:** `/plugin` is **only** available in the Claude Code **terminal CLI** — not in the Claude Desktop app or claude.ai. If you're on Desktop/web, use Option B.
+> Both the marketplace and plugin are named **`chili-piper-skills`** (the ref is `plugin-name@marketplace-name`); or run `/plugin` and pick it from the **Marketplaces** menu. `/plugin` is CLI-only — on Desktop/web use Option A.
 >
-> Both the marketplace and the plugin are named **`chili-piper-skills`**, so the install ref is `chili-piper-skills@chili-piper-skills` (`plugin-name@marketplace-name`). You can also run `/plugin` and pick it from the **Marketplaces** menu instead of typing the name.
->
-> **See a `git@github.com: Permission denied` / SSH error?** Your git is cloning over SSH. For this public repo no key is needed — tell git to use HTTPS and retry:
+> **See a `git@github.com: Permission denied` / SSH error?** No key is needed for this public repo — tell git to use HTTPS and retry:
 > ```
 > git config --global url."https://github.com/".insteadOf "git@github.com:"
 > ```
 
-**Option B — Claude Desktop / claude.ai (upload a skill):**
+Options A and B install the full plugin (skills + slash commands + MCP config) and keep it updated — see [Staying up to date](#staying-up-to-date).
 
-Skills install through Claude's **Customize → Skills** panel (no `/plugin` needed):
+**Option C — Just one skill (upload a single `.zip`):**
 
-1. Download the skill's `.zip` from the [latest release](https://github.com/Chili-Piper/mcp-assets/releases/latest) — e.g. [`meeting-inspector.zip`](https://github.com/Chili-Piper/mcp-assets/releases/latest/download/meeting-inspector.zip). Each skill is a separate `.zip`.
-2. Open **Customize → Skills → ＋** and upload the `.zip`. It's added as a **Personal skill** (just you — local to your account).
-3. Make sure the **Chili Piper MCP** connector is connected with your own API key or OAuth ([setup](mcp-servers/chili-piper/README.md)).
+Want only one skill, or to push a single skill as an **Organization skill**? Download it from the [latest release](https://github.com/Chili-Piper/mcp-assets/releases/latest) (e.g. [`meeting-inspector.zip`](https://github.com/Chili-Piper/mcp-assets/releases/latest/download/meeting-inspector.zip)) and upload it via **Customize → Skills → ＋** (added as a Personal skill; admins can choose **Organization** + **Share**).
 
-> **Org admins:** to roll a skill out to your whole team, upload it under **Organization skills** and turn on **Share**. Personal (local) and Organization (org-wide) are both supported — users can self-serve either way.
-
-**Option C — ChatGPT:** deploy the matching Custom GPT — see [`gpts/README.md`](gpts/README.md).
+**Option D — ChatGPT:** deploy the matching Custom GPT — see [`gpts/README.md`](gpts/README.md).
 
 ### 3. Run a skill
 
@@ -93,7 +95,11 @@ Or just ask in natural language — the agent loads the matching skill automatic
 
 ## Deploy for your whole team
 
-A single admin can roll these skills out to an entire team or org so everyone gets the same vetted specialists. See [`docs/org-deployment.md`](docs/org-deployment.md).
+A single admin can roll these skills out to an entire team or org so everyone gets the same vetted specialists — and for a first-party set like this, org-wide is often the right call.
+
+**Easiest (Claude Desktop / claude.ai):** add the marketplace under **Organization plugins** (Customize → **Organization plugins → ＋ → Create plugin → Add marketplace** → `https://github.com/Chili-Piper/mcp-assets` → **Sync**). It then shows up for everyone in your org's **Directory → Your organization** tab.
+
+For Claude Code (settings.json), managed/enterprise rollout, and the private-fork option, see [`docs/org-deployment.md`](docs/org-deployment.md).
 
 ---
 
@@ -101,8 +107,9 @@ A single admin can roll these skills out to an entire team or org so everyone ge
 
 We actively improve these skills, fix correctness issues, and add new ones. To stay current:
 
+- **Claude Desktop / claude.ai (plugin):** the plugin updates from the marketplace automatically; if needed, re-open **Add marketplace** and **Sync** to refresh.
 - **Claude Code plugin:** run `/plugin update chili-piper-skills@chili-piper-skills` (or enable auto-update).
-- **Claude Desktop / claude.ai:** re-download the skill `.zip` from the [latest release](https://github.com/Chili-Piper/mcp-assets/releases/latest) and re-upload it in Customize → Skills.
+- **Single skill installed via `.zip`:** re-download from the [latest release](https://github.com/Chili-Piper/mcp-assets/releases/latest) and re-upload in Customize → Skills.
 - **Manual install:** `git pull`, or re-download the skill folder.
 - **Watch releases:** click **Watch → Custom → Releases** on this repo to be notified of every versioned update.
 - **Changelog:** every release is logged in [`CHANGELOG.md`](CHANGELOG.md).
