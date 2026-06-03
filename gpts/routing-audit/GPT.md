@@ -1,7 +1,7 @@
 ---
 name: Routing Audit
 description: Audits all Chili Piper concierge routers for coverage gaps — unmapped lead sources, stale ownership rules, unbalanced distributions, and catch-all overflows — before they show up as lost pipeline.
-version: 0.2.0
+version: 0.2.1
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Audit all routers across our org for coverage gaps"
@@ -85,10 +85,12 @@ For each workspace call `listDistributions`. For each distribution inspect:
 - **Member count:** distributions with 0 members will route no leads
 - **Members with 0 weight:** effectively excluded from routing
 - **Algorithm:** Strict / Flexible / Weighted / Working Hours
+- **Assignment balance:** each active member carries `statistics.assigned` (cumulative assignments for the current period). Derive `idealNumber = (weight / totalWeight) × totalAssigned` (where `totalAssigned` = sum of all members' `statistics.assigned`), then compare each member's actual `assigned / totalAssigned` share to their `weight / totalWeight` share — this detects *real* imbalance rather than weight-only inspection.
 
 Flag:
 - Any distribution with 0 or 1 active member (no redundancy)
 - Weighted distributions where one rep has > 5× the weight of others
+- Distributions where a rep's actual `assigned` share deviates from their ideal share by > 2× (indicates capping, calendar outages, or reassignment churn)
 
 ---
 
@@ -124,12 +126,17 @@ Flag:
 > Rule `<name>` in router `<name>` had 0 matches in the last N days.
 > Check: is this rule still needed? Is ownership data in Salesforce up to date?
 
+**[LOW]** Assignment imbalance vs. configured weight
+> Distribution `<name>`: rep `<name>` received `N%` of assignments but their weight share is `N%` (ideal: `N` assignments).
+> Check: capping config, recent calendar outages, or reassignment churn.
+
 **Recommendations** (prioritized)
 
 1. Fix critical gaps (missing catch-all) — these drop leads silently
 2. Investigate high catch-all rates — add rules for top unmatched profiles
 3. Fill empty distributions — any distribution with 0 members routes nothing
 4. Review single-member distributions before the next vacation or departure
+5. Investigate assignment imbalance — if actual share deviates > 2× from weight share, check capping, availability, or reassignment activity
 
 **Human decision point**
 
