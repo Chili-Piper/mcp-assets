@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💡 Browse the skill idea inbox
+    url: https://github.com/Chili-Piper/mcp-assets/issues?q=is%3Aissue+label%3Askill-idea
+    about: See skill ideas already proposed — comment, upvote with 👍, or pick one up to build before adding a new one.
+  - name: 📚 Chili Piper Help Center
+    url: https://help.chilipiper.com
+    about: Product questions and how-to docs (not skill issues) are best answered here.
