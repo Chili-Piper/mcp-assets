@@ -1,7 +1,7 @@
 ---
 name: routing-audit
 description: Audits all Chili Piper concierge routers for coverage gaps — unmapped lead sources, stale ownership rules, unbalanced distributions, and catch-all overflows — before they show up as lost pipeline
-version: 0.2.0
+version: 0.2.1
 inputs:
   - name: workspace
     type: string
@@ -22,7 +22,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review gaps and decide which to fix first — routing gaps silently leak pipeline, so prioritize by volume before severity"
 writes_to: "Nothing — read-only diagnostic. Use the Chili Piper router builder to apply fixes."
-api_note: "Field names are validated against live MCP responses — the tools' own descriptions are unreliable. concierge-logs requires a routerId and has a hard 30-day maximum window. Per-router rules + the catch-all come from the router object returned by concierge-list-routers (router.routing.rules[] and router.routing.catchAll); rule-list is workspace-scoped (it takes no routerId) and requires filter.ruleBuilderVersion. distribution-list-put returns a top-level array (no results wrapper) and takes workspaceIds (array)."
+api_note: "Field names are validated against live MCP responses — the tools' own descriptions are unreliable. concierge-logs requires a routerId and has a hard 30-day maximum window. Per-router rules + the catch-all come from the router object returned by concierge-list-routers (router.routing.rules[] and router.routing.catchAll); rule-list is workspace-scoped (it takes no routerId) and requires filter.ruleBuilderVersion. distribution-list-put returns a top-level array (no results wrapper) and takes workspaceIds (array). As of DISTRO-4426 (2026-06-03): distribution-list-put state.userStates now includes statistics:{assigned,cancelled,noShow,reassignedToThis,reassignedFromThis} on every variant; use statistics.assigned alongside weights to detect actual vs. configured balance imbalances."
 ---
 
 # Routing Audit
@@ -37,7 +37,7 @@ You are a RevOps systems auditor. Your job is to systematically inspect all Chil
 | `concierge-list-routers` | Routers in a workspace → `{routers: [{router: {id, name, slug, routing: {rules: [...], catchAll: {...}}}, workspaceId}]}`. routerId is `routers[N].router.id`; the router's rules and catch-all are on `routers[N].router.routing`. |
 | `rule-list` | Active routing rules, **workspace-scoped** (no routerId). Input `{filter: {ruleBuilderVersion: ["ExplicitV1"] (required), workspaceId?, name?, type?}, pagination}`. Returns `{results: [{id, name, type, conditions, workspaceId, metadata: {revision}}], total}`. `type` is `OwnershipRule` or `NonOwnershipRule`. |
 | `concierge-logs` | Routing decisions → `status`, `matchedPath` (object), `guestEmail`, `triggeredAt`, `assignments`, `meetingId`. `matchedPath.route.type` is `RuleRoute` or `CatchAllRoute`. 30-day max window; requires `workspaceId` + `routerId`. |
-| `distribution-list-put` | Distributions — **top-level array** (no `results` wrapper). Each item `{id, published: {distributionId, name, weights: [{userId, weight}], assignmentTypeConfig: {type, handling: {type}}, capping, teamRef: {id}}, state: {userStates: [{userId, type: "Active"\|"Removed"}]}}`. Input takes `workspaceIds` (array) + optional `name`, `assignmentType` filters. |
+| `distribution-list-put` | Distributions — **top-level array** (no `results` wrapper). Each item `{id, published: {distributionId, name, weights: [{userId, weight}], assignmentTypeConfig: {type, handling: {type}}, capping, teamRef: {id}}, state: {userStates: [{userId, type: "Active"\|"Capped"\|"Disabled"\|"Removed"\|"NoLicense", statistics: {assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}}]}}`. Input takes `workspaceIds` (array) + optional `name`, `assignmentType` filters. |
 
 ---
 
@@ -142,10 +142,12 @@ Use the optional `name` filter to look up a specific distribution, or `assignmen
 - **Active members:** `state.userStates[]` filtered to `type == "Active"` — a distribution with 0 active members routes no leads
 - **Weights:** `published.weights[]` (each `{userId, weight}`) — a member with weight 0 is effectively excluded
 - **Algorithm / handling:** `published.assignmentTypeConfig.handling.type` (`Strict` or `Flexible`); the assignment scope is `published.assignmentTypeConfig.type`
+- **Assignment balance:** each `state.userStates[]` entry carries `statistics.assigned`. Derive `idealNumber = (weight / totalWeight) × totalAssigned` where `totalAssigned = sum of all members' statistics.assigned`. Compare each member's actual `assigned / totalAssigned` share to their `weight / totalWeight` share to detect real imbalance (as opposed to weight-only inspection).
 
 Flag:
 - Any distribution with 0 or 1 active member (no redundancy — single rep absence blocks the route)
 - Distributions where one rep's weight is > 5× the others (may be intentional, but worth flagging)
+- Distributions where one rep's actual `assigned` share deviates from their ideal share by > 2× (more actionable than weight alone — indicates capping, calendar outages, or reassignment churn)
 
 ---
 
@@ -181,12 +183,16 @@ Flag:
 > Rule `<name>` (`OwnershipRule`) in router `<name>` had 0 matches in the last `N` days.
 > Check: is this rule still needed? Is ownership data in Salesforce up to date?
 
+**[LOW]** Assignment imbalance vs. configured weight
+> Distribution `<name>`: rep `<name>` received `N%` of assignments but their weight share is `N%` (ideal: `N` assignments). Check capping config, recent calendar outages, or reassignment churn.
+
 **Recommendations** (prioritized)
 
 1. Fix critical gaps (catch-all routing to no one) — these drop leads silently
 2. Investigate high catch-all rates — add rules for top unmatched profiles
 3. Fill empty distributions — any distribution with 0 active members is currently routing nothing
 4. Review single-member distributions before the next vacation or departure
+5. Investigate assignment imbalance — if actual share deviates > 2× from weight share, check capping, availability, or reassignment activity
 
 **Human decision point**
 
