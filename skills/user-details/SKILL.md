@@ -1,7 +1,7 @@
 ---
 name: user-details
 description: Pulls a full profile for any Chili Piper user — teams, workspaces, meeting types, scheduling links, and recent meeting activity — for onboarding audits, offboarding checks, and rep-level troubleshooting
-version: 0.1.3
+version: 0.1.4
 inputs:
   - name: user
     type: string
@@ -24,7 +24,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the profile and decide: onboard the user to missing teams, fix routing gaps, or proceed with offboarding"
 writes_to: "Nothing — read-only diagnostic"
-api_note: "Field names validated against live MCP responses. user-read returns license info but NO calendar/CRM connection status. user-find is needed first if you have an email or name rather than a user ID. workspace-list items use `id` (not `workspaceId`); team-list-put results use `id` (not `teamId`) and include `workspaceId`. As of DISTRO-4472 (2026-05-21): team-list-put member filter is live (server-side filtering by userId); team-list-put also accepts an optional name filter. meeting-export-v2-put supports server-side filters: hostIds, assigneeIds, bookerIds, meetingTypeIds, status."
+api_note: "Field names validated against live MCP responses. user-read returns license info but NO calendar/CRM connection status. user-find is needed first if you have an email or name rather than a user ID. workspace-list items use `id` (not `workspaceId`); team-list-put results use `id` (not `teamId`) and include `workspaceId`. As of DISTRO-4472 (2026-05-21): team-list-put member filter is live (server-side filtering by userId); team-list-put also accepts an optional name filter. meeting-export-v2-put supports server-side filters: hostIds, assigneeIds, bookerIds, meetingTypeIds, status. As of CEH-10353 (2026-06-03): licenses gains an optional `tier` field (`RoutingAndScheduling`|`Experiences`|`ChiliDataPlatform`); `distro`, `concierge`, `conciergeLive`, `chat` are now optional booleans (default `false` when absent); `chiliCalOrg` and `handoff` remain required."
 ---
 
 # User Details
@@ -36,7 +36,7 @@ You are a RevOps analyst. Your job is to pull a complete profile for a Chili Pip
 | Tool | What it returns |
 |------|----------------|
 | `user-find` | Search by email or name → `id`, `name`, `email`, `isSuperAdmin`, `licenses` (object), `workspaces` (array of workspaceId strings), `personalWorkspaceId` |
-| `user-read` | Full user record (same fields as user-find result item, unwrapped) → `id`, `name`, `email`, `isSuperAdmin`, `licenses` (object with boolean fields: `distro`, `chiliCalOrg`, `concierge`, `conciergeLive`, `chat`, `handoff`), `workspaces` (array of workspaceId strings, NOT `workspaceIds`), `personalWorkspaceId`. No `calendarConnected`, `calendarProvider`, or `crmConnected` fields. |
+| `user-read` | Full user record (same fields as user-find result item, unwrapped) → `id`, `name`, `email`, `isSuperAdmin`, `licenses` (object: required `chiliCalOrg`, `handoff`; optional `distro`, `concierge`, `conciergeLive`, `chat` — default `false`; optional `tier`: `RoutingAndScheduling`\|`Experiences`\|`ChiliDataPlatform` — absent for non-tiered users), `workspaces` (array of workspaceId strings, NOT `workspaceIds`), `personalWorkspaceId`. No `calendarConnected`, `calendarProvider`, or `crmConnected` fields. |
 | `workspace-list` | All workspaces → array of `{id, name, nrOfUsers}` — the identifier is `id` (NOT `workspaceId`) |
 | `team-list-put` | Teams filtered by `member: [userId]` (server-side, confirmed live as of DISTRO-4472) → only teams this user belongs to; also accepts optional `name: string` filter; response: `{results: [{id, name, workspaceId, members, metadata}], total}` (the team identifier is `id`, NOT `teamId`) |
 | `scheduling-link-list-personal` | Personal scheduling links owned by this user |
@@ -73,7 +73,7 @@ args:
 Extract:
 - `id`, `email`, `name`
 - `isSuperAdmin` — true/false
-- `licenses` — object with boolean fields: `distro`, `chiliCalOrg`, `concierge`, `conciergeLive`, `chat`, `handoff`
+- `licenses` — object: required booleans `chiliCalOrg`, `handoff`; optional booleans `distro`, `concierge`, `conciergeLive`, `chat` (default `false` when absent); optional `tier` enum: `RoutingAndScheduling` | `Experiences` | `ChiliDataPlatform` (absent for non-tiered users)
 - `workspaces` — list of workspaceId strings (field is `workspaces`, NOT `workspaceIds`)
 
 Note: `calendarConnected`, `calendarProvider`, and `crmConnected` are **not** present in the `user-read` response. Calendar connection status is not available from user-read — it will surface in routing/availability failures if misconfigured. CRM connection status is likewise not directly readable from this endpoint.
@@ -170,7 +170,7 @@ Counts:
 |-------|-------|
 | User ID | |
 | Super Admin | true / false |
-| Licenses | distro, chiliCalOrg, concierge, … (list enabled ones) |
+| Licenses | distro, chiliCalOrg, concierge, … (list enabled boolean flags); Tier: RoutingAndScheduling / Experiences / ChiliDataPlatform (if set) |
 
 **Warnings** (if any)
 - ⚠ Calendar connection status is not available from the API — check routing/availability failures if scheduling issues are reported
@@ -179,7 +179,7 @@ Counts:
 **Workspace memberships**
 
 | Workspace | ID |
-|-----------|----||
+|-----------|----|
 | ... | |
 
 **Team memberships**
@@ -191,7 +191,7 @@ Counts:
 **Scheduling links**
 
 | Link name | Type | Meeting type |
-|-----------|------|-------------|
+|-----------|------|--------------|
 | ... | Personal / Round-robin | |
 
 **Recent activity (last 30 days)**
