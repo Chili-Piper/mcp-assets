@@ -26,8 +26,10 @@ The Chili Piper MCP exposes all public org API endpoints as tools. Key capabilit
 
 ## Requirements
 
-- A Chili Piper account with API access
-- An API key from Admin Center (or OAuth via browser login — see below)
+> **Available to Admins only.** Connecting Chili Piper via MCP is an Admin-only feature — you must be an Admin on your Chili Piper account to generate an API key or complete the OAuth login.
+
+- A Chili Piper account with **Admin** access
+- An API key from Command Center (or OAuth via browser login — see below)
 - Claude Code (or any MCP-compatible client that supports HTTP transport)
 
 > No Chili Piper account = no access through this door. The MCP is the door, not the building.
@@ -40,7 +42,7 @@ The Chili Piper MCP uses **HTTP transport** — it connects directly to Chili Pi
 
 ### Option A — API key (recommended for most users)
 
-Any Chili Piper user with API access can generate an API key in Admin Center and use it here. No Admin role required.
+Generate an API key in Command Center and use it here. Generating API keys is an Admin-only action.
 
 **Claude Code (one command):**
 
@@ -50,7 +52,7 @@ claude mcp add --transport http chili-piper \
   --header "Authorization: Bearer YOUR_API_KEY"
 ```
 
-Replace `YOUR_API_KEY` with the key from Admin Center.
+Replace `YOUR_API_KEY` with the key from Command Center.
 
 **Manual config** — add to `~/.claude.json` (or your agent's MCP config file):
 
@@ -122,17 +124,21 @@ API keys are scoped. Assign only the permissions your recipe needs. Common scope
 
 **Full scheduling key** (for booking/routing recipes): add `concierge.schedule` + `handoff.schedule` + `scheduling-links.schedule` + `meeting.modify`
 
-Create and manage keys in **Admin Center > API Keys**.
+Create and manage keys in **Command Center → Integrations → Credentials → API Access Tokens**.
 
 ---
 
 ## Getting your API key
 
+> Generating an API key requires **Admin** access.
+
 1. Log in to your Chili Piper account
-2. Navigate to **Admin Center** (top-right menu)
-3. Go to **API Keys**
-4. Click **Create new key**, name it, select scopes, copy the key
-5. Store it in your environment: `export CHILI_PIPER_API_KEY=your_key_here`
+2. Open **Command Center**
+3. In the left sidebar, go to **Integrations**
+4. Select the **Credentials** tab at the top of the page
+5. Make sure you're on the **API Access Tokens** sub-tab (**not** HTTP Auth)
+6. Click **Generate Token**, select the permissions (scopes) your token needs, then click **Generate**
+7. Copy the token and store it securely — **it is only shown once.** Then add it to your environment: `export CHILI_PIPER_API_KEY=your_key_here`
 
 Full guide: [help.chilipiper.com — Edge API References](https://help.chilipiper.com/hc/en-us/articles/35576029581971)
 
