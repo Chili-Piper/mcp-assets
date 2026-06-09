@@ -26,9 +26,11 @@ The Chili Piper MCP exposes all public org API endpoints as tools. Key capabilit
 
 ## Requirements
 
-> **Available to Admins only.** Connecting Chili Piper via MCP is an Admin-only feature — you must be an Admin on your Chili Piper account to generate an API key or complete the OAuth login.
+> **Admin-gated setup.** Generating an API key and completing the OAuth login both require an Admin on your Chili Piper account.
+>
+> **Note:** an Admin can generate an API key and supply it to a **non-admin user**, who can then use it with the MCP. Only key *generation* and the OAuth path require Admin access — using a key that was issued to you does not.
 
-- A Chili Piper account with **Admin** access
+- A Chili Piper account (an **Admin** to generate the key; the key can then be used by a non-admin)
 - An API key from Command Center (or OAuth via browser login — see below)
 - Claude Code (or any MCP-compatible client that supports HTTP transport)
 
@@ -42,7 +44,7 @@ The Chili Piper MCP uses **HTTP transport** — it connects directly to Chili Pi
 
 ### Option A — API key (recommended for most users)
 
-Generate an API key in Command Center and use it here. Generating API keys is an Admin-only action.
+Generate an API key in Command Center and use it here. Generating the key is an Admin-only action, but once issued the key can be used by any user — including non-admins.
 
 **Claude Code (one command):**
 
