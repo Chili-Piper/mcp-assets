@@ -19,6 +19,8 @@ inputs:
 outputs:
   - name: availability_result
     description: Whether slots were found, and in what quantity
+  - name: per_day_breakdown
+    description: Slot count per calendar day across the window (includes zero-slot days), surfacing working-hours patterns and gaps
   - name: failures
     description: Per-rep failure reasons if no slots found
   - name: diagnosis
@@ -122,7 +124,16 @@ args:
 
 ## Step 4 — Interpret the result
 
-If slots are returned (non-empty list): report availability count and earliest slot. No blocker.
+If slots are returned (non-empty list): report total availability count and earliest slot. No blocker.
+
+**Always include a per-day breakdown.** Bucket every entry in `startTimes` by the calendar date of its `startTime` and count slots per day across the whole window (include zero-slot days so gaps are visible). This turns a raw "180 slots" into a pattern a human can act on:
+
+- **Weekends / holidays showing 0** confirm working-hours config, not a bug.
+- **A weekday at 0** in an otherwise-full week is a real signal (day off, fully booked, or a calendar block) — worth calling out.
+- **A later first slot on some weekdays** (e.g. Mondays starting 09:30 vs 08:30 elsewhere) points to day-specific working hours.
+- **First/last day partials** are usually just the query window boundaries (a midday `startsAt` truncates day 1; the window end truncates the last day) — label them as partial, not as a drop. To get full first/last days, anchor `interval.startsAt` to start-of-day (00:00).
+
+Times come back in **UTC** — state the timezone, and convert to the rep's working timezone if the human needs local hours.
 
 If slots list is empty: inspect the `failures` map. For each entry (`userId → failureReason`):
 
@@ -157,6 +168,17 @@ Identify and surface the specific blocking user(s), not just "no slots available
 | Window checked | `<today>` to `<today + N days>` |
 | Slots found | N |
 | Earliest slot | |
+
+**Availability per day**
+
+> Include this whenever slots are returned. One row per day in the window (including 0-slot days). Mark days truncated by the query window boundary as *partial*.
+
+| Date | Day | Slots |
+|------|-----|-------|
+| `<YYYY-MM-DD>` | Mon | N *(partial — window started midday)* |
+| ... | | |
+| `<YYYY-MM-DD>` | Sat | 0 |
+| **Total** | | **N** |
 
 **Failures**
 
