@@ -99,7 +99,7 @@ Every skill carries a QA maturity level (tracked in [`../docs/QA.md`](../docs/QA
 |-------|-------------|:--------:|
 | [user-details](user-details/SKILL.md) | Full profile for any Chili Piper user | `verified` |
 | [user-meetings](user-meetings/SKILL.md) | Rep-level meeting volume and health metrics | `verified` |
-| [user-copy](user-copy/SKILL.md) | Copies a user's workspace/team memberships to another user (writes) | `tested` |
+| [user-copy](user-copy/SKILL.md) | Copies a user's workspace/team memberships (and, optionally, licenses) to another user (writes) | `tested` |
 | [user-offboarding](user-offboarding/SKILL.md) | Safely removes a departing rep, with an audit trail (writes/destructive) | `tested` |
 
 > ⚠️ `user-copy` and `user-offboarding` modify Chili Piper data. Both default to `dry_run: true` and require explicit human confirmation before any write.

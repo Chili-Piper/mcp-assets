@@ -49,7 +49,7 @@ GPT_OPERATIONS = {
     "user-details": ["user-find", "user-read", "workspace-list", "team-list-put",
                      "scheduling-link-list-personal", "scheduling-link-list-round-robin", "meeting-export-v2-put"],
     "user-copy": ["user-find", "workspace-list", "workspace-list-users", "team-list-put",
-                  "workspace-add-users", "team-add-users", "team-create"],
+                  "workspace-add-users", "team-add-users", "team-create", "user-update-licenses"],
     "user-offboarding": ["user-find", "user-read", "meeting-export-v2-put", "workspace-list", "workspace-list-users",
                          "workspace-remove-users", "team-list-put", "team-remove-users", "team-create", "team-delete",
                          "meeting-cancel", "distribution-list-put"],

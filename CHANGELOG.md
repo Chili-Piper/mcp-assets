@@ -26,6 +26,13 @@ Initial public release of the official Chili Piper Skills repository (formerly t
   includes `bookedAt` and `meetingId` columns (in production 2026-05-29).
 
 ### Changed
+- **`user-copy` 0.1.4** — added optional, opt-in product-license copying via
+  `user-update-licenses` (new `copy_licenses` input, default `false`). It is
+  additive only — grants licenses the source has that the target lacks and never
+  revokes (downgrades apply immediately and the call fails on insufficient seats).
+  Licenses are read from the existing `user-find` results, surfaced in the dry-run
+  plan, and confirmed after the write. Paired `gpts/user-copy/` bumped to 0.1.4
+  and its `openapi.yaml` regenerated to expose `userUpdateLicenses`.
 - Repurposed the repository from a community GTM cookbook to Chili Piper's
   official, first-party skills; removed community scaffolding.
 - GPT Action OpenAPI specs now target the real Edge API
