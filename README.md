@@ -26,6 +26,7 @@ A **Skill** is a small, self-contained instruction set that teaches an AI agent 
 | [meeting-inspector](skills/meeting-inspector/) | Deep-dive a single meeting — booking trigger, routing path, rep assignment, outcome | ✅ |
 | [no-show-analyzer](skills/no-show-analyzer/) | Analyze no-show patterns by trigger, route, rep, or workspace | ✅ |
 | [routing-audit](skills/routing-audit/) | Audit all concierge routers for coverage gaps and stale rules | ✅ |
+| [distribution-analysis](skills/distribution-analysis/) | Analyze a round-robin distribution — meeting counts by rep, imbalance vs. weights, skew, cancellations | ✅ |
 | [availability-inspector](skills/availability-inspector/) | Diagnose why a rep or team shows no available slots | ✅ |
 | [concierge-debugger](skills/concierge-debugger/) | Trace why a specific lead didn't book | ✅ |
 | [org-meeting](skills/org-meeting/) | Org-wide meeting volume and health snapshot | ✅ |
