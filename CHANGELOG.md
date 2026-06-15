@@ -2,9 +2,7 @@
 
 All notable changes to the official Chili Piper Skills are recorded here. The repo follows [Keep a Changelog](https://keepachangelog.com/); each skill also carries its own `version` in its `SKILL.md` (and matching `GPT.md`).
 
-## [Unreleased]
-
-Initial public release of the official Chili Piper Skills repository (formerly the internal `gtm-clawllective` cookbook).
+## [1.1.0]
 
 ### Added
 - **Slash-command wrappers for all 11 skills.** Added 9 new commands
@@ -15,6 +13,12 @@ Initial public release of the official Chili Piper Skills repository (formerly t
   these thin wrappers make every skill discoverable and runnable under `/chili…`
   (the plugin namespace) in Claude Code. The two write-action wrappers
   (`/copy-user`, `/offboard-user`) default to a dry run and confirm before applying.
+
+## [1.0.0]
+
+Initial public release of the official Chili Piper Skills repository (formerly the internal `gtm-clawllective` cookbook).
+
+### Added
 - **11 official skills** for the Chili Piper MCP, each with a matching ChatGPT GPT:
   meeting-inspector, no-show-analyzer, routing-audit, concierge-debugger,
   availability-inspector, org-meeting, distribution-analysis, user-details,
