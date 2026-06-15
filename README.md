@@ -92,6 +92,24 @@ In Claude Code:
 
 Or just ask in natural language — the agent loads the matching skill automatically.
 
+Every skill also has a slash-command wrapper, so they all surface when you type `/chili…` (the plugin namespace). Type `/` to browse:
+
+| Command | Skill |
+|---|---|
+| `/inspect-meeting` | meeting-inspector |
+| `/audit-routing` | routing-audit |
+| `/check-availability` | availability-inspector |
+| `/debug-concierge` | concierge-debugger |
+| `/analyze-distribution` | distribution-analysis |
+| `/analyze-no-shows` | no-show-analyzer |
+| `/org-meeting-report` | org-meeting |
+| `/user-details` | user-details |
+| `/user-meetings` | user-meetings |
+| `/copy-user` | user-copy |
+| `/offboard-user` | user-offboarding |
+
+`/copy-user` and `/offboard-user` write to Chili Piper — both default to a dry run and confirm before applying.
+
 ---
 
 ## Deploy for your whole team
