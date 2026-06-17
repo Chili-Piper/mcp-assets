@@ -2,7 +2,19 @@
 
 All notable changes to the official Chili Piper Skills are recorded here. The repo follows [Keep a Changelog](https://keepachangelog.com/); each skill also carries its own `version` in its `SKILL.md` (and matching `GPT.md`).
 
-## [Unreleased]
+## [1.1.0]
+
+### Added
+- **Slash-command wrappers for all 11 skills.** Added 9 new commands
+  (`/check-availability`, `/debug-concierge`, `/analyze-distribution`,
+  `/analyze-no-shows`, `/org-meeting-report`, `/user-details`, `/user-meetings`,
+  `/copy-user`, `/offboard-user`) alongside the existing `/inspect-meeting` and
+  `/audit-routing`. Skills are model-loaded and don't surface in the `/` menu;
+  these thin wrappers make every skill discoverable and runnable under `/chili…`
+  (the plugin namespace) in Claude Code. The two write-action wrappers
+  (`/copy-user`, `/offboard-user`) default to a dry run and confirm before applying.
+
+## [1.0.0]
 
 Initial public release of the official Chili Piper Skills repository (formerly the internal `gtm-clawllective` cookbook).
 

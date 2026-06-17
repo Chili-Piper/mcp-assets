@@ -21,7 +21,7 @@ outputs:
   - name: flags
     description: Workspaces or reps with significantly above-average no-show rates
 tools_required: [chili-piper-mcp]
-human_decision_point: "Review the breakdown and decide: share with VP Sales/CRO, drill into a flagged workspace with /no-show-analyzer, or check individual reps with /user-meetings"
+human_decision_point: "Review the breakdown and decide: share with VP Sales/CRO, drill into a flagged workspace with /analyze-no-shows, or check individual reps with /user-meetings"
 writes_to: "Nothing — read-only"
 api_note: "meeting-list-put has a strict 7-day maximum window. For 30-day ranges the skill makes multiple paginated calls. Workspace IDs are resolved via workspace-list. Pass workspaceIds for server-side workspace scoping. The status filter on meeting-list-put is confirmed live as of DISTRO-4472 (2026-05-21) — for historical analysis (entire date range in the past), pass status: [\"Completed\",\"NoShow\",\"Canceled\"] to skip Active/upcoming meetings and reduce data returned."
 ---
@@ -134,7 +134,7 @@ For each group with ≥ 10 meetings, calculate no-show rate. Flag any group wher
 **Flags**
 
 For each flagged group:
-> `<Workspace/Rep>` — `N%` no-show rate vs `N%` org average. Run `/no-show-analyzer workspace="<name>"` or `/user-meetings user="<email>"` for root-cause analysis.
+> `<Workspace/Rep>` — `N%` no-show rate vs `N%` org average. Run `/analyze-no-shows workspace="<name>"` or `/user-meetings user="<email>"` for root-cause analysis.
 
 **Human decision point**
 
@@ -144,9 +144,9 @@ For each flagged group:
 
 ## Suggested follow-up skills
 
-- `/no-show-analyzer` — drill into a flagged workspace with root-cause hypotheses
+- `/analyze-no-shows` — drill into a flagged workspace with root-cause hypotheses
 - `/user-meetings` — inspect a specific rep's meeting health
-- `/meeting-inspector` — investigate a single anomalous meeting
+- `/inspect-meeting` — investigate a single anomalous meeting
 
 ---
 
