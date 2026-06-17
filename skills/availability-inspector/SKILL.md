@@ -1,7 +1,7 @@
 ---
 name: availability-inspector
 description: Checks why a rep or team is showing no available slots — diagnoses calendar connectivity, working hours, meeting limits, and distribution membership to find the specific blocker
-version: 0.1.0
+version: 0.1.1
 inputs:
   - name: user
     type: string
@@ -30,7 +30,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the diagnosis and fix the blocker — most causes require action in Chili Piper admin, Google/Outlook calendar settings, or Zoom/Teams reconnection"
 writes_to: "Nothing — read-only diagnostic"
-api_note: "Field names validated against the live availability-slots schema. expectedHost must be an OBJECT ({type:'User', userId}); attendees use a type discriminator (ManuallyAssigned|DistributionAssignee|AssignedViaTeam|AdditionalAttendee) and a required boolean (omitting `required` returns 400). meetingTypeRef.id is REQUIRED. Durations use Scala FiniteDuration ('30 minutes') or ISO-8601 ('PT30M'); the interval duration is e.g. '14 days'/'P14D' (not milliseconds). availability-slots returns {startTimes, failures:{userId: failure}}; the exact failure-reason strings are not documented — read the literal value rather than assuming an enum. A required attendee with no calendar connected blocks the entire slot query."
+api_note: "Field names validated against the live availability-slots schema. expectedHost must be an OBJECT ({type:'User', userId}); attendees use a type discriminator (ManuallyAssigned|DistributionAssignee|AssignedViaTeam|AdditionalAttendee) and a required boolean (omitting `required` returns 400). meetingTypeRef.id is REQUIRED. Durations use Scala FiniteDuration ('30 minutes') or ISO-8601 ('PT30M'); the interval duration is e.g. '14 days'/'P14D' (not milliseconds). availability-slots returns {startTimes, failures:{userId: failure}}; the exact failure-reason strings are not documented — read the literal value rather than assuming an enum. A required attendee with no calendar connected blocks the entire slot query. As of DISTRO-4552 (2026-06-16): availability-slots caps responses at 1000 start-time slots and returns HTTP 422 (edge.availability-result-too-large) when exceeded — narrow the lookahead window or reduce the number of attendees to stay under the cap."
 ---
 
 # Availability Inspector
@@ -43,7 +43,7 @@ You are a Chili Piper calendar specialist. A rep or team is showing no available
 |------|----------------|
 | `user-find` | Resolve email/name to user ID |
 | `user-read` | `{id, name, email, isSuperAdmin, licenses: {distro, chiliCalOrg, concierge, conciergeLive, chat, handoff}, workspaces, salesforce, hubspot}` — **no** `calendarConnected`/`calendarProvider`/`crmConnected`; calendar status only surfaces in availability-slots failures |
-| `availability-slots` | Available slots + `failures` map per user |
+| `availability-slots` | Available slots + `failures` map per user; returns **422** (`edge.availability-result-too-large`) if result exceeds **1000 slots** — narrow the lookahead window to avoid |
 
 **`availability-slots` failure reasons (common patterns — confirm the exact string against the live `failures` map):**
 
@@ -97,6 +97,8 @@ Check immediately:
 Build the request using the verified shape below. `expectedHost` must be an **object**, `meetingTypeRef.id` is **required**, and every attendee needs both a `type` discriminator and a `required` boolean.
 
 > **`meetingTypeRef.id` is required.** If you don't have one, get a `meetingTypeId` from one of the user's existing meetings (`meeting-list-put` returns `meetingTypeId`) or from the rep's scheduling link, and pass it here. The API will 400 without it.
+
+> ⚠ **Slot cap:** `availability-slots` caps responses at **1000 start-time slots** and returns HTTP **422** (`edge.availability-result-too-large`) if exceeded. If you get a 422, reduce `interval.duration` (e.g. `"7 days"`) or reduce the attendee count.
 
 ```
 tool: availability-slots
