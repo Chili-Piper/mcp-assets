@@ -1,7 +1,7 @@
 ---
 name: user-details
 description: Pulls a full profile for any Chili Piper user — teams, workspaces, meeting types, scheduling links, and recent meeting activity — for onboarding audits, offboarding checks, and rep-level troubleshooting
-version: 0.1.4
+version: 0.1.5
 inputs:
   - name: user
     type: string
@@ -18,13 +18,13 @@ outputs:
   - name: memberships
     description: All workspaces and teams the user belongs to
   - name: scheduling_links
-    description: Personal and round-robin scheduling links owned by this user
+    description: Personal, round-robin, admin one-on-one, group, and ownership scheduling links owned by or including this user
   - name: recent_activity
     description: Meeting volume and no-show rate for the last 30 days (if include_meetings=true)
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the profile and decide: onboard the user to missing teams, fix routing gaps, or proceed with offboarding"
 writes_to: "Nothing — read-only diagnostic"
-api_note: "Field names validated against live MCP responses. user-read returns license info but NO calendar/CRM connection status. user-find is needed first if you have an email or name rather than a user ID. workspace-list items use `id` (not `workspaceId`); team-list-put results use `id` (not `teamId`) and include `workspaceId`. As of DISTRO-4472 (2026-05-21): team-list-put member filter is live (server-side filtering by userId); team-list-put also accepts an optional name filter. meeting-export-v2-put supports server-side filters: hostIds, assigneeIds, bookerIds, meetingTypeIds, status. As of CEH-10353 (2026-06-03): licenses gains an optional `tier` field (`RoutingAndScheduling`|`Experiences`|`ChiliDataPlatform`); `distro`, `concierge`, `conciergeLive`, `chat` are now optional booleans (default `false` when absent); `chiliCalOrg` and `handoff` remain required."
+api_note: "Field names validated against live MCP responses. user-read returns license info but NO calendar/CRM connection status. user-find is needed first if you have an email or name rather than a user ID. workspace-list items use `id` (not `workspaceId`); team-list-put results use `id` (not `teamId`) and include `workspaceId`. As of DISTRO-4472 (2026-05-21): team-list-put member filter is live (server-side filtering by userId); team-list-put also accepts an optional name filter. meeting-export-v2-put supports server-side filters: hostIds, assigneeIds, bookerIds, meetingTypeIds, status. As of CEH-10353 (2026-06-03): licenses gains an optional `tier` field (`RoutingAndScheduling`|`Experiences`|`ChiliDataPlatform`); `distro`, `concierge`, `conciergeLive`, `chat` are now optional booleans (default `false` when absent); `chiliCalOrg` and `handoff` remain required. As of DISTRO-4548 (2026-06-16): scheduling-link-list-admin-one-on-one, scheduling-link-list-group, and scheduling-link-list-ownership are now live — query all five link types to enumerate every scheduling link this user is part of."
 ---
 
 # User Details
@@ -41,6 +41,9 @@ You are a RevOps analyst. Your job is to pull a complete profile for a Chili Pip
 | `team-list-put` | Teams filtered by `member: [userId]` (server-side, confirmed live as of DISTRO-4472) → only teams this user belongs to; also accepts optional `name: string` filter; response: `{results: [{id, name, workspaceId, members, metadata}], total}` (the team identifier is `id`, NOT `teamId`) |
 | `scheduling-link-list-personal` | Personal scheduling links owned by this user |
 | `scheduling-link-list-round-robin` | Round-robin links this user is part of |
+| `scheduling-link-list-admin-one-on-one` | Admin one-on-one scheduling links in the user's workspaces |
+| `scheduling-link-list-group` | Group scheduling links in the user's workspaces |
+| `scheduling-link-list-ownership` | Ownership-based scheduling links in the user's workspaces |
 | `meeting-export-v2-put` | CSV export — server-side filters (all confirmed live as of DISTRO-4472): `hostIds`, `assigneeIds`, `bookerIds`, `meetingTypeIds`, `status`; response: `{filename, data: "<CSV>"}` — parse header row for column names |
 
 ---
@@ -127,7 +130,25 @@ args:
   userId: <user ID>
 ```
 
-Combine results. Note the meeting type and whether the link is active.
+```
+tool: scheduling-link-list-admin-one-on-one
+args:
+  userId: <user ID>
+```
+
+```
+tool: scheduling-link-list-group
+args:
+  userId: <user ID>
+```
+
+```
+tool: scheduling-link-list-ownership
+args:
+  userId: <user ID>
+```
+
+Combine results across all five types. Note the meeting type and whether the link is active.
 
 ---
 
@@ -179,7 +200,7 @@ Counts:
 **Workspace memberships**
 
 | Workspace | ID |
-|-----------|----|
+|-----------|-|
 | ... | |
 
 **Team memberships**
@@ -192,7 +213,7 @@ Counts:
 
 | Link name | Type | Meeting type |
 |-----------|------|--------------|
-| ... | Personal / Round-robin | |
+| ... | Personal / Round-robin / Admin one-on-one / Group / Ownership | |
 
 **Recent activity (last 30 days)**
 
