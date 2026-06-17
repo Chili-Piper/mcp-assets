@@ -54,6 +54,7 @@ GPT_OPERATIONS = {
                          "workspace-remove-users", "team-list-put", "team-remove-users", "team-create", "team-delete",
                          "meeting-cancel", "distribution-list-put"],
     "distribution-analysis": ["workspace-list", "distribution-list-put", "user-find-by-ids", "meeting-list-put"],
+    "distro-debugger": ["workspace-list", "distro-logs", "distro-log-get", "distribution-list-put"],
 }
 
 TITLES = {
@@ -68,6 +69,7 @@ TITLES = {
     "user-copy": "Chili Piper — User Copy Actions",
     "user-offboarding": "Chili Piper — User Offboarding Actions",
     "distribution-analysis": "Chili Piper — Distribution Analysis Actions",
+    "distro-debugger": "Chili Piper — Distribution Debugger Actions",
 }
 
 
