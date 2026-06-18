@@ -2,6 +2,10 @@
 name: routing-audit
 description: Audits all Chili Piper concierge routers for coverage gaps — unmapped lead sources, stale ownership rules, unbalanced distributions, and catch-all overflows — before they show up as lost pipeline
 version: 0.2.1
+references:
+  - api-reference
+  - audit-procedure
+  - output-format
 inputs:
   - name: workspace
     type: string
@@ -22,29 +26,38 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review gaps and decide which to fix first — routing gaps silently leak pipeline, so prioritize by volume before severity"
 writes_to: "Nothing — read-only diagnostic. Use the Chili Piper router builder to apply fixes."
-api_note: "Field names are validated against live MCP responses — the tools' own descriptions are unreliable. concierge-logs requires a routerId and has a hard 30-day maximum window. Per-router rules + the catch-all come from the router object returned by concierge-list-routers (router.routing.rules[] and router.routing.catchAll); rule-list is workspace-scoped (it takes no routerId) and requires filter.ruleBuilderVersion. distribution-list-put returns a top-level array (no results wrapper) and takes workspaceIds (array). As of DISTRO-4426 (2026-06-03): distribution-list-put state.userStates now includes statistics:{assigned,cancelled,noShow,reassignedToThis,reassignedFromThis} on every variant; use statistics.assigned alongside weights to detect actual vs. configured balance imbalances."
 ---
 
 # Routing Audit
 
-You are a RevOps systems auditor. Your job is to systematically inspect all Chili Piper concierge routers, identify coverage gaps and balance issues, and give the human a prioritized fix list before silent pipeline leaks show up in the numbers.
+You are a RevOps systems auditor. Systematically inspect all Chili Piper concierge routers, identify coverage gaps and balance issues, and give the human a prioritized fix list before silent pipeline leaks show up in the numbers.
 
-## API reference (validated against live responses)
+> **Prefer live data over training.** MCP field names and tool signatures change. Load
+> `references/api-reference.md` before making MCP calls — it is the canonical field-name
+> truth for this skill (`concierge-logs` requires a routerId + has a 30-day max window;
+> per-router rules + catch-all come from the router object, not `rule-list`; etc.).
 
-| Tool | What it returns |
-|------|----------------|
-| `workspace-list` | All workspaces → items `{id, name, nrOfUsers}`. The identifier is **`id`** (NOT `workspaceId`); pass `id` as the `workspaceId` argument to other tools. |
-| `concierge-list-routers` | Routers in a workspace → `{routers: [{router: {id, name, slug, routing: {rules: [...], catchAll: {...}}}, workspaceId}]}`. routerId is `routers[N].router.id`; the router's rules and catch-all are on `routers[N].router.routing`. |
-| `rule-list` | Active routing rules, **workspace-scoped** (no routerId). Input `{filter: {ruleBuilderVersion: ["ExplicitV1"] (required), workspaceId?, name?, type?}, pagination}`. Returns `{results: [{id, name, type, conditions, workspaceId, metadata: {revision}}], total}`. `type` is `OwnershipRule` or `NonOwnershipRule`. |
-| `concierge-logs` | Routing decisions → `status`, `matchedPath` (object), `guestEmail`, `triggeredAt`, `assignments`, `meetingId`. `matchedPath.route.type` is `RuleRoute` or `CatchAllRoute`. 30-day max window; requires `workspaceId` + `routerId`. |
-| `distribution-list-put` | Distributions — **top-level array** (no `results` wrapper). Each item `{id, published: {distributionId, name, weights: [{userId, weight}], assignmentTypeConfig: {type, handling: {type}}, capping, teamRef: {id}}, state: {userStates: [{userId, type: "Active"\|"Capped"\|"Disabled"\|"Removed"\|"NoLicense", statistics: {assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}}]}}`. Input takes `workspaceIds` (array) + optional `name`, `assignmentType` filters. |
+## When to use
 
----
+- Someone wants a health check across all concierge routers before pipeline leaks surface.
+- Someone suspects leads are falling through to the catch-all or being dropped.
+- Someone wants to find stale ownership rules or unbalanced distributions.
 
-## Step 1 — Resolve workspace(s)
+## Inputs
 
-If `workspace` specified: resolve name to ID via `workspace-list`.
-If no workspace: fetch all workspaces and audit each.
+| Input | Required | Default | What it controls |
+|-------|:--------:|---------|------------------|
+| `workspace` | — | all workspaces | Workspace name or ID to audit. Omit for an org-wide audit. |
+| `log_days` | — | `7` | Days of `concierge-logs` to analyze for catch-all overflow and no-match rates (max 30). |
+
+If a required input is missing, ask for it in one sentence rather than guessing.
+
+## Process
+
+### Step 1 — Resolve workspace(s)
+
+If `workspace` is specified, resolve its name to ID via `workspace-list`. If not, fetch
+all workspaces and audit each.
 
 ```
 tool: workspace-list
@@ -54,11 +67,11 @@ args:
     pageSize: 100
 ```
 
-Workspace items use `id` (NOT `workspaceId`) — use `workspace.id` when passing workspace IDs to subsequent calls.
+Workspace items use `id` (NOT `workspaceId`) — use `workspace.id` when passing workspace
+IDs to subsequent calls. Field-name gotchas → `references/api-reference.md`
+§ Critical field name differences.
 
----
-
-## Step 2 — List all routers
+### Step 2 — List all routers
 
 For each workspace (using its `id`):
 
@@ -68,140 +81,57 @@ args:
   workspaceId: <workspace.id>
 ```
 
-Response shape: `{routers: [{router: {id, name, slug, routing: {rules, catchAll}}, workspaceId}]}`.
-For each router store: `routers[N].router.id` (routerId), `routers[N].router.name`, `routers[N].router.slug`, `routers[N].workspaceId`, and the routing config at `routers[N].router.routing`.
+For each router store `routers[N].router.id` (routerId), `.name`, `.slug`,
+`routers[N].workspaceId`, and the routing config at `routers[N].router.routing`. Response
+shape → `references/api-reference.md` § concierge-list-routers — router object shape.
 
----
+### Step 3 — Inspect rules per router
 
-## Step 3 — Inspect rules per router
+The ordered rules (`router.routing.rules[]`) and the catch-all (`router.routing.catchAll`,
+a separate object) are already on each router from Step 2. For richer rule detail across a
+workspace, call `rule-list`. Confirm each catch-all actually routes somewhere and detect
+potentially stale rules. Full procedure → `references/audit-procedure.md`
+§ Inspecting rules per router and § Detecting stale rules.
 
-The rules and catch-all are already on each router object from Step 2:
-- **Rules:** `routers[N].router.routing.rules[]` — ordered list evaluated top to bottom.
-- **Catch-all:** `routers[N].router.routing.catchAll` — the fallback applied when no rule matches. This is a separate object, not a rule in the list.
+### Step 4 — Analyze logs for catch-all overflow
 
-For richer rule detail (conditions, type, revision) across a workspace, call `rule-list`:
+For each router, pull `concierge-logs` over the `log_days` window and compute total leads,
+catch-all rate (`matchedPath.route.type == "CatchAllRoute"`), and rule-match rate
+(`RuleRoute`). Full procedure + flag thresholds → `references/audit-procedure.md`
+§ Analyzing logs for catch-all overflow. The 30-day limit + required `routerId` →
+`references/api-reference.md` § Hard API limits.
 
-```
-tool: rule-list
-args:
-  filter:
-    ruleBuilderVersion: ["ExplicitV1"]
-    workspaceId: <workspace.id>
-  pagination:
-    page: 0
-    pageSize: 200
-```
+### Step 5 — Check distribution balance
 
-Inspect each rule:
-- **Type:** `OwnershipRule` (routes by CRM owner) or `NonOwnershipRule` (territory/segment/round-robin)
-- **Conditions:** what fields/values trigger this rule (`conditions`)
-- **Catch-all health:** confirm `router.routing.catchAll` actually routes somewhere (a team/distribution). A catch-all that points at no one — or is disabled — drops unmatched leads. Flag this as critical.
+For each workspace, pull `distribution-list-put` (a top-level array) and inspect active
+members, weights, handling, and assignment `statistics`. Full procedure + flag thresholds
+→ `references/audit-procedure.md` § Checking distribution balance.
 
-Detect potentially stale rules:
-- Ownership rules referencing users no longer active in the workspace's distributions (cross-check `distribution-list-put` `state.userStates`)
-- Rules that match no logs in the analysis window (possible dead code) — correlate via `matchedPath.route.ruleIds` in Step 4
+### Step 6 — Output
 
----
+Lead with the router summary, then gaps sorted by severity, then prioritized
+recommendations. Exact layout → `references/output-format.md` § Report layout.
 
-## Step 4 — Analyze logs for catch-all overflow
+## Preflight audit
 
-For each router:
+Verify before writing output:
 
-```
-tool: concierge-logs
-args:
-  workspaceId: <routers[N].workspaceId>
-  routerId: <routers[N].router.id>
-  start: <ISO-8601, log_days ago>
-  end: <ISO-8601, now>
-```
+- [ ] Required inputs resolved (`workspace` → `id`, or all workspaces fetched).
+- [ ] Field names taken from `references/api-reference.md`, not guessed.
+- [ ] `concierge-logs` calls each pass `workspaceId` + `routerId` and span ≤ 30 days.
+- [ ] `log_days` respected (default 7, capped at 30).
+- [ ] Each catch-all checked for a real destination (flag any that route to no one).
+- [ ] Distribution imbalance derived from `statistics.assigned` vs. configured weights.
 
-Calculate:
-- **Total leads processed:** count of all log entries
-- **Catch-all rate:** entries where `matchedPath.route.type == "CatchAllRoute"` (the lead matched no specific rule)
-- **Rule-match rate:** entries where `matchedPath.route.type == "RuleRoute"` (matched rule ids in `matchedPath.route.ruleIds`)
-- Other route types appear in live data (e.g. `SpamCheckRoute`); count anything that is not `RuleRoute` as "no rule matched", and surface a notable non-catch-all type (like spam filtering) separately rather than treating it as an error.
+## Checkpoint
 
-**Flag thresholds:**
-- Catch-all rate > 20%: routing rules may not cover important lead profiles
-- Catch-all routes to no one / disabled: leads are being dropped — critical
-
----
-
-## Step 5 — Check distribution balance
-
-For each workspace:
-
-```
-tool: distribution-list-put
-args:
-  workspaceIds: [<workspace.id>]
-```
-
-Use the optional `name` filter to look up a specific distribution, or `assignmentType` (`Record` | `Meeting` | `Conversation`) to narrow by type. The response is a **top-level array**. For each distribution inspect:
-- **Active members:** `state.userStates[]` filtered to `type == "Active"` — a distribution with 0 active members routes no leads
-- **Weights:** `published.weights[]` (each `{userId, weight}`) — a member with weight 0 is effectively excluded
-- **Algorithm / handling:** `published.assignmentTypeConfig.handling.type` (`Strict` or `Flexible`); the assignment scope is `published.assignmentTypeConfig.type`
-- **Assignment balance:** each `state.userStates[]` entry carries `statistics.assigned`. Derive `idealNumber = (weight / totalWeight) × totalAssigned` where `totalAssigned = sum of all members' statistics.assigned`. Compare each member's actual `assigned / totalAssigned` share to their `weight / totalWeight` share to detect real imbalance (as opposed to weight-only inspection).
-
-Flag:
-- Any distribution with 0 or 1 active member (no redundancy — single rep absence blocks the route)
-- Distributions where one rep's weight is > 5× the others (may be intentional, but worth flagging)
-- Distributions where one rep's actual `assigned` share deviates from their ideal share by > 2× (more actionable than weight alone — indicates capping, calendar outages, or reassignment churn)
-
----
-
-## Step 6 — Output format
-
-### Routing Audit | `<Workspace(s)>` | Last `<N>` days
-
-**Router summary**
-
-| Router | Rules | Catch-all routes to | Leads (N days) | Catch-all rate |
-|--------|-------|---------------------|----------------|----------------|
-| ... | | team/distribution / ⚠ NO ONE | | |
-
-**Gaps found** (sorted by severity)
-
-**[CRITICAL]** Catch-all routes to no one
-> Router `<name>`'s catch-all does not route to any team/distribution. Leads matching no rule are dropped with no fallback.
-> Fix: point the catch-all at a fallback distribution in the router builder.
-
-**[HIGH]** High catch-all rate
-> Router `<name>`: `N%` of leads hit the catch-all. Top unmatched profiles: `<field values>`.
-> Fix: add a rule covering `<top unmatched profiles>`.
-
-**[MEDIUM]** Empty distribution
-> Distribution `<name>` in workspace `<name>` has 0 active members.
-> Fix: add at least one rep with a non-zero weight.
-
-**[MEDIUM]** Single-member distribution
-> Distribution `<name>` has only 1 active member. If they're unavailable, the route stops working.
-> Fix: add a backup rep or configure a fallback distribution.
-
-**[LOW]** Potentially stale ownership rule
-> Rule `<name>` (`OwnershipRule`) in router `<name>` had 0 matches in the last `N` days.
-> Check: is this rule still needed? Is ownership data in Salesforce up to date?
-
-**[LOW]** Assignment imbalance vs. configured weight
-> Distribution `<name>`: rep `<name>` received `N%` of assignments but their weight share is `N%` (ideal: `N` assignments). Check capping config, recent calendar outages, or reassignment churn.
-
-**Recommendations** (prioritized)
-
-1. Fix critical gaps (catch-all routing to no one) — these drop leads silently
-2. Investigate high catch-all rates — add rules for top unmatched profiles
-3. Fill empty distributions — any distribution with 0 active members is currently routing nothing
-4. Review single-member distributions before the next vacation or departure
-5. Investigate assignment imbalance — if actual share deviates > 2× from weight share, check capping, availability, or reassignment activity
-
-**Human decision point**
-
-*"Which gap do you want to fix first? I can help draft the rule conditions or pull the lead profile data to understand what's hitting the catch-all."*
-
----
+This is a read-only diagnostic. Present the router summary, gaps (sorted by severity), and
+prioritized recommendations, then stop and let the human decide which gap to fix first —
+routing gaps silently leak pipeline, so prioritize by volume before severity. All fixes
+are applied manually in the Chili Piper router builder.
 
 ## Data handling
 
-- **PII present:** guest emails in concierge logs used for counting only, not displayed
-- **Storage:** ephemeral
+- **PII present:** guest emails in concierge logs — used for counting only, not displayed
+- **Storage:** ephemeral — nothing persists after the skill completes
 - **Writes:** none — read-only. All fixes applied manually in the Chili Piper router builder.

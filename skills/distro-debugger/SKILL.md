@@ -2,6 +2,10 @@
 name: distro-debugger
 description: Debugs why a CRM record was routed (or not routed) through a Chili Piper distribution — accepts a log ID, Salesforce record ID, or contact/lead name, explains each rule stage, and recommends a targeted fix
 version: 0.3.0
+references:
+  - api-reference
+  - debug-procedure
+  - output-format
 inputs:
   - name: log_id
     type: string
@@ -40,278 +44,89 @@ outputs:
 tools_required: [chili-piper-mcp, salesforce-mcp]
 human_decision_point: "Review the diagnosis and decide: fix the distribution rule, manually reassign the record, or escalate to engineering"
 writes_to: "Nothing — read-only diagnostic"
-api_note: |
-  distro-log-get: requires logId + routerId. Returns full per-rule evaluation trace.
-  distro-logs: POST /v1/org/distro/logs. Query params: workspaceId (required), page (default 0), pageSize (default 10).
-  Body (send {} for no filter): userIds, status, distributionMethod, search (text), from (ISO8601), to (ISO8601).
-  Use distro-list-routers to find workspaceId values.
-  Use distribution-list-put to resolve router display names.
 ---
 
 # Distribution Debugger
 
 You are a Chili Piper RevOps specialist. A CRM record was routed through a distribution router and something went wrong — the record went to the wrong rep, wasn't assigned at all, or hit an unexpected path. Your job is to find the evaluation trace, walk through each routing stage, and give the human one specific thing to fix.
 
-## Input resolution order
+> **Prefer live data over training.** MCP field names and tool signatures change. Load `references/api-reference.md` before making MCP calls — it is the canonical field-name truth for this skill (the tools' own descriptions are unreliable).
+
+## When to use
+
+- A CRM record was assigned to the wrong rep, or not assigned at all, through a distribution router.
+- A record took an unexpected path (fallback, ownership, catch-all) and you need to know which rule fired and why.
+- Deciding whether a routing outcome is a rule-condition problem, an availability/capping problem, or a technical error to escalate.
+
+## Inputs
+
+| Input | Required | Default | What it controls |
+|-------|:--------:|---------|------------------|
+| `log_id` | — | — | Distribution log ID to inspect directly. Provide with `router_id`. |
+| `router_id` | — | — | Distribution router ID. Required when `log_id` is provided. |
+| `salesforce_id` | — | — | Salesforce record ID (Lead or Contact) to search for. |
+| `record_name` | — | — | Full name of the Lead or Contact to search for. |
+| `workspace` | — | — | Workspace name or ID. Required when searching by `salesforce_id` or `record_name`. |
+| `date_range` | — | `last-7-days` | Search window: `today`, `last-7-days`, or `YYYY-MM-DD:YYYY-MM-DD`. |
+
+At least one of `log_id`, `salesforce_id`, or `record_name` must be provided. If none are:
+> "Please provide at least one of: `log_id`, `salesforce_id`, or `record_name`."
+
+When searching by `salesforce_id` or `record_name`, `workspace` is required. If omitted:
+> "Which workspace should I search? (Required — distro-logs searches within one workspace at a time.)"
+
+## Process
+
+### Step 1 — Resolve the log entry
 
 Resolve in this order:
 
-1. **`log_id` + `router_id` provided** → skip to Step 2 (fetch log directly)
-2. **`salesforce_id` provided** → Step 1A (search distro logs by Salesforce ID)
-3. **`record_name` provided** → Step 1B (resolve name via Salesforce, then search distro logs)
-
-At least one of `log_id`, `salesforce_id`, or `record_name` must be provided. If none are, respond:
-> "Please provide at least one of: `log_id`, `salesforce_id`, or `record_name`."
-
-When using path 2 or 3, `workspace` is required. If omitted, ask:
-> "Which workspace should I search? (Required — distro-logs searches within one workspace at a time.)"
-
----
-
-## API reference
-
-| Tool | What it returns |
-|------|----------------|
-| `distro-log-get` | Full evaluation trace for one log entry → `status`, `record`, `assignee`, `stages[]`, `enrichment`, `assignmentDecision`, `triggeredAt` |
-| `distro-logs` | Paginated log list. Query: `workspaceId` (req), `page`, `pageSize`. Body: `search`, `status`, `distributionMethod`, `userIds`, `from`, `to` |
-| `distro-list-routers` | Routers in a workspace → use to resolve workspaceId and router names |
-| `distribution-list-put` | Distributions in a workspace → `distributionId`, `name`, `assignees`, `capping` |
-| `workspace-list` | All workspaces → `workspaceId`, `name` |
-| `salesforce-query` | SOQL query to resolve a record name to a Salesforce ID |
-
-**Log status values (`distro-logs` and `distro-log-get`):**
-| Status | Meaning |
-|--------|---------|
-| `Finished` | Record completed routing successfully and was assigned |
-| `SlaFinished` | Record completed routing after an SLA timer expired |
-| `NotTriggered` | The router flow did not fire for this record |
-| `NotMatchedEntryRule` | Record entered the router but matched no entry rule — dropped or hit catch-all |
-| `NotRouted` | Record was processed but no assignment was made |
-| `DelayInProgress` | Record is paused at a delay step — not yet complete |
-| `WorkingHours` | Record is held pending working hours — not yet complete |
-| `SlaInProgress` | Record is within an active SLA window — not yet complete |
-| `Error` | Technical error during evaluation — requires engineering investigation |
-
-**distributionMethod values (how the assignee was selected):**
-| Value | Meaning |
-|-------|---------|
-| `RoundRobinEvaluationSuccess` | Normal round-robin assignment |
-| `EvaluatedFromRoundRobinArs` | Round-robin with account routing strategy |
-| `FromOwnershipArs` | Assigned to the record's CRM owner |
-| `DuplicateMatchOwner` | Assigned to owner of a matching duplicate record |
-| `FallbackTeam` | No primary match; fell back to the team fallback |
-| `FallbackUser` | No primary match; fell back to a specific fallback user |
-| `NoDistribution` | No distribution was configured for the matched rule |
-| `NoUserAvailable` | All eligible reps were at capacity or unavailable |
-| `ClientError` | Assignment failed due to a client-side error |
-
----
-
-## Step 1A — Search by Salesforce ID (skip if log_id provided)
-
-Convert `date_range` to ISO8601:
-- `today` → `from`: start of today UTC, `to`: now
-- `last-7-days` → `from`: 7 days ago UTC, `to`: now
-- `YYYY-MM-DD:YYYY-MM-DD` → `from`: first date T00:00:00Z, `to`: second date T23:59:59Z
-
-Resolve workspace name to ID via `workspace-list` if a name was provided.
-
-Search distro logs using the Salesforce ID as a text search:
-
-```
-tool: distro-logs
-args:
-  workspaceId: <workspace id>
-  page: 0
-  pageSize: 20
-body:
-  search: <salesforce_id>
-  from: <ISO8601 start>
-  to: <ISO8601 end>
-```
-
-If multiple results: present a summary table (record name, status, triggeredAt, assignee) and ask which to inspect.
-If exactly one result: proceed directly with that entry's `logId` and `routerId`.
-If no results: report "No distribution log found for `<salesforce_id>` in workspace `<workspace>` for the requested period."
-
----
-
-## Step 1B — Search by record name (skip if log_id or salesforce_id provided)
-
-First resolve the name to a Salesforce ID:
-
-```
-tool: salesforce-query
-args:
-  query: "SELECT Id, Name, Email FROM Lead WHERE Name = '<record_name>' LIMIT 5"
-```
-
-If no Lead match, try Contact:
-
-```
-tool: salesforce-query
-args:
-  query: "SELECT Id, Name, Email FROM Contact WHERE Name = '<record_name>' LIMIT 5"
-```
-
-If multiple Salesforce records returned: present them and ask the human to confirm which one.
-If no Salesforce record found: report "No Lead or Contact found matching `<record_name>`. Check spelling or use `salesforce_id` directly."
-
-Once you have the Salesforce ID, search distro logs using both the ID and name:
+1. **`log_id` + `router_id` provided** → skip to Step 2 (fetch log directly).
+2. **`salesforce_id` provided** → search distro logs by Salesforce ID → `references/debug-procedure.md` § Search by Salesforce ID.
+3. **`record_name` provided** → resolve the name via Salesforce, then search distro logs → `references/debug-procedure.md` § Search by record name.
 
-```
-tool: distro-logs
-args:
-  workspaceId: <workspace id>
-  page: 0
-  pageSize: 20
-body:
-  search: <salesforce_id or record_name>
-  from: <ISO8601 start>
-  to: <ISO8601 end>
-```
+Status values and call shapes → `references/api-reference.md` § Tools and what they return, § Hard API limits.
 
-Handle multiple or zero results the same as Step 1A.
+### Step 2 — Fetch the full evaluation trace
 
----
+Call `distro-log-get` with `logId` + `routerId` → `references/debug-procedure.md` § Fetch the full evaluation trace. Trace field names → `references/api-reference.md` § Evaluation trace fields.
 
-## Step 2 — Fetch the full evaluation trace
+### Step 3 — Enrich with router context
 
-```
-tool: distro-log-get
-args:
-  logId: <log_id>
-  routerId: <router_id>
-```
+Resolve the human-readable router name → `references/debug-procedure.md` § Enrich with router context.
 
-If not found: "Log entry `<log_id>` not found for router `<router_id>`. Verify the IDs are correct and that the log is within the retention window."
+### Step 4 — Walk the evaluation stages
 
-Extract:
-- `status` — lifecycle outcome
-- `distributionMethod` — how the assignee was selected
-- `record` — the CRM record and its field values
-- `assignee` — who was assigned (if anyone)
-- `triggeredAt` — when routing fired
-- `stages[]` — ordered rule evaluations
-- `enrichment` — field enrichment that ran before rule evaluation
-- `assignmentDecision` — round-robin position, weight, or fallback reason
+Walk `stages[]` in order, finding the firing rule or the first failing condition → `references/debug-procedure.md` § Walk the evaluation stages.
 
----
+### Step 5 — Diagnose by status
 
-## Step 3 — Enrich with router context
+Branch on `status` (and `distributionMethod` for `Finished`) to the matching case → `references/debug-procedure.md` § Diagnose by status. Status meanings → `references/api-reference.md` § Log status values and § distributionMethod values.
 
-If workspace was resolved, fetch the router name:
+### Step 6 — Output
 
-```
-tool: distribution-list-put
-args:
-  workspaceId: <workspace id>
-```
+Exact layout → `references/output-format.md` § Template.
 
-Match `router_id` against `distributionId` to surface the human-readable router name.
+## Preflight audit
 
----
+Verify before writing output:
 
-## Step 4 — Walk the evaluation stages
+- [ ] At least one of `log_id`, `salesforce_id`, `record_name` present; `workspace` present when searching by record.
+- [ ] Field names taken from `references/api-reference.md`, not guessed.
+- [ ] `date_range` converted to ISO8601 `from`/`to` before any `distro-logs` call.
+- [ ] `distro-log-get` called with both `logId` and `routerId`.
+- [ ] Diagnosis branch chosen from the literal `status` value (no assumed status enum).
 
-For each stage in `stages[]`, in order:
+## Checkpoint
 
-1. Note whether `matched` is true or false
-2. For each condition in `conditions[]`:
-   - `passed = false` → failure point: record `field`, `operator`, `expected`, `actual`
-   - `passed = true` → note briefly
-3. If a stage `matched = true`: this is the firing rule — note `assignee`
-4. If no stage matched: record hit catch-all or was dropped
-
-| Stage | Rule | Matched | First failing condition |
-|-------|------|---------|------------------------|
-| 1 | … | ✅ / ❌ | field `X` was `Y`, expected `Z` |
-
----
-
-## Step 5 — Diagnose by status
-
-**`Finished` or `SlaFinished`:**
-> Record was assigned to `<assignee>` via `<distributionMethod>`.
-> If the assignment seems wrong: check whether the correct rule fired, or whether enrichment altered a key field before evaluation. `SlaFinished` means the record waited through an SLA window first — check if the delay was expected.
-
-**`NotMatchedEntryRule`:**
-> No entry rule matched this record. Walk through each stage's failing conditions.
-> Common causes: field is null/empty, CRM field name mismatch, enrichment failed to populate a required field.
-> Fix: identify the first failing condition and either update the rule or correct the field mapping.
-
-**`NotRouted`:**
-> The record entered the router and matched an entry rule, but no assignment was made.
-> Check `distributionMethod`: `NoUserAvailable` means all reps were at capacity; `NoDistribution` means the matched rule has no distribution configured.
-> Fix: add a distribution to the rule, or adjust rep capping/availability.
-
-**`NotTriggered`:**
-> The router flow did not fire. The record may not have met the trigger criteria, or the router was not active for this record type.
-> Check the router trigger configuration against the record's source, object type, or entry conditions.
-
-**`DelayInProgress` / `WorkingHours` / `SlaInProgress`:**
-> The record is still in-flight — it hasn't failed, it's waiting.
-> Inform the human: routing is not complete. Come back after the delay/SLA window or working hours resume.
-
-**`Error`:**
-> Technical error. Escalate: provide `router_id`, `log_id`, `triggeredAt` to Chili Piper support.
-
-**distributionMethod context for `Finished`:**
-- `FallbackTeam` / `FallbackUser`: the primary distribution had no available rep — verify rep capacity and working hours
-- `NoUserAvailable`: all reps at capacity — increase capping or add reps
-- `FromOwnershipArs` / `DuplicateMatchOwner`: assigned by CRM ownership — verify this is the intended behavior for this rule
-
----
-
-## Step 6 — Output format
-
-### Distribution Debug: `<record name or ID>`
-
-**Log summary**
-
-| Field | Value |
-|-------|-------|
-| Router | |
-| Triggered at | |
-| Salesforce record | |
-| Status | |
-| Assigned to | |
-| Assignment method | |
-
-**Enrichment**
-
-> [Fields enriched before rule evaluation, any failures — or "No enrichment ran"]
-
-**Stage-by-stage evaluation**
-
-| Stage | Rule | Matched | Notes |
-|-------|------|---------|-------|
-| 1 | | ✅/❌ | |
-
-**Condition detail for failing stages**
-
-- Rule: `<ruleName>` — field `<field>` was `<actual>`, expected `<operator> <expected>`
-
-**Diagnosis**
-
-> [What happened, which rule fired or why none did, whether enrichment or SLA played a role]
-
-**Root cause**
-
-> [The specific condition, field value, or config gap]
-
-**Fix**
-
-> [One specific change: update condition X, add fallback distribution, fix enrichment mapping, adjust capping]
-
-**Human decision point**
+Present the log summary, stage-by-stage evaluation, diagnosis, root cause, and fix, then stop for the human:
 
 *"Should I open the router builder to apply this fix, or would you like to manually reassign the record first?"*
 
----
+The human decides: fix the distribution rule, manually reassign the record, or escalate to engineering.
 
 ## Data handling
 
 - **PII present:** CRM record fields and Salesforce name/email used for lookup — display only what is needed for diagnosis
-- **Storage:** ephemeral
+- **Storage:** ephemeral — nothing persists after the skill completes
 - **Writes:** none — read-only diagnostic

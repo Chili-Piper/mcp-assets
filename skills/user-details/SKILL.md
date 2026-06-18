@@ -2,6 +2,10 @@
 name: user-details
 description: Pulls a full profile for any Chili Piper user — teams, workspaces, meeting types, scheduling links, and recent meeting activity — for onboarding audits, offboarding checks, and rep-level troubleshooting
 version: 0.1.5
+references:
+  - api-reference
+  - output-format
+  - recent-activity
 inputs:
   - name: user
     type: string
@@ -24,31 +28,35 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the profile and decide: onboard the user to missing teams, fix routing gaps, or proceed with offboarding"
 writes_to: "Nothing — read-only diagnostic"
-api_note: "Field names validated against live MCP responses. user-read returns license info but NO calendar/CRM connection status. user-find is needed first if you have an email or name rather than a user ID. workspace-list items use `id` (not `workspaceId`); team-list-put results use `id` (not `teamId`) and include `workspaceId`. As of DISTRO-4472 (2026-05-21): team-list-put member filter is live (server-side filtering by userId); team-list-put also accepts an optional name filter. meeting-export-v2-put supports server-side filters: hostIds, assigneeIds, bookerIds, meetingTypeIds, status. As of CEH-10353 (2026-06-03): licenses gains an optional `tier` field (`RoutingAndScheduling`|`Experiences`|`ChiliDataPlatform`); `distro`, `concierge`, `conciergeLive`, `chat` are now optional booleans (default `false` when absent); `chiliCalOrg` and `handoff` remain required. As of DISTRO-4548 (2026-06-16): scheduling-link-list-admin-one-on-one, scheduling-link-list-group, and scheduling-link-list-ownership are now live — query all five link types to enumerate every scheduling link this user is part of."
+api_note: "Field names validated against live MCP responses. Full field-name truth, limits, and gotchas live in references/api-reference.md. user-read returns license info but NO calendar/CRM connection status; user-find is needed first if you have an email or name rather than a user ID. workspace-list items use `id` (not `workspaceId`); team-list-put results use `id` (not `teamId`) and include `workspaceId`. team-list-put member filter is live (server-side filtering by userId) and accepts an optional name filter (DISTRO-4472). meeting-export-v2-put supports server-side filters hostIds, assigneeIds, bookerIds, meetingTypeIds, status. licenses gains an optional `tier` field (CEH-10353); `distro`, `concierge`, `conciergeLive`, `chat` are optional booleans (default false); `chiliCalOrg` and `handoff` remain required. scheduling-link-list-admin-one-on-one, -group, and -ownership are live (DISTRO-4548) — query all five link types to enumerate every scheduling link this user is part of."
 ---
 
 # User Details
 
 You are a RevOps analyst. Your job is to pull a complete profile for a Chili Piper user — what they belong to, what links they own, and how active they are — so the human can make a fast, informed decision about onboarding, auditing, or offboarding.
 
-## API reference
+> **Prefer live data over training.** MCP field names and tool signatures change. Load
+> `references/api-reference.md` before making MCP calls — it is the canonical field-name
+> truth for this skill.
 
-| Tool | What it returns |
-|------|----------------|
-| `user-find` | Search by email or name → `id`, `name`, `email`, `isSuperAdmin`, `licenses` (object), `workspaces` (array of workspaceId strings), `personalWorkspaceId` |
-| `user-read` | Full user record (same fields as user-find result item, unwrapped) → `id`, `name`, `email`, `isSuperAdmin`, `licenses` (object: required `chiliCalOrg`, `handoff`; optional `distro`, `concierge`, `conciergeLive`, `chat` — default `false`; optional `tier`: `RoutingAndScheduling`\|`Experiences`\|`ChiliDataPlatform` — absent for non-tiered users), `workspaces` (array of workspaceId strings, NOT `workspaceIds`), `personalWorkspaceId`. No `calendarConnected`, `calendarProvider`, or `crmConnected` fields. |
-| `workspace-list` | All workspaces → array of `{id, name, nrOfUsers}` — the identifier is `id` (NOT `workspaceId`) |
-| `team-list-put` | Teams filtered by `member: [userId]` (server-side, confirmed live as of DISTRO-4472) → only teams this user belongs to; also accepts optional `name: string` filter; response: `{results: [{id, name, workspaceId, members, metadata}], total}` (the team identifier is `id`, NOT `teamId`) |
-| `scheduling-link-list-personal` | Personal scheduling links owned by this user |
-| `scheduling-link-list-round-robin` | Round-robin links this user is part of |
-| `scheduling-link-list-admin-one-on-one` | Admin one-on-one scheduling links in the user's workspaces |
-| `scheduling-link-list-group` | Group scheduling links in the user's workspaces |
-| `scheduling-link-list-ownership` | Ownership-based scheduling links in the user's workspaces |
-| `meeting-export-v2-put` | CSV export — server-side filters (all confirmed live as of DISTRO-4472): `hostIds`, `assigneeIds`, `bookerIds`, `meetingTypeIds`, `status`; response: `{filename, data: "<CSV>"}` — parse header row for column names |
+## When to use
 
----
+- Onboarding audit: confirm a new rep is on the right teams, workspaces, and links.
+- Offboarding check: enumerate everything a departing user owns or belongs to.
+- Rep-level troubleshooting: licenses, memberships, owned links, and recent activity in one place.
 
-## Step 1 — Resolve the user
+## Inputs
+
+| Input | Required | Default | What it controls |
+|-------|:--------:|---------|------------------|
+| `user` | ✅ | — | Email address, name, or Chili Piper user ID of the user to inspect |
+| `include_meetings` | — | `true` | Include recent meeting volume (last 30 days). Requires meeting.read scope. |
+
+If `user` is missing, ask for it in one sentence rather than guessing.
+
+## Process
+
+### Step 1 — Resolve the user
 
 If `user` looks like an email (contains `@`), call `user-find` with `query=<email>`.
 If `user` looks like a name, call `user-find` with `query=<name>`.
@@ -62,10 +70,9 @@ args:
 
 If zero results: report "No user found for `<input>`." Stop.
 If multiple results: list them and ask the human to confirm which one.
+Result fields → `references/api-reference.md` § Tool summary.
 
----
-
-## Step 2 — Fetch full user record
+### Step 2 — Fetch full user record
 
 ```
 tool: user-read
@@ -73,19 +80,11 @@ args:
   userId: <resolved user ID>
 ```
 
-Extract:
-- `id`, `email`, `name`
-- `isSuperAdmin` — true/false
-- `licenses` — object: required booleans `chiliCalOrg`, `handoff`; optional booleans `distro`, `concierge`, `conciergeLive`, `chat` (default `false` when absent); optional `tier` enum: `RoutingAndScheduling` | `Experiences` | `ChiliDataPlatform` (absent for non-tiered users)
-- `workspaces` — list of workspaceId strings (field is `workspaces`, NOT `workspaceIds`)
+Extract `id`, `email`, `name`, `isSuperAdmin`, `licenses`, and `workspaces`. The
+licenses object shape, the `workspaces` (not `workspaceIds`) gotcha, and the absent
+calendar/CRM connection fields → `references/api-reference.md` § user-read field names.
 
-Note: `calendarConnected`, `calendarProvider`, and `crmConnected` are **not** present in the `user-read` response. Calendar connection status is not available from user-read — it will surface in routing/availability failures if misconfigured. CRM connection status is likewise not directly readable from this endpoint.
-
----
-
-## Step 3 — Resolve workspace memberships
-
-Call `workspace-list` to get all workspace names.
+### Step 3 — Resolve workspace memberships
 
 ```
 tool: workspace-list
@@ -95,13 +94,15 @@ args:
     pageSize: 100
 ```
 
-Map the user's `workspaces` (list of workspaceId strings) to workspace names by joining to the `id` field of each workspace-list item. Note any workspaces where you'd expect them but they're absent.
+Map the user's `workspaces` (list of workspaceId strings) to workspace names by joining
+to the `id` field of each workspace-list item. Note any workspaces where you'd expect
+them but they're absent. Identifier gotcha → `references/api-reference.md` §
+workspace-list field names.
 
----
+### Step 4 — Find team memberships
 
-## Step 4 — Find team memberships
-
-Use the `member` filter to fetch only teams this user belongs to — no client-side filtering needed.
+Use the `member` filter to fetch only teams this user belongs to — no client-side
+filtering needed.
 
 ```
 tool: team-list-put
@@ -112,123 +113,46 @@ args:
     pageSize: 100
 ```
 
-Response: `{results: [{id, name, workspaceId, members, metadata}], total}`. Extract `id` (team identifier), `name`, `workspaceId` for each result.
+Extract `id` (team identifier), `name`, `workspaceId` for each result. Response shape and
+identifier gotcha → `references/api-reference.md` § team-list-put.
 
----
+### Step 5 — Find scheduling links
 
-## Step 5 — Find scheduling links
+Query all five link types with `userId: <user ID>`, then combine results and note the
+meeting type and whether each link is active:
 
-```
-tool: scheduling-link-list-personal
-args:
-  userId: <user ID>
-```
+- `scheduling-link-list-personal`
+- `scheduling-link-list-round-robin`
+- `scheduling-link-list-admin-one-on-one`
+- `scheduling-link-list-group`
+- `scheduling-link-list-ownership`
 
-```
-tool: scheduling-link-list-round-robin
-args:
-  userId: <user ID>
-```
+Tool details → `references/api-reference.md` § Scheduling-link list tools.
 
-```
-tool: scheduling-link-list-admin-one-on-one
-args:
-  userId: <user ID>
-```
+### Step 6 — Recent meeting activity (if include_meetings=true)
 
-```
-tool: scheduling-link-list-group
-args:
-  userId: <user ID>
-```
+Skip if `include_meetings=false`. Full windowed-export procedure and no-show rate
+computation → `references/recent-activity.md`.
 
-```
-tool: scheduling-link-list-ownership
-args:
-  userId: <user ID>
-```
+### Step 7 — Output
 
-Combine results across all five types. Note the meeting type and whether the link is active.
+Exact layout → `references/output-format.md` § User profile layout.
 
----
+## Preflight audit
 
-## Step 6 — Recent meeting activity (if include_meetings=true)
+Verify before writing output (this skill never mutates):
 
-`meeting-export-v2-put` has a strict **≤ 7-day** window per call. Split the 30-day range into chunks of at most 6 days each (5 or 6 calls). For each chunk:
+- [ ] `user` resolved to a single user ID (Step 1 — no ambiguous multi-match left unresolved).
+- [ ] Field names taken from `references/api-reference.md`, not guessed (`workspaces` not `workspaceIds`; team/workspace `id` not `teamId`/`workspaceId`).
+- [ ] All five scheduling-link list tools queried (Step 5).
+- [ ] If `include_meetings=true`: every `meeting-export-v2-put` call stays within the ≤ 7-day window, and records are deduplicated on `Meeting ID`.
+- [ ] Calendar/CRM connection warnings included (those fields are not readable from the API).
 
-```
-tool: meeting-export-v2-put
-args:
-  start: <chunk start, ISO-8601>
-  end: <chunk end, ISO-8601>
-  hostIds: [<resolved user ID>]
-  status: ["Active", "Completed", "NoShow", "Canceled"]
-```
+## Checkpoint
 
-Response: `{filename: "...", data: "<CSV>"}`. Parse `data` as CSV — read the header row first to identify column names. No pagination needed; all matching records for the chunk are returned in one response.
-
-Merge records across all chunks. Deduplicate on the `Meeting ID` column.
-
-Calculate from the status column. **Note on `Active`:** meetings not explicitly closed stay `Active` even after the meeting time passes. Split `Active` on the `When` column vs. now:
-- `Active` + start in future → Upcoming (exclude from rate)
-- `Active` + start in past → informally completed (include in denominator, not numerator)
-
-Counts:
-- Total in rate: Completed + NoShow + past-Active
-- No-show rate: `NoShow / (Completed + NoShow + past-Active)`
-- Cancelled count (excluded from rate)
-- Surface caveat if past-Active is significant
-
----
-
-## Step 7 — Output format
-
-### User Profile: `<name>` (`<email>`)
-
-**Identity**
-
-| Field | Value |
-|-------|-------|
-| User ID | |
-| Super Admin | true / false |
-| Licenses | distro, chiliCalOrg, concierge, … (list enabled boolean flags); Tier: RoutingAndScheduling / Experiences / ChiliDataPlatform (if set) |
-
-**Warnings** (if any)
-- ⚠ Calendar connection status is not available from the API — check routing/availability failures if scheduling issues are reported
-- ⚠ CRM connection status is not available from the API — ownership-based routing failures will surface at routing time
-
-**Workspace memberships**
-
-| Workspace | ID |
-|-----------|-|
-| ... | |
-
-**Team memberships**
-
-| Team | Workspace |
-|------|----------|
-| ... | |
-
-**Scheduling links**
-
-| Link name | Type | Meeting type |
-|-----------|------|--------------|
-| ... | Personal / Round-robin / Admin one-on-one / Group / Ownership | |
-
-**Recent activity (last 30 days)**
-
-| Metric | Value |
-|--------|-------|
-| Meetings (completed + no-show) | |
-| No-shows | |
-| No-show rate | |
-| Cancelled | |
-
-**Human decision point**
-
-*"What would you like to do with this user? I can check missing workspace memberships, look at their routing assignments, or start an offboarding flow."*
-
----
+Present the full profile, then stop for the human. Surface the decision prompt: onboard
+the user to missing teams, fix routing gaps, or proceed with offboarding. Let the human
+choose the next action — this skill performs no writes.
 
 ## Data handling
 

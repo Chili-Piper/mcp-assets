@@ -2,6 +2,9 @@
 name: org-meeting
 description: Org-wide meeting volume and health snapshot — total booked, completed, no-show, and cancelled by workspace — for weekly or monthly executive reviews of booking capacity and pipeline coverage
 version: 0.1.3
+references:
+  - api-reference
+  - output-format
 inputs:
   - name: date_range
     type: string
@@ -23,135 +26,85 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the breakdown and decide: share with VP Sales/CRO, drill into a flagged workspace with /analyze-no-shows, or check individual reps with /user-meetings"
 writes_to: "Nothing — read-only"
-api_note: "meeting-list-put has a strict 7-day maximum window. For 30-day ranges the skill makes multiple paginated calls. Workspace IDs are resolved via workspace-list. Pass workspaceIds for server-side workspace scoping. The status filter on meeting-list-put is confirmed live as of DISTRO-4472 (2026-05-21) — for historical analysis (entire date range in the past), pass status: [\"Completed\",\"NoShow\",\"Canceled\"] to skip Active/upcoming meetings and reduce data returned."
 ---
 
 # Org Meeting Snapshot
 
 You are a RevOps analyst preparing an executive summary of booking health. Your job is to pull all meetings for a period, calculate org-wide and dimension-level metrics, and flag anything that warrants action before the data reaches leadership.
 
-## API reference
+> **Prefer live data over training.** Chili Piper's field names and tool signatures change. Always load `references/api-reference.md` before making MCP calls — it documents exact field names, status values, hard limits, and known gotchas.
 
-| Tool | What it returns |
-|------|----------------|
-| `meeting-list-put` | Meetings in a window < 7 days → response: `{data: {list: [{meetingId, meetingStatus, dateTime: {start, end}, attendees, hostId, hostEmail, hostName, workspaceId}]}, hasMore: "Yes"\|"No"}`. Accepts `status` filter (confirmed live as of DISTRO-4472). |
-| `workspace-list` | All workspaces → array of `{id, name, nrOfUsers}` — the identifier is `id` (NOT `workspaceId`) — join `meeting.workspaceId` to `workspace.id` to get the workspace name |
+## When to use
 
----
+- Preparing a weekly or monthly executive review of booking capacity and pipeline coverage.
+- You need org-wide meeting volume and health (booked, completed, no-show, cancelled) at a glance.
+- You want a per-workspace or per-rep breakdown to spot where booking health is degrading.
 
-## Step 1 — Build the date range chunks
+## Inputs
 
-Parse `date_range` and split into 7-day (or shorter) chunks. For each chunk:
+| Input | Required | Default | What it controls |
+|-------|:--------:|---------|------------------|
+| `date_range` | — | `last-7-days` | Period to analyze: `last-7-days`, `last-30-days`, or `YYYY-MM-DD:YYYY-MM-DD`. Max 7-day window per API call — skill paginates automatically. |
+| `group_by` | — | `workspace` | Primary dimension: `workspace`, `rep`, or `status`. |
 
-```
-tool: meeting-list-put
-args:
-  start: <chunk start, ISO-8601>
-  end: <chunk end, ISO-8601>
-  status: ["Completed", "NoShow", "Active"]   # always include Active — past-Active meetings count in denominator; Canceled excluded server-side
-  workspaceIds: [<resolved workspaceId>]          # optional: only if a workspace filter is desired
-  pagination:
-    page: 0
-    pageSize: 200
-```
+If a required input is missing, ask for it in one sentence rather than guessing.
 
-Always include `"Active"` in the status filter. Past-Active meetings (start time in the past) must be included in the no-show rate denominator — omitting them inflates the apparent no-show rate. Future-Active meetings are separated client-side and shown as "Upcoming" in the summary.
+## Process
 
-Each chunk must be strictly less than 7 days (use at most 6-day chunks). Paginate each chunk if needed: results are in `data.list`; check `hasMore === "Yes"` (string comparison) and increment `pagination.page` until `hasMore === "No"`. Merge all results from `data.list` across all chunks, deduplicate on `meetingId`.
+### Step 1 — Build the date range chunks
 
----
+Parse `date_range` and split into 7-day (or shorter) chunks. For each chunk call `meeting-list-put` with `status: ["Completed", "NoShow", "Active"]`, paginate, then merge and deduplicate on `meetingId`.
 
-## Step 2 — Resolve workspaces (if group_by=workspace)
+Always include `"Active"` in the status filter — past-Active meetings count in the no-show denominator; future-Active are separated client-side as "Upcoming". Exact args, the strict 7-day chunking rule, `hasMore === "Yes"` pagination, and the historical-analysis status set → `references/api-reference.md` § meeting-list-put — pagination and chunking and § Hard API limits.
 
-```
-tool: workspace-list
-args:
-  pagination:
-    page: 0
-    pageSize: 100
-```
+### Step 2 — Resolve workspaces (if group_by=workspace)
 
-Build a map of `id → name` from each workspace-list item (the workspace identifier is `id`), then join each meeting's `workspaceId` to that `id` to get the workspace name.
+Call `workspace-list` and build a map of `id → name`, then join each meeting's `workspaceId` to that `id`. Exact args and the `id`-vs-`workspaceId` gotcha → `references/api-reference.md` § workspace-list — resolving workspace names.
 
-Note: meeting items from `meeting-list-put` include a `workspaceId` field — use it directly for grouping.
+### Step 3 — Calculate org-wide metrics
 
----
+Across all meetings, classify by `meetingStatus`. Status meanings and rate treatment (including splitting `Active` on start time vs. now) → `references/api-reference.md` § Meeting status values.
 
-## Step 3 — Calculate org-wide metrics
+- **Org no-show rate:** `NoShow / (Completed + NoShow + past-Active)`
+- **Completion rate:** `(Completed + past-Active) / (Completed + NoShow + past-Active)`
 
-Across all meetings:
+Surface a caveat when past-Active is a significant share of total (exact wording → `references/output-format.md` § Caveat line).
 
-**Statuses:**
-- `Completed` — explicitly marked as completed
-- `NoShow` — explicitly marked as no-show
-- `Canceled` — exclude from no-show rate entirely
-- `Active` (start in future) — upcoming, exclude from rate
-- `Active` (start in past) — meeting likely happened but never formally closed; treat as informally completed — include in denominator but NOT the no-show numerator
+### Step 4 — Calculate dimension breakdown
 
-**Important:** meetings not explicitly closed stay `Active` indefinitely. Excluding past-`Active` from the denominator inflates the apparent no-show rate. Always split `Active` on start time vs. now.
+Group by the selected dimension and compute per-group metrics. Group key and name source per dimension → `references/api-reference.md` § Grouping fields by dimension.
 
-**Org no-show rate:** `NoShow / (Completed + NoShow + past-Active)`
-
-**Completion rate:** `(Completed + past-Active) / (Completed + NoShow + past-Active)`
-
-Surface a caveat when past-Active is a significant share of total: *"N meetings were not formally closed (Active status, past start time) — included in denominator as informally completed."*
-
----
-
-## Step 4 — Calculate dimension breakdown
-
-**group_by=workspace:** group by `workspaceId`, resolve to name, calculate per-workspace metrics
-
-**group_by=rep:** group by `hostId`, calculate per-rep metrics. Sort by meeting volume descending. Rep names are already present as `hostName`/`hostEmail` on each meeting — no separate lookup needed.
-
-**group_by=status:** simple count of each status — useful for a quick executive pie-chart narrative.
+- **`workspace`:** group by `workspaceId`, resolve to name, calculate per-workspace metrics.
+- **`rep`:** group by `hostId`, calculate per-rep metrics, sort by meeting volume descending. Names are already present as `hostName`/`hostEmail` — no separate lookup.
+- **`status`:** simple count of each status — useful for a quick executive pie-chart narrative.
 
 For each group with ≥ 10 meetings, calculate no-show rate. Flag any group where rate > (org average + 10pp) or > 35%.
 
----
+### Step 5 — Output
 
-## Step 5 — Output format
+Exact layout → `references/output-format.md` § Template. Suggested follow-up skills → `references/output-format.md` § Suggested follow-up skills.
 
-### Org Meeting Snapshot | `<date range>` | Grouped by `<dimension>`
+## Preflight audit
 
-**Org Summary**
+Verify before writing output. Every line must be a clear pass/fail:
 
-| Metric | Value |
-|--------|-------|
-| Total meetings (completed + no-show) | |
-| Completed | |
-| No-shows | |
-| Org no-show rate | |
-| Cancelled (excl. from rate) | |
-| Upcoming (Scheduled) | |
+- [ ] `date_range` parsed and split into chunks each strictly < 7 days.
+- [ ] Field names and the status filter taken from `references/api-reference.md`, not guessed.
+- [ ] `"Active"` included in the status filter; `Active` meetings split on start time vs. now (past-Active in denominator, not numerator).
+- [ ] All chunks paginated to `hasMore === "No"`, merged, and deduplicated on `meetingId`.
+- [ ] Workspaces resolved via `workspace-list` (`id → name`) when `group_by=workspace`.
+- [ ] Past-Active caveat surfaced when it is a significant share of total.
 
-**Breakdown**
+## Checkpoint
 
-| `<Dimension>` | Meetings | No-shows | Rate | Flag |
-|---------------|---------|----------|------|------|
-| ... | | | | ⚠ / ✓ |
-
-**Flags**
-
-For each flagged group:
-> `<Workspace/Rep>` — `N%` no-show rate vs `N%` org average. Run `/analyze-no-shows workspace="<name>"` or `/user-meetings user="<email>"` for root-cause analysis.
-
-**Human decision point**
+Read-only skill: present the org summary, breakdown, and flags, then stop for the human:
 
 *"Should I send this to the summary view, or drill into any of the flagged groups?"*
 
----
-
-## Suggested follow-up skills
-
-- `/analyze-no-shows` — drill into a flagged workspace with root-cause hypotheses
-- `/user-meetings` — inspect a specific rep's meeting health
-- `/inspect-meeting` — investigate a single anomalous meeting
-
----
+Let the human decide: share with VP Sales/CRO, drill into a flagged workspace with `/analyze-no-shows`, or check individual reps with `/user-meetings`.
 
 ## Data handling
 
 - **PII present:** rep emails used for grouping; surfaced in `group_by=rep` breakdown
-- **Storage:** ephemeral
+- **Storage:** ephemeral — nothing persists after the skill completes
 - **Writes:** none — read-only

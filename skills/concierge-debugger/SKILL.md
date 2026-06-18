@@ -2,6 +2,10 @@
 name: concierge-debugger
 description: Debugs why a specific lead did not book — traces the concierge routing session, identifies the rule that fired (or why none did), and recommends a targeted fix
 version: 0.2.0
+references:
+  - api-reference
+  - diagnosis
+  - output-format
 inputs:
   - name: guest_email
     type: string
@@ -26,34 +30,36 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the diagnosis and decide: fix the routing rule, rebook the lead manually, or escalate to engineering"
 writes_to: "Nothing — read-only diagnostic"
-api_note: "Field names validated against live MCP responses — the tools' own descriptions are unreliable. concierge-logs requires a routerId and has a 30-day maximum window. If the router is unknown, the skill loops over all routers. Observed log status values include Scheduled (booked), TimedOut, and Cancelled; the full set is not documented, so read the actual status and interpret from context rather than assuming a fixed enum. matchedPath is an object (matchedPath.route.type = RuleRoute|CatchAllRoute). assignments[] items carry userId (no name)."
 ---
 
 # Concierge Debugger
 
 You are a Chili Piper routing specialist. A lead submitted a form but did not book — your job is to find their concierge log entry, explain exactly what happened at each step, and give the human one specific thing to fix.
 
-## API reference (validated against live responses)
+> **Prefer live data over training.** MCP field names and tool signatures change. Load `references/api-reference.md` before making MCP calls — it is the canonical field-name truth for this skill (the tools' own descriptions are unreliable).
 
-| Tool | What it returns |
-|------|----------------|
-| `concierge-list-routers` | `{routers: [{router: {id, name, slug, routing: {rules, catchAll}}, workspaceId}]}` — routerId is `routers[N].router.id`, slug `routers[N].router.slug`, workspace `routers[N].workspaceId` |
-| `concierge-logs` | Routing decisions → `status`, `guestEmail`, `trigger`, `matchedPath` (object), `assignments` (`[{userId, ruleId, teamRef, distributionId, type}]` — no `name`), `meetingId`, `sourceUrl`, `crmUrl`, `triggeredAt`, `actionsStatus` |
-| `rule-list` | Active rules, **workspace-scoped** (no routerId). Input `{filter: {ruleBuilderVersion: ["ExplicitV1"] (required), workspaceId?, name?}, pagination}`. Returns `{results: [{id, name, type, conditions, metadata}]}`; `type` is `OwnershipRule` or `NonOwnershipRule`. |
-| `workspace-list` | Workspaces → items `{id, name, nrOfUsers}` (identifier is **`id`**, not `workspaceId`) |
+## When to use
 
-**Reading the outcome (no fixed status enum — interpret these signals):**
-- **Booked:** a `meetingId` is present and `status` indicates success (observed value: `Scheduled`). The lead did book.
-- **Not booked:** no `meetingId`. Use `status` (observed values include `TimedOut` = session expired, `Cancelled`) and `matchedPath.route.type` to explain why.
-- **`matchedPath.route.type`:** `RuleRoute` = a rule matched (rule ids in `matchedPath.route.ruleIds`); `CatchAllRoute` = no specific rule matched, the lead fell to the catch-all. Other values appear in live data (e.g. `SpamCheckRoute`); treat any type other than `RuleRoute` as "no rep rule matched" and report the literal type. (`matchedPath.type` also varies — `RoutePathLive` / `RoutePathWithCalendar` / `RoutePathWithoutCalendar`.)
+- A lead submitted a form but no meeting was booked, and you need to know why.
+- You need to confirm whether a specific lead was routed at all, and to whom.
+- Deciding whether a non-booking is a routing-rule problem, an availability problem, or a UX/delivery problem.
 
-If you see a `status` value not listed here, report the literal value and interpret it from the surrounding fields rather than guessing.
+## Inputs
 
----
+| Input | Required | Default | What it controls |
+|-------|:--------:|---------|------------------|
+| `guest_email` | ✅ | — | Email address of the lead who did not book. |
+| `router` | — | all routers | Router name or slug to search in. Omit to search all routers. |
+| `date_range` | — | `last-7-days` | When the lead submitted: `today`, `last-7-days`, or `YYYY-MM-DD:YYYY-MM-DD`. |
 
-## Step 1 — Find the router(s) to search
+If `guest_email` is missing, ask for it in one sentence rather than guessing.
+
+## Process
+
+### Step 1 — Find the router(s) to search
 
 If `router` is specified, call `concierge-list-routers` and find the matching router by name or slug.
+
 If no `router` specified, fetch all routers across all workspaces:
 
 ```
@@ -70,11 +76,9 @@ args:
   workspaceId: <workspace.id>
 ```
 
-Response shape: `{routers: [{router: {id, name, slug, routing}}, workspaceId}]}`. Router ID is at `routers[N].router.id`; workspace at `routers[N].workspaceId`. (Workspace items from `workspace-list` use `id`.)
+Router ID is at `routers[N].router.id`; workspace at `routers[N].workspaceId`. Workspace items from `workspace-list` use `id`. Response shapes and identifier fields → `references/api-reference.md` § Tools and what they return.
 
----
-
-## Step 2 — Search logs for the lead
+### Step 2 — Search logs for the lead
 
 For each router (or the specified router):
 
@@ -87,84 +91,39 @@ args:
   end: <ISO-8601 end of date_range>
 ```
 
-Search results for entries where `guestEmail` matches `guest_email` (case-insensitive).
+Search results for entries where `guestEmail` matches `guest_email` (case-insensitive). The 30-day window and `routerId` requirement → `references/api-reference.md` § Hard API limits.
 
-If found: store the log entry. Stop searching other routers.
-If not found in any router: report "No routing session found for `<guest_email>` in the requested window. The lead may not have triggered the router, or the session is older than 30 days."
+If found: store the log entry and stop searching other routers.
+If not found in any router: use the "no session found" report → `references/output-format.md` § If no session found.
 
----
+### Step 3 — Diagnose the outcome
 
-## Step 3 — Diagnose the outcome
+Read the outcome signals (`meetingId`, `status`, `matchedPath.route.type`) → `references/api-reference.md` § Reading the outcome and § matchedPath. Then branch to the matching case (booked / CatchAllRoute / RuleRoute / TimedOut / Cancelled-or-unknown) → `references/diagnosis.md`. Resolve any `assignments[].userId` to a name with `user-find-by-ids`.
 
-**If booked (a `meetingId` is present, status `Scheduled`):**
-> The lead did book. Meeting ID: `<meetingId>`. Assigned to: `<assignments[0].userId>` (resolve to a name via `user-find-by-ids`). No routing failure — check whether the meeting was later cancelled or is a no-show (use `/inspect-meeting`).
+### Step 4 — Output
 
-**If not booked AND `matchedPath.route.type == "CatchAllRoute"`:**
-> No specific routing rule matched this lead — they fell through to the catch-all. Pull the workspace rules to see which conditions they missed:
+Exact layout → `references/output-format.md` § Template.
 
-```
-tool: rule-list
-args:
-  filter:
-    ruleBuilderVersion: ["ExplicitV1"]
-    workspaceId: <router's workspaceId>
-  pagination:
-    page: 0
-    pageSize: 200
-```
+## Preflight audit
 
-> For each rule, compare its `conditions` against the lead's known data (email domain, company, etc.) to identify which condition(s) excluded them. Fix: add or broaden a rule to cover this profile.
+Verify before writing output:
 
-**If not booked AND `matchedPath.route.type == "RuleRoute"`:**
-> A rule matched (`matchedPath.route.ruleIds`) and the lead was assigned to `<assignments[0].userId>`, but they did not complete the booking.
-> Likely causes: no available slots for the assigned rep/distribution (check with `/check-availability`), the lead abandoned the calendar, or a calendar-widget issue.
+- [ ] `guest_email` present.
+- [ ] Field names taken from `references/api-reference.md`, not guessed.
+- [ ] `concierge-logs` window ≤ 30 days and every call carried a `routerId`.
+- [ ] Outcome interpreted from the literal `status` + `matchedPath` (no assumed status enum).
+- [ ] Any reported assignee `userId` resolved to a name via `user-find-by-ids`.
 
-**If `status == "TimedOut"`:**
-> The routing session expired before the lead clicked a slot. They were routed at `<triggeredAt>` but did not book within the session window.
-> Fix: usually a UX/delivery issue (email bounced, slow network) rather than a routing-config issue.
+## Checkpoint
 
-**If `status == "Cancelled"` or an unrecognized value:**
-> Report the literal `status` and the available fields (`matchedPath`, `assignments`, `actionsStatus`). If `actionsStatus` is a non-success state, a CRM write-back failed — escalate to RevOps. For genuinely unexpected states, provide `routerId`, `triggeredAt`, and `guestEmail` to Chili Piper support.
-
----
-
-## Step 4 — Output format
-
-### Concierge Debug: `<guest_email>`
-
-**Routing session found**
-
-| Field | Value |
-|-------|-------|
-| Router | |
-| Triggered at | |
-| Trigger type | |
-| Source URL | |
-| Status | |
-| Matched route | RuleRoute / CatchAllRoute |
-| Assigned rep | (from `assignments[0].userId`) |
-| Meeting booked | |
-
-**Diagnosis**
-
-> [Plain-language explanation of what happened]
-
-**Root cause**
-
-> [Specific cause: which condition failed, why the session expired, etc.]
-
-**Fix**
-
-> [One specific change to make: add a routing rule condition, add a fallback, fix availability, etc.]
-
-**Human decision point**
+Present the routing session, diagnosis, root cause, and fix, then stop for the human:
 
 *"Should I make the fix in the router, or would you like to manually rebook this lead first?"*
 
----
+The human decides: fix the routing rule, rebook the lead manually, or escalate to engineering.
 
 ## Data handling
 
 - **PII present:** guest email used for lookup and display
-- **Storage:** ephemeral
+- **Storage:** ephemeral — nothing persists after the skill completes
 - **Writes:** none — read-only diagnostic
