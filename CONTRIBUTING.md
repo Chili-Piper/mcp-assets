@@ -29,7 +29,7 @@ When you build a `status:ready-to-build` idea, open a PR that closes its issue (
 ## Submitting a change
 
 1. Fork and branch.
-2. Follow the structure in [`skills/README.md`](skills/README.md) — each skill is `skills/<slug>/SKILL.md` with a `references/` folder for deep dives.
+2. Read [`docs/methodology.md`](docs/methodology.md) — the Interpreted-Context authoring standard every skill follows (layered loading, file budgets, the required SKILL.md shape) — and start from [`docs/SKILL.template.md`](docs/SKILL.template.md). Each skill is `skills/<slug>/SKILL.md` with a `references/` folder for deep detail; see [`skills/README.md`](skills/README.md) for the frontmatter schema.
 3. If your change affects a skill that also ships as a ChatGPT GPT, update the paired `gpts/<slug>/` to the same `version`.
 4. Run the checks locally:
    ```bash
