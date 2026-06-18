@@ -1,57 +1,63 @@
-# Skill authoring methodology — Interpreted Context
+# Skill authoring methodology — progressive disclosure
 
-This is the **canonical** standard for how every skill in this repo is written. It
-adapts the **Interpreted Context Methodology (ICM)** — *folder structure as agent
-architecture* — to Chili Piper skills. When anything elsewhere in the repo conflicts
-with this file, this file wins; other docs link here rather than restating it.
+This is the authoring standard for every skill in this repo. It is Anthropic's **Agent
+Skills progressive-disclosure** model, made concrete for Chili Piper skills with a few
+repo-specific rules (file budgets, a required `SKILL.md` shape). Other docs in the repo
+link here rather than restating it.
 
-> **Sources.** ICM, "Folder Structure as Agent Architecture"
-> ([RinDig/Interpreted-Context-Methodology](https://github.com/RinDig/Interpreted-Context-Methdology));
-> *Interpretable Context Methodology: Folder Structure as Agentic Architecture*
-> ([arXiv:2603.16021](https://arxiv.org/pdf/2603.16021)).
+> **Primary source.** Anthropic, *Agent Skills* —
+> [platform.claude.com/docs/en/agents-and-tools/agent-skills/overview](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview).
+>
+> **Convergent framing we drew on.** The same "folder structure as agent architecture"
+> idea is described independently as the Interpreted-Context Methodology
+> ([RinDig/Interpreted-Context-Methdology](https://github.com/RinDig/Interpreted-Context-Methdology) —
+> note the repo owner's spelling of the slug; and the preprint
+> [arXiv:2603.16021](https://arxiv.org/pdf/2603.16021)). Useful vocabulary, but Anthropic's
+> convention above is the authority for how these skills are built.
 
 ---
 
-## Why ICM here
+## Why progressive disclosure
 
-A skill is context an agent loads to do one job correctly. ICM's claim is that the
-**filesystem layout is the architecture**: scope each file to one job, load only what
-the current step needs, and keep every artifact human-readable. The payoff for these
-skills is concrete — an agent spends ~2–8k tokens on the right slice of a skill instead
-of ~30k on the whole thing, and a human can audit exactly what the agent will read.
+A skill is context an agent loads to do one job. Progressive disclosure is the discipline
+of being deliberate about what enters the context window and what stays on disk until it's
+actually needed. The payoff for these skills is concrete — an agent spends ~2–8k tokens on
+the right slice of a skill instead of ~30k on the whole thing, and a human can audit
+exactly which files an agent will read, in what order.
 
-## The five principles
+## The principles
 
 1. **Single responsibility.** One skill does one Chili Piper task. One reference file
    covers one topic (an API surface, an output format, one procedure).
-2. **Plain-text interfaces.** Everything is Markdown a human can read and edit. No
-   binary formats, no proprietary serialization.
-3. **Layered context loading.** The agent reads the cheapest layer that answers its
+2. **Plain-text interfaces.** Everything is Markdown a human can read and edit.
+3. **Load only what the step needs.** The agent reads the cheapest layer that answers its
    current step and stops. Deep detail lives behind an explicit "load this when…".
-4. **Human-editable, glass-box outputs.** Every intermediate is inspectable; a reviewer
-   can see precisely which files an agent will pull and in what order.
+4. **Glass-box.** Every artifact is inspectable; a reviewer can see precisely which files
+   an agent will pull and in what order.
 5. **Canonical sources, one-way dependencies.** Each fact lives in exactly one file;
    everything else links to it. If A references B, B must not reference A.
 
-## The context layers, mapped to this repo
+## The loading stages, mapped to this repo
 
-| Layer | ICM role | In this repo |
-|------|----------|--------------|
-| 0 | System orientation | [`AGENTS.md`](../AGENTS.md) — what this repo is, the layout, the rules. ~1 screen. |
-| 1 | Task routing | A skill's frontmatter `description` — the one sentence an agent reads to decide *whether to load this skill at all*. |
-| 2 | Stage contract | `skills/<slug>/SKILL.md` body — Inputs → Process → Outputs for this one task. |
-| 3 | Reference material | `skills/<slug>/references/*.md` — API field names, output formats, deep procedures. Loaded **on demand** from a Process step. |
-| 4 | Working artifacts | Live MCP responses and anything the run produces. Never committed. |
+Anthropic's model loads a skill in three stages; we add a repo-level orientation file on
+top for *authors* working across skills.
 
-An agent should be able to route on layer 1, execute the happy path on layer 2, and
-only drop to layer 3 when a step says so.
+| Stage | Anthropic model | In this repo |
+|------|-----------------|--------------|
+| (author orientation) | — | [`AGENTS.md`](../AGENTS.md) — what this repo is, the layout, the rules. ~1 screen. |
+| Discovery | name + `description` only | A skill's frontmatter `description` — the one sentence an agent reads to decide *whether to load this skill at all*. |
+| Activation | full `SKILL.md` | `skills/<slug>/SKILL.md` body — Inputs → Process → Outputs for this one task. |
+| Execution | referenced files, as needed | `skills/<slug>/references/*.md` — API field names, output formats, deep procedures. Loaded **on demand** from a Process step. |
+
+An agent should be able to route on the `description`, execute the happy path on
+`SKILL.md`, and only drop to a reference when a step says so.
 
 ## Required SKILL.md shape
 
 Copy [`SKILL.template.md`](SKILL.template.md). Every SKILL.md has, in order:
 
 1. **Frontmatter** — the schema in [`../skills/README.md`](../skills/README.md). The
-   `description` is the layer-1 router: one sentence, ≤ 280 characters. List every
+   `description` is the discovery line: one sentence, ≤ 280 characters. List every
    `references/` file in `references:` and nothing that isn't a file.
 2. **Role line** — one or two sentences: who the agent is and the job.
 3. **When to use** — the situations this skill is the right tool for.
@@ -71,17 +77,20 @@ Copy [`SKILL.template.md`](SKILL.template.md). Every SKILL.md has, in order:
 Don't write "see `references/api-reference.md`." Write the step's pointer as
 *"field names → `references/api-reference.md` § Critical field name differences."*
 The agent loads one section, not the file. References therefore carry stable `##`
-headings that Process steps can name.
+headings that Process steps can name. (Anthropic's guidance: for a reference over ~100
+lines, include a table of contents at the top.)
 
 ## File budgets
 
-ICM keeps every file small enough to load whole. Enforced/recommended here:
+Progressive disclosure works only if each file is small enough to load whole. Anthropic
+suggests keeping a SKILL.md under ~500 lines and splitting longer files; we hold a tighter
+repo budget so the entry point stays lean:
 
 | File | Budget | Enforcement |
 |------|--------|-------------|
 | `references/*.md` | ≤ 200 lines | **hard** — CI fails |
 | `SKILL.md` | ≤ 200 lines | warning — push detail into `references/` |
-| frontmatter `description` | ≤ 280 chars | warning — it's a router, not a summary |
+| frontmatter `description` | ≤ 280 chars | warning — it's a discovery line, not a summary |
 | `AGENTS.md` | ≤ 80 lines | by convention |
 
 When a SKILL.md outgrows its budget, the fix is always the same: move the deep detail
@@ -101,10 +110,12 @@ skill), `output-format.md` (the exact result layout), then one file per deep pro
 
 ```bash
 pip install pyyaml
-python .github/scripts/validate_skill_frontmatter.py   # frontmatter + ICM structure
+python .github/scripts/validate_skill_frontmatter.py   # frontmatter + structure
 python .github/scripts/check_gpt_sync.py               # SKILL <-> GPT parity
 ```
 
-A structural refactor that doesn't change behavior keeps the existing `version` (and so
-needs no paired GPT edit). Bump `version` only when behavior changes — and then bump the
-paired `gpts/<slug>/GPT.md` to match.
+A structural refactor that doesn't change behavior keeps the existing skill `version` (and
+so needs no paired GPT edit). Bump a skill `version` only when behavior changes — and then
+bump the paired `gpts/<slug>/GPT.md` to match. The **plugin** version
+(`.claude-plugin/plugin.json` + `marketplace.json`) is separate: bump it whenever you want
+installed clients to pull an update, since org distribution keys off it.

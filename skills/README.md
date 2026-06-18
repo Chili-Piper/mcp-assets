@@ -25,7 +25,7 @@ Read skills/<skill-name>/SKILL.md
 
 ## Skill structure
 
-Skills follow the **Interpreted-Context Methodology** — folder structure as agent architecture, with layered on-demand loading. The full authoring standard (the five principles, the context layers, file budgets, and the required SKILL.md shape) is in [`../docs/methodology.md`](../docs/methodology.md); copy [`../docs/SKILL.template.md`](../docs/SKILL.template.md) to start a new skill.
+Skills follow **progressive disclosure** (Anthropic's Agent Skills convention) — one job per file, with on-demand loading of deep detail. The full authoring standard (the principles, the loading stages, file budgets, and the required SKILL.md shape) is in [`../docs/methodology.md`](../docs/methodology.md); copy [`../docs/SKILL.template.md`](../docs/SKILL.template.md) to start a new skill.
 
 Each skill lives in its own directory:
 

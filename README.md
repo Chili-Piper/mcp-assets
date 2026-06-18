@@ -19,7 +19,7 @@ Maintained by Chili Piper. These are ready-to-use AI specialists — meeting dia
 
 A **Skill** is a small, self-contained instruction set that teaches an AI agent how to do one Chili Piper task correctly — which MCP tools to call, in what order, and how to format the result. A **GPT** is the same capability packaged for ChatGPT.
 
-Every skill is built on the **[Interpreted-Context Methodology](docs/methodology.md)** — folder structure as agent architecture, so an agent loads only the slice of a skill the current step needs.
+Every skill is built on **[progressive disclosure](docs/methodology.md)** (Anthropic's Agent Skills convention), so an agent loads only the slice of a skill the current step needs.
 
 ### Available skills
 

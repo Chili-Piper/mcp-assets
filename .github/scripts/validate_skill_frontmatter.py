@@ -1,4 +1,4 @@
-"""Validate skill frontmatter AND Interpreted-Context structure.
+"""Validate skill frontmatter AND progressive-disclosure structure.
 
 Run from the repo root:  python .github/scripts/validate_skill_frontmatter.py
 
@@ -11,9 +11,9 @@ Two classes of check (see docs/methodology.md for the why):
       so a reference is never orphaned or unlisted — canonical, one-way wiring)
     - no references/*.md exceeds the 200-line load budget
 
-  WARNINGS (printed, do NOT fail — they flag ICM debt to pay down):
+  WARNINGS (printed, do NOT fail — they flag structural debt to pay down):
     - SKILL.md over 200 lines (push deep detail into references/)
-    - frontmatter `description` over 280 chars (it's a layer-1 router, one sentence)
+    - frontmatter `description` over 280 chars (it's a discovery line, one sentence)
 """
 
 import os
@@ -30,7 +30,7 @@ REQUIRED_FIELDS = [
     "writes_to",     # where outputs go, or "Nothing — read-only"
 ]
 
-# Interpreted-Context file budgets (docs/methodology.md "File budgets")
+# Progressive-disclosure file budgets (docs/methodology.md "File budgets")
 REFERENCE_MAX_LINES = 200   # hard — a reference must load whole
 SKILL_MAX_LINES = 200       # soft — over this, split into references/
 DESCRIPTION_MAX_CHARS = 280  # soft — the description is a router, not a summary
@@ -81,7 +81,7 @@ def validate_skill(skill_dir):
             f"{name}/SKILL.md: frontmatter name '{fm['name']}' does not match directory '{name}'"
         )
 
-    # --- Interpreted-Context structure: references <-> frontmatter consistency ---
+    # --- progressive-disclosure structure: references <-> frontmatter consistency ---
     declared = fm.get("references") or []
     if not isinstance(declared, list):
         errors.append(f"{name}/SKILL.md: 'references' must be a list of basenames")
@@ -147,7 +147,7 @@ def main():
         all_warnings.extend(warns)
 
     if all_warnings:
-        print("Interpreted-Context warnings (not failing):\n")
+        print("Progressive-disclosure warnings (not failing):\n")
         for w in all_warnings:
             print(f"  ! {w}")
         print()

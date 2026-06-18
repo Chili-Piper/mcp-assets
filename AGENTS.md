@@ -24,9 +24,9 @@ repo holds **zero customer data**.
 
 ## The one rule that governs structure
 
-Skills follow the **Interpreted Context Methodology** — folder structure as agent
-architecture: one job per file, layered loading, canonical sources, plain-text. The
-full standard, with file budgets and the required SKILL.md shape, is
+Skills follow **progressive disclosure** (Anthropic's Agent Skills convention): one job
+per file, load only what the current step needs, canonical sources, plain-text. The full
+standard — the loading stages, file budgets, and the required SKILL.md shape — is
 [`docs/methodology.md`](docs/methodology.md). **Read it before adding or editing a
 skill.** Start a new skill by copying [`docs/SKILL.template.md`](docs/SKILL.template.md).
 
