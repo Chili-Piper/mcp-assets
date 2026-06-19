@@ -1,7 +1,7 @@
 ---
 name: routing-audit
 description: Audits all Chili Piper concierge routers for coverage gaps — unmapped lead sources, stale ownership rules, unbalanced distributions, and catch-all overflows — before they show up as lost pipeline
-version: 0.2.1
+version: 0.2.2
 inputs:
   - name: workspace
     type: string
@@ -22,7 +22,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review gaps and decide which to fix first — routing gaps silently leak pipeline, so prioritize by volume before severity"
 writes_to: "Nothing — read-only diagnostic. Use the Chili Piper router builder to apply fixes."
-api_note: "Field names are validated against live MCP responses — the tools' own descriptions are unreliable. concierge-logs requires a routerId and has a hard 30-day maximum window. Per-router rules + the catch-all come from the router object returned by concierge-list-routers (router.routing.rules[] and router.routing.catchAll); rule-list is workspace-scoped (it takes no routerId) and requires filter.ruleBuilderVersion. distribution-list-put returns a top-level array (no results wrapper) and takes workspaceIds (array). As of DISTRO-4426 (2026-06-03): distribution-list-put state.userStates now includes statistics:{assigned,cancelled,noShow,reassignedToThis,reassignedFromThis} on every variant; use statistics.assigned alongside weights to detect actual vs. configured balance imbalances."
+api_note: "Field names are validated against live MCP responses — the tools' own descriptions are unreliable. concierge-logs requires a routerId and has a hard 30-day maximum window. Per-router rules + the catch-all come from the router object returned by concierge-list-routers (router.routing.rules[] and router.routing.catchAll); rule-list is workspace-scoped (it takes no routerId) and requires filter.ruleBuilderVersion. distribution-list-put returns a top-level array (no results wrapper) and takes workspaceIds (array). As of DISTRO-4426 (2026-06-03): distribution-list-put state.userStates now includes statistics:{assigned,cancelled,noShow,reassignedToThis,reassignedFromThis} on every variant; use statistics.assigned alongside weights to detect actual vs. configured balance imbalances. As of DISTRO-4549 (PR #898, 2026-06-18): routing.rules[] entries and routing.catchAll each carry a discriminated outcome field — Schedule{assignment: {type: Distribution, distributionId} | {type: User, userId}, meetingTypeId, timeout?: {minutes, onTimeout: Landing|{url}}, crmActions?: [...]} or Redirect{url}. Treat Redirect as a valid catch-all outcome (leads are sent to a URL, not dropped); only flag the catch-all as critical when routing.catchAll is absent or its outcome is null/missing."
 ---
 
 # Routing Audit
@@ -32,10 +32,10 @@ You are a RevOps systems auditor. Your job is to systematically inspect all Chil
 ## API reference (validated against live responses)
 
 | Tool | What it returns |
-|------|----------------|
+|------|-----------------|
 | `workspace-list` | All workspaces → items `{id, name, nrOfUsers}`. The identifier is **`id`** (NOT `workspaceId`); pass `id` as the `workspaceId` argument to other tools. |
-| `concierge-list-routers` | Routers in a workspace → `{routers: [{router: {id, name, slug, routing: {rules: [...], catchAll: {...}}}, workspaceId}]}`. routerId is `routers[N].router.id`; the router's rules and catch-all are on `routers[N].router.routing`. |
-| `rule-list` | Active routing rules, **workspace-scoped** (no routerId). Input `{filter: {ruleBuilderVersion: ["ExplicitV1"] (required), workspaceId?, name?, type?}, pagination}`. Returns `{results: [{id, name, type, conditions, workspaceId, metadata: {revision}}], total}`. `type` is `OwnershipRule` or `NonOwnershipRule`. |
+| `concierge-list-routers` | Routers in a workspace → `{routers: [{router: {id, name, slug, routing: {rules: [...], catchAll: {outcome: ...}}}, workspaceId}]}`. routerId is `routers[N].router.id`; rules and catch-all on `routers[N].router.routing`. Each rule row and the catch-all carry `outcome`: `{type: "Schedule", assignment: {type: "Distribution", distributionId} \| {type: "User", userId}, meetingTypeId, timeout?: {minutes, onTimeout: "Landing"\|{url}}, crmActions?: [...]}` or `{type: "Redirect", url}`. |
+| `rule-list` | Active routing rules, **workspace-scoped** (no routerId). Input `{filter: {ruleBuilderVersion: ["ExplicitV1"] (required), workspaceId?, name?}, pagination}`. Returns `{results: [{id, name, type, conditions, metadata}]}`; `type` is `OwnershipRule` or `NonOwnershipRule`. |
 | `concierge-logs` | Routing decisions → `status`, `matchedPath` (object), `guestEmail`, `triggeredAt`, `assignments`, `meetingId`. `matchedPath.route.type` is `RuleRoute` or `CatchAllRoute`. 30-day max window; requires `workspaceId` + `routerId`. |
 | `distribution-list-put` | Distributions — **top-level array** (no `results` wrapper). Each item `{id, published: {distributionId, name, weights: [{userId, weight}], assignmentTypeConfig: {type, handling: {type}}, capping, teamRef: {id}}, state: {userStates: [{userId, type: "Active"\|"Capped"\|"Disabled"\|"Removed"\|"NoLicense", statistics: {assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}}]}}`. Input takes `workspaceIds` (array) + optional `name`, `assignmentType` filters. |
 
@@ -95,7 +95,7 @@ args:
 Inspect each rule:
 - **Type:** `OwnershipRule` (routes by CRM owner) or `NonOwnershipRule` (territory/segment/round-robin)
 - **Conditions:** what fields/values trigger this rule (`conditions`)
-- **Catch-all health:** confirm `router.routing.catchAll` actually routes somewhere (a team/distribution). A catch-all that points at no one — or is disabled — drops unmatched leads. Flag this as critical.
+- **Catch-all health:** confirm `router.routing.catchAll` has a valid `outcome`. A `Schedule` outcome assigns to a distribution or user and books a meeting (valid); a `Redirect` outcome sends the lead to a URL — leads are not dropped (also valid). Flag as **critical** only when `routing.catchAll` is absent or its `outcome` field is null/missing. Surface a `Redirect` catch-all as **informational** — it may be intentional (low-intent leads sent to a content page) but worth confirming with the admin.
 
 Detect potentially stale rules:
 - Ownership rules referencing users no longer active in the workspace's distributions (cross-check `distribution-list-put` `state.userStates`)
@@ -157,15 +157,19 @@ Flag:
 
 **Router summary**
 
-| Router | Rules | Catch-all routes to | Leads (N days) | Catch-all rate |
-|--------|-------|---------------------|----------------|----------------|
-| ... | | team/distribution / ⚠ NO ONE | | |
+| Router | Rules | Catch-all outcome | Leads (N days) | Catch-all rate |
+|--------|-------|-------------------|----------------|----------------|
+| ... | | Schedule: team/distribution / User / ⚠ MISSING \| Redirect: `<url>` | | |
 
 **Gaps found** (sorted by severity)
 
-**[CRITICAL]** Catch-all routes to no one
-> Router `<name>`'s catch-all does not route to any team/distribution. Leads matching no rule are dropped with no fallback.
-> Fix: point the catch-all at a fallback distribution in the router builder.
+**[CRITICAL]** Missing catch-all or no valid outcome
+> Router `<name>` has no catch-all, or its catch-all has no valid `outcome`. Leads matching no rule are dropped with no fallback.
+> Fix: set the catch-all to a `Schedule` outcome (assign via a distribution or user + book a meeting type) or a `Redirect` outcome (send leads to a URL fallback).
+
+**[INFO]** Catch-all redirects to URL (no booking)
+> Router `<name>`'s catch-all uses a `Redirect` outcome: leads falling through all rules are sent to `<url>` rather than being booked.
+> Confirm this is intentional. If these leads should be bookable, update the catch-all to a `Schedule` outcome.
 
 **[HIGH]** High catch-all rate
 > Router `<name>`: `N%` of leads hit the catch-all. Top unmatched profiles: `<field values>`.
@@ -188,7 +192,7 @@ Flag:
 
 **Recommendations** (prioritized)
 
-1. Fix critical gaps (catch-all routing to no one) — these drop leads silently
+1. Fix critical gaps (catch-all missing or no valid outcome) — these drop leads silently
 2. Investigate high catch-all rates — add rules for top unmatched profiles
 3. Fill empty distributions — any distribution with 0 active members is currently routing nothing
 4. Review single-member distributions before the next vacation or departure
