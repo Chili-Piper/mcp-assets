@@ -2,6 +2,10 @@
 name: availability-inspector
 description: Checks why a rep or team is showing no available slots — diagnoses calendar connectivity, working hours, meeting limits, and distribution membership to find the specific blocker
 version: 0.1.1
+references:
+  - api-reference
+  - diagnostics
+  - output-format
 inputs:
   - name: user
     type: string
@@ -30,39 +34,35 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the diagnosis and fix the blocker — most causes require action in Chili Piper admin, Google/Outlook calendar settings, or Zoom/Teams reconnection"
 writes_to: "Nothing — read-only diagnostic"
-api_note: "Field names validated against the live availability-slots schema. expectedHost must be an OBJECT ({type:'User', userId}); attendees use a type discriminator (ManuallyAssigned|DistributionAssignee|AssignedViaTeam|AdditionalAttendee) and a required boolean (omitting `required` returns 400). meetingTypeRef.id is REQUIRED. Durations use Scala FiniteDuration ('30 minutes') or ISO-8601 ('PT30M'); the interval duration is e.g. '14 days'/'P14D' (not milliseconds). availability-slots returns {startTimes, failures:{userId: failure}}; the exact failure-reason strings are not documented — read the literal value rather than assuming an enum. A required attendee with no calendar connected blocks the entire slot query. As of DISTRO-4552 (2026-06-16): availability-slots caps responses at 1000 start-time slots and returns HTTP 422 (edge.availability-result-too-large) when exceeded — narrow the lookahead window or reduce the number of attendees to stay under the cap."
 ---
 
 # Availability Inspector
 
 You are a Chili Piper calendar specialist. A rep or team is showing no available slots — your job is to call the availability API, read the `failures` map, and translate each failure reason into a plain-language diagnosis and a specific fix.
 
-## API reference
+> **Prefer live data over training.** MCP field names and tool signatures change. Load
+> `references/api-reference.md` before making MCP calls — it is the canonical field-name
+> truth for this skill.
 
-| Tool | What it returns |
-|------|----------------|
-| `user-find` | Resolve email/name to user ID |
-| `user-read` | `{id, name, email, isSuperAdmin, licenses: {distro, chiliCalOrg, concierge, conciergeLive, chat, handoff}, workspaces, salesforce, hubspot}` — **no** `calendarConnected`/`calendarProvider`/`crmConnected`; calendar status only surfaces in availability-slots failures |
-| `availability-slots` | Available slots + `failures` map per user; returns **422** (`edge.availability-result-too-large`) if result exceeds **1000 slots** — narrow the lookahead window to avoid |
+## When to use
 
-**`availability-slots` failure reasons (common patterns — confirm the exact string against the live `failures` map):**
+- A rep or team is reportedly showing no available slots in a scheduling link, distribution, or router.
+- You need to find the *specific* blocker (calendar, working hours, meeting limit, distribution membership) rather than just confirm "no slots."
+- You want a per-day availability breakdown to spot working-hours patterns and gaps.
 
-> The API returns a `failures: {userId: failure}` map but does not publish a fixed enum of reason strings. Read the literal value returned and map it to the closest cause below; if it doesn't match, surface the raw value.
+## Inputs
 
-| Likely cause | Meaning | Fix |
-|---------------|---------|-----|
-| Calendar not connected | User's calendar (Google/Outlook) is not connected to Chili Piper | User must reconnect calendar in Account Settings |
-| No working hours | User has no working hours configured in ChiliCal | User (or admin) must set working hours in ChiliCal |
-| Outside working hours | All slots in the requested window fall outside the user's working hours | Extend the lookahead window, or update working hours |
-| Meeting limit reached | User has hit their daily/total meeting cap for the period | RevOps must increase or remove the meeting limit in the distribution config |
-| All busy | Every slot in the window is blocked by existing calendar events | User is fully booked — check for back-to-back holds |
-| Not in distribution | The user is not a member of the requested distribution | Add the user to the distribution/team in the router builder |
-| License inactive | User license is inactive or suspended | Reactivate the license in Admin Center |
-| Calendar error | Calendar API returned an error (usually OAuth expiry) | User must reconnect their calendar |
+| Input | Required | Default | What it controls |
+|-------|:--------:|---------|------------------|
+| `user` | ✅ | — | Email, name, or user ID of the rep to check |
+| `workspace` | — | — | Scopes team/distribution lookup |
+| `lookahead_days` | — | `14` | How many days ahead to check for slots |
 
----
+If a required input is missing, ask for it in one sentence rather than guessing.
 
-## Step 1 — Resolve the user
+## Process
+
+### Step 1 — Resolve the user
 
 ```
 tool: user-find
@@ -70,11 +70,9 @@ args:
   query: <user input>
 ```
 
-If zero results: stop. If multiple: ask human to confirm.
+If zero results: stop. If multiple: ask the human to confirm.
 
----
-
-## Step 2 — Check user profile for obvious blockers
+### Step 2 — Check user profile for obvious blockers
 
 ```
 tool: user-read
@@ -82,130 +80,53 @@ args:
   userId: <resolved user ID>
 ```
 
-The response is `{id, name, email, isSuperAdmin, licenses: {distro, chiliCalOrg, concierge, conciergeLive, chat, handoff}, workspaces, salesforce, hubspot, slug, managedWorkspaces, managedTeams}`.
+`user-read` does NOT return calendar status — that surfaces only in Step 3's failures map.
+Run the license check and proceed to Step 3 if the user looks valid.
+Response shape + license-check rule → `references/api-reference.md` § user-read note.
 
-**Note:** `user-read` does NOT return `calendarConnected`, `calendarProvider`, or `crmConnected`. Calendar connection status is not available from this endpoint — it surfaces only in the `availability-slots` `failures` map (Step 3).
+### Step 3 — Call availability-slots
 
-Check immediately:
-- `licenses.chiliCalOrg = false` AND `licenses.concierge = false` AND `licenses.handoff = false` → user may not have a scheduling license; report `NotActive` (verify with your admin)
-- If user looks valid, proceed directly to Step 3 — calendar status will surface in the failures map
+Build the request from the verified shape (object `expectedHost`, required
+`meetingTypeRef.id`, attendee `type` + `required`). To find a single rep's blocker, query
+just that rep as a `required: true` `ManuallyAssigned` attendee; for a team, a slot is only
+returned when ALL `required: true` attendees are free simultaneously, so `failures`
+pinpoints the blocker.
 
----
+- Request shape + field rules → `references/api-reference.md` § availability-slots request shape and § Critical field-name rules.
+- 1000-slot cap / 422 handling → `references/api-reference.md` § Hard API limits.
 
-## Step 3 — Call availability-slots
+### Step 4 — Interpret the result
 
-Build the request using the verified shape below. `expectedHost` must be an **object**, `meetingTypeRef.id` is **required**, and every attendee needs both a `type` discriminator and a `required` boolean.
+Read `startTimes` and the `failures` map; map each failure reason to a diagnosis + fix, and
+for team queries surface the specific blocking user(s). When slots ARE returned, build the
+per-day breakdown.
 
-> **`meetingTypeRef.id` is required.** If you don't have one, get a `meetingTypeId` from one of the user's existing meetings (`meeting-list-put` returns `meetingTypeId`) or from the rep's scheduling link, and pass it here. The API will 400 without it.
+- Causes table + multi-user rules + per-day signals → `references/diagnostics.md` § Failure-reason causes table, § Multi-user (team) availability, § Per-day breakdown signals.
 
-> ⚠ **Slot cap:** `availability-slots` caps responses at **1000 start-time slots** and returns HTTP **422** (`edge.availability-result-too-large`) if exceeded. If you get a 422, reduce `interval.duration` (e.g. `"7 days"`) or reduce the attendee count.
+### Step 5 — Output
 
-```
-tool: availability-slots
-args:
-  expectedHost:
-    type: User
-    userId: <userId>
-  attendees:
-    - type: ManuallyAssigned
-      userId: <userId>
-      required: true
-  meetingTypeRef:
-    id: <meetingTypeId>
-    timestamp: <ISO-8601 now>
-  meetingTypeOverride:
-    meetingDurationOverride: "30 minutes"     # FiniteDuration or ISO-8601 ("PT30M"); omit to use the meeting type's default
-  interval:
-    startsAt: <ISO-8601 now>
-    duration: "<lookahead_days> days"          # e.g. "14 days" or "P14D" — NOT milliseconds
-```
+Exact layout → `references/output-format.md` § Template.
 
-> **Diagnostic intent:** to find a single rep's blocker, query just that rep as a `required: true` `ManuallyAssigned` attendee — if they're unavailable, they'll appear in `failures`. When checking a team, a slot is only returned when ALL `required: true` attendees are free simultaneously, so the `failures` map pinpoints which member is blocking.
+## Preflight audit
 
----
+Verify before writing output. Every line must be a clear pass/fail:
 
-## Step 4 — Interpret the result
+- [ ] `user` resolved to a single user ID (Step 1 returned exactly one match, or the human confirmed).
+- [ ] Field names taken from `references/api-reference.md`, not guessed (object `expectedHost`, attendee `type` + `required`, `meetingTypeRef.id`).
+- [ ] `availability-slots` returned without a 422; if 422, the lookahead window or attendee count was reduced and the call re-run (≤ 1000 slots).
+- [ ] Each failure reason mapped from the literal value, with the raw value surfaced when it matches no known cause.
+- [ ] Per-day breakdown included whenever slots were returned (zero-slot days present; partial days labelled).
 
-If slots are returned (non-empty list): report total availability count and earliest slot. No blocker.
+## Checkpoint
 
-**Always include a per-day breakdown.** Bucket every entry in `startTimes` by the calendar date of its `startTime` and count slots per day across the whole window (include zero-slot days so gaps are visible). This turns a raw "180 slots" into a pattern a human can act on:
-
-- **Weekends / holidays showing 0** confirm working-hours config, not a bug.
-- **A weekday at 0** in an otherwise-full week is a real signal (day off, fully booked, or a calendar block) — worth calling out.
-- **A later first slot on some weekdays** (e.g. Mondays starting 09:30 vs 08:30 elsewhere) points to day-specific working hours.
-- **First/last day partials** are usually just the query window boundaries (a midday `startsAt` truncates day 1; the window end truncates the last day) — label them as partial, not as a drop. To get full first/last days, anchor `interval.startsAt` to start-of-day (00:00).
-
-Times come back in **UTC** — state the timezone, and convert to the rep's working timezone if the human needs local hours.
-
-If slots list is empty: inspect the `failures` map. For each entry (`userId → failureReason`):
-
-Look up the failure reason in the table above and produce a diagnosis + fix.
-
-**If multiple users were queried** (team availability): a slot is only returned when ALL `required: true` attendees are available simultaneously. The `failures` map shows which user(s) are blocking.
-
-**Common multi-user pattern:**
-- Two users in the distribution
-- One has `CalendarNotConnected`
-- Result: 0 slots returned, but only one user is the actual blocker
-
-Identify and surface the specific blocking user(s), not just "no slots available."
-
----
-
-## Step 5 — Output format
-
-### Availability Inspector: `<user name>` (`<email>`)
-
-**User profile**
-
-| Check | Status |
-|-------|--------|
-| Scheduling license | Active (chiliCalOrg / concierge / handoff) / ⚠ None |
-| Calendar status | Not readable from user-read — check failures map below |
-
-**Availability query result**
-
-| Field | Value |
-|-------|-------|
-| Window checked | `<today>` to `<today + N days>` |
-| Slots found | N |
-| Earliest slot | |
-
-**Availability per day**
-
-> Include this whenever slots are returned. One row per day in the window (including 0-slot days). Mark days truncated by the query window boundary as *partial*.
-
-| Date | Day | Slots |
-|------|-----|-------|
-| `<YYYY-MM-DD>` | Mon | N *(partial — window started midday)* |
-| ... | | |
-| `<YYYY-MM-DD>` | Sat | 0 |
-| **Total** | | **N** |
-
-**Failures**
-
-| User | Failure reason | Plain-English meaning |
-|------|---------------|----------------------|
-| ... | | |
-
-**Diagnosis**
-
-> [One-paragraph explanation of the specific blocker]
-
-**Fix**
-
-> **Step 1:** [Specific action for the user or admin]
-> **Step 2:** [If multiple steps]
-> **Verify:** Re-run `/availability-inspector` after the fix to confirm slots appear.
-
-**Human decision point**
+Present the diagnosis and the step-by-step fix, then stop for the human. Most causes require
+action outside this tool (Chili Piper admin, Google/Outlook calendar settings, or
+Zoom/Teams reconnection), so let the human decide the next step:
 
 *"Should I check the rest of the team, or does this fix cover the routing issue you're seeing?"*
-
----
 
 ## Data handling
 
 - **PII present:** user email used for lookup and display
-- **Storage:** ephemeral
+- **Storage:** ephemeral — nothing persists after the skill completes
 - **Writes:** none — read-only diagnostic

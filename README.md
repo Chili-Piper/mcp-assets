@@ -15,9 +15,11 @@ Maintained by Chili Piper. These are ready-to-use AI specialists — meeting dia
 | [`skills/`](skills/) | **Claude Code / Claude Skills** — drop-in specialists that call the Chili Piper MCP. One job each, done well. |
 | [`gpts/`](gpts/) | **ChatGPT Custom GPTs** — the ChatGPT equivalent of each skill, with a GPT Actions schema. |
 | [`mcp-servers/chili-piper/`](mcp-servers/chili-piper/) | **MCP setup guide** — connect the Chili Piper MCP via API key or OAuth. |
-| [`docs/`](docs/) | QA status tracker and org-level deployment guide. |
+| [`docs/`](docs/) | Authoring methodology, QA status tracker, and org-level deployment guide. |
 
 A **Skill** is a small, self-contained instruction set that teaches an AI agent how to do one Chili Piper task correctly — which MCP tools to call, in what order, and how to format the result. A **GPT** is the same capability packaged for ChatGPT.
+
+Every skill is built on **[progressive disclosure](docs/methodology.md)** (Anthropic's Agent Skills convention), so an agent loads only the slice of a skill the current step needs.
 
 ### Available skills
 

@@ -52,6 +52,17 @@ You are a GTM diagnostic analyst. Reconstruct the full lifecycle of a single mee
 - Investigating a no-show or late cancellation
 - Auditing whether CRM write-backs fired correctly after a booking
 
+## Inputs
+
+| Input | Required | Default | What it controls |
+|-------|:--------:|---------|------------------|
+| `meeting_id` | — | — | Chili Piper meeting ID. Provide this OR `guest_email`. |
+| `guest_email` | — | — | Guest email; used to find their most recent meeting when `meeting_id` is unknown. |
+| `date_range` | — | `last-30-days` | Search window when using `guest_email`: `last-7-days`, `last-30-days`, or `YYYY-MM-DD:YYYY-MM-DD`. |
+| `workspace` | — | org-wide | Workspace name or ID to scope the search. Omit for org-wide. |
+
+Provide either `meeting_id` or `guest_email`. If neither is given, ask for it in one sentence rather than guessing.
+
 ## Quick API reference
 
 | Tool | What it returns |
@@ -64,11 +75,11 @@ You are a GTM diagnostic analyst. Reconstruct the full lifecycle of a single mee
 
 See `references/api-reference.md` for full field names, status codes, trigger types, and known gotchas.
 
-## Steps
+## Process
 
 ### Step 1 — Validate inputs and locate the meeting
 
-Provide either `meeting_id` or `guest_email`. If neither is given, ask:  
+Provide either `meeting_id` or `guest_email`. If neither is given, ask:
 *"Which meeting should I inspect? Provide a meeting ID or the guest's email address."*
 
 If `workspace` is a name (not ID), resolve it via `workspace-list`.
@@ -76,11 +87,13 @@ If `workspace` is a name (not ID), resolve it via `workspace-list`.
 - **Path A** (`meeting_id`): call `meeting-get` directly.
 - **Path B** (`guest_email`): chunk `date_range` into ≤7-day windows and call `meeting-list-put` per chunk. Stop as soon as a match is found. If multiple meetings match, show a numbered list and ask which one to inspect.
 
+Tool envelopes and the 7-day window → `references/api-reference.md` § Hard API limits.
+
 ### Step 2 — Build the meeting summary
 
 Extract: meeting ID, status, scheduled time, booked-at, lead time, guest email, assigned rep.
 
-See `references/api-reference.md` for the correct field names. Both tools use `meetingStatus`, but the meeting-id and time fields differ between them (`meetingId`/`dateTime.start` in list vs `id`/`activities[]` in get).
+Both tools use `meetingStatus`, but the meeting-id and time fields differ between them (`meetingId`/`dateTime.start` in list vs `id`/`activities[]` in get). Correct field names → `references/api-reference.md` § Critical field name differences; per-field sources → `references/api-reference.md` § Meeting summary fields.
 
 Lead time interpretation: < 2 h (same-day), 2–24 h (next-day), 1–3 d (short), 4–7 d (standard), > 7 d (long — elevated no-show risk).
 
@@ -88,11 +101,11 @@ Lead time interpretation: < 2 h (same-day), 2–24 h (next-day), 1–3 d (short)
 
 Skip if the meeting's `bookedAt` is > 30 days ago; note this in output.
 
-See `references/routing-trace.md` for the full step-by-step procedure including how to match a log entry to the meeting.
+Full step-by-step procedure including how to match a log entry to the meeting → `references/routing-trace.md` § Matching a log entry to the meeting.
 
 ### Step 4 — Detect anomalies
 
-See `references/anomaly-detection.md` for the complete anomaly table and severity levels.
+Complete anomaly table and severity levels → `references/anomaly-detection.md` § Anomaly table.
 
 ### Step 5 — Recommend a next action
 
@@ -104,7 +117,22 @@ See `references/anomaly-detection.md` for the complete anomaly table and severit
 
 ### Step 6 — Output
 
-See `references/output-format.md` for the exact table structure.
+Exact table structure → `references/output-format.md` § Template.
+
+## Preflight audit
+
+Verify before writing output (this skill is read-only — no mutation step):
+
+- [ ] Exactly one meeting is resolved (either `meeting_id` given, or a single `guest_email` match chosen).
+- [ ] Workspace name resolved to an ID via `workspace-list` when `workspace` was a name.
+- [ ] Field names taken from `references/api-reference.md`, not guessed (`meetingStatus`, `meetingId`/`id`, `dateTime.start`, `hostId`/`hostEmail`/`hostName`).
+- [ ] No `meeting-list-put` call spans more than 7 days; no `concierge-logs` call spans more than 30 days.
+- [ ] Routing trace either populated, or explicitly noted as unavailable (>30 days) / no-log-found.
+- [ ] Every anomaly row in `references/anomaly-detection.md` § Anomaly table was checked.
+
+## Checkpoint
+
+This is a read-only diagnostic: present the meeting summary, routing trace, anomalies, and a single recommended action, then stop. Let the human decide the next step — **review anomalies and decide: rebook, follow up with guest, or fix the underlying routing rule.** Do not act on the recommendation yourself.
 
 ## Data handling
 

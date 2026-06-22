@@ -2,6 +2,10 @@
 name: user-copy
 description: Copies a user's Chili Piper workspace and team memberships (and, optionally, product licenses) to a new or existing user — eliminating manual re-configuration when onboarding a rep onto an existing territory or replacing a departing rep
 version: 0.1.4
+references:
+  - api-reference
+  - output-format
+  - copy-procedure
 inputs:
   - name: source_user
     type: string
@@ -38,201 +42,111 @@ api_note: "This skill reads source memberships via workspace-list-users and team
 
 # User Copy
 
-You are a RevOps onboarding specialist. Your job is to read one user's workspace and team memberships in Chili Piper and replicate them to another user — with a clear dry-run plan before any writes happen.
+You are a RevOps onboarding specialist. Your job is to read one user's workspace and team memberships in Chili Piper and replicate them to another user — producing a clear dry-run plan and requiring explicit human confirmation before any write happens.
 
-## API reference
+> **Prefer live data over training.** Chili Piper's field names and tool signatures change. Load `references/api-reference.md` before making MCP calls — it is the canonical field-name truth for this skill (especially the `id`-vs-`workspaceId`/`teamId` gotchas).
 
-| Tool | What it returns |
-|------|----------------|
-| `user-find` | Search by email or name → `id`, `email`, `name`, `isSuperAdmin`, `licenses` (already includes the license object — no separate read needed), `workspaces` |
-| `workspace-list` | All workspaces → items `{id, name, nrOfUsers}` — the identifier is `id` (NOT `workspaceId`) |
-| `workspace-list-users` | Users in a specific workspace → `userId`, `email` |
-| `team-list-put` | Teams filtered by `member: [userId]` (server-side, confirmed live as of DISTRO-4472) and optionally `name: string` → `{results: [{id, name, workspaceId, members, metadata}], total}` — the team identifier is `id` (NOT `teamId`) |
-| `workspace-add-users` | Add a user to a workspace |
-| `team-add-users` | Add a user to a team |
-| `team-create` | Create a new team in a workspace → `{id, workspaceId, name, members, metadata}` — accepts `workspaceId` (req), `name` (req), `members` (opt, initial user IDs) |
-| `user-update-licenses` | Bulk-set product licenses for one or more users (only used when `copy_licenses=true`). Takes `update: {<userId>: {distro, chiliCalOrg, concierge, conciergeLive, chat, handoff, tier?}}`. ⚠ downgrades take effect immediately; the call fails if the org lacks enough seats |
+## When to use
 
----
+- Onboarding a new rep onto an existing territory — give them the same workspace/team access an established rep already has.
+- Replacing a departing rep — stand up the replacement's memberships without manual re-configuration.
+- Optionally granting the new rep the same product licenses the source has (opt-in, additive only).
 
-## Step 1 — Resolve both users
+## Inputs
 
-```
-tool: user-find
-args:
-  query: <source_user>
-```
+| Input | Required | Default | What it controls |
+|-------|:--------:|---------|------------------|
+| `source_user` | ✅ | — | Email, name, or user ID of the user to copy configuration **from**. |
+| `target_user` | ✅ | — | Email, name, or user ID of the user to copy configuration **to** (must already exist). |
+| `dry_run` | — | `true` | If true, show what would be done without making any changes. Always recommended before first run. |
+| `copy_licenses` | — | `false` | If true, also grant the target any product licenses the source has that the target lacks (additive only — never revokes). Consumes paid seats, so it is opt-in. |
 
-```
-tool: user-find
-args:
-  query: <target_user>
-```
+If a required input is missing, ask for it in one sentence rather than guessing.
 
-If either returns zero results, stop and report. If either returns multiple results, list them and ask the human to confirm.
+## Process
 
-Store `sourceId`, `sourceEmail`, `targetId`, `targetEmail`. Each `user-find` result also carries a `licenses` object (`distro`, `chiliCalOrg`, `concierge`, `conciergeLive`, `chat`, `handoff`, and optional `tier`) — when `copy_licenses=true`, also store `sourceLicenses` and `targetLicenses` for use in Step 3.5. No separate read call is needed.
+Keep the happy path here; deep mechanics live in `references/copy-procedure.md` and exact
+tool args/field names in `references/api-reference.md`.
 
----
+### Step 1 — Resolve both users
 
-## Step 2 — Find source user's workspace memberships
+Call `user-find` for the source and the target; store `sourceId`, `sourceEmail`,
+`targetId`, `targetEmail` (and, when `copy_licenses=true`, `sourceLicenses` /
+`targetLicenses` from the same results). Zero / multiple results → stop or ask.
+Exact mechanics → `references/copy-procedure.md` § Resolve both users. Fields →
+`references/api-reference.md` § Resolving users — `user-find`.
 
-```
-tool: workspace-list
-args:
-  pagination:
-    page: 0
-    pageSize: 100
-```
+### Step 2 — Find source user's workspace memberships
 
-Workspace items use `id` (not `workspaceId`). For each workspace, check if the source user is a member:
+List workspaces and collect every workspace where `sourceId` is a member, retaining each
+workspace's `id`. Procedure → `references/copy-procedure.md` § Find source user's
+workspace memberships. The `id`-not-`workspaceId` gotcha → `references/api-reference.md`
+§ Critical field-name differences.
 
-```
-tool: workspace-list-users
-args:
-  workspaceId: <workspace.id>
-```
+### Step 3 — Find source user's team memberships
 
-Collect all workspaces where `sourceId` appears in the member list. Store as `sourceWorkspaces` (each entry retaining its `id` value — this is the value you pass as the `workspaceId` argument elsewhere).
+Use the `team-list-put` `member` filter to fetch only the source user's teams, retaining
+each team's `id`. Procedure → `references/copy-procedure.md` § Find source user's team
+memberships. Response shape / `id`-not-`teamId` → `references/api-reference.md`
+§ Team membership — `team-list-put`.
 
----
+### Step 3.5 — Determine licenses to copy (only if copy_licenses=true)
 
-## Step 3 — Find source user's team memberships
+Skip entirely when `copy_licenses=false` (the default). Otherwise compute the additive
+grant set (source has it AND target lacks it; grant-only, never revoke). Full rule →
+`references/copy-procedure.md` § Determine licenses to copy.
 
-Use the `member` filter to fetch only the teams this user belongs to — no need to fetch all teams and filter client-side.
+### Step 4 — Determine what to copy
 
-```
-tool: team-list-put
-args:
-  member: [<sourceId>]
-  pagination:
-    page: 0
-    pageSize: 100
-```
+For each source workspace and team, mark `ADD` or `SKIP (already member)` based on whether
+the target is already a member. Procedure → `references/copy-procedure.md` § Determine
+what to copy.
 
-Response shape: `{results: [{id, name, workspaceId, members, metadata}], total}`. The team identifier is `id` (not `teamId`); `members` is an array of user ID strings. Store as `sourceTeams` (each entry retaining its `id` value — this is the value you pass as the `teamId` argument to `team-add-users`).
+### Step 5 — Present the plan (always shown before writes)
 
----
+Render the copy plan, including the "Not copied (manual setup required)" notice. Exact
+layout → `references/output-format.md` § Plan template.
 
-## Step 3.5 — Determine licenses to copy (only if copy_licenses=true)
+### Step 6 — Execute (only if dry_run=false)
 
-Skip this step entirely when `copy_licenses=false` (the default).
+If `dry_run=true`, stop here (see Checkpoint). If `dry_run=false`, run the
+`workspace-add-users` / `team-add-users` writes and, when applicable, the single merged
+additive `user-update-licenses` write. Procedure → `references/copy-procedure.md`
+§ Execute. Exact license payload → `references/api-reference.md`
+§ Licenses — `user-update-licenses`.
 
-Using `sourceLicenses` and `targetLicenses` from Step 1, compute the **additive grant set**: every license where `sourceLicenses[type] = true` AND `targetLicenses[type] = false`. This is grant-only — never include a license the target already has, and never revoke one the source lacks. Store as `licensesToGrant`.
+### Step 7 — Confirm result
 
-The license types are: `distro`, `chiliCalOrg`, `concierge`, `conciergeLive`, `chat`, `handoff`. (`tier` is left untouched.)
+Re-fetch memberships (and licenses, if granted) to verify the writes landed; report any
+that did not. Procedure → `references/copy-procedure.md` § Confirm result. Result layout →
+`references/output-format.md` § Result template.
 
-If `licensesToGrant` is empty, note "no new licenses to grant" — the target already has everything the source does.
+## Preflight audit
 
----
+Verify before mutating data. Every line must be a clear pass/fail:
 
-## Step 4 — Determine what to copy
+- [ ] Both `source_user` and `target_user` resolved to exactly one user each (names → IDs); the target already exists.
+- [ ] Field names and identifiers taken from `references/api-reference.md` (workspace/team identifier is `id`, not `workspaceId`/`teamId`), not guessed.
+- [ ] `sourceWorkspaces` and `sourceTeams` collected; each entry marked `ADD` or `SKIP (already member)`.
+- [ ] When `copy_licenses=true`: `licensesToGrant` is additive-only (source-true AND target-false); nothing the target already has is included; nothing is revoked.
+- [ ] **Dry-run diff produced and shown** — the full copy plan (workspaces, teams, and any licenses) is rendered to the human *before* any write.
+- [ ] No write performed while `dry_run=true`.
 
-For each workspace in `sourceWorkspaces`:
-- Check if `targetId` is already a member via `workspace-list-users`
-- If already a member: mark as `SKIP (already member)`
-- If not: mark as `ADD`
+## Checkpoint
 
-For each team in `sourceTeams`:
-- Check if `targetId` is already in the team's `members`
-- If already a member: mark as `SKIP (already member)`
-- If not: mark as `ADD`
+**Write skill — checkpoint before any mutation.** This skill defaults to `dry_run: true`.
+While `dry_run=true`, stop after presenting the plan and ask:
 
----
+*"Does this plan look right? Re-run with `dry_run=false` to apply the changes."*
 
-## Step 5 — Present the plan (always shown before writes)
-
-### Copy plan: `<sourceEmail>` → `<targetEmail>`
-
-**Workspaces to add**
-
-| Workspace | Action |
-|-----------|--------|
-| ... | ADD / SKIP (already member) |
-
-**Teams to add**
-
-| Team | Workspace | Action |
-|------|-----------|--------|
-| ... | | ADD / SKIP (already member) |
-
-**Licenses to grant** *(only when `copy_licenses=true`)*
-
-| License | Source | Target | Action |
-|---------|--------|--------|--------|
-| ... | ✓ / ✗ | ✓ / ✗ | GRANT / SKIP (already has) |
-
-> ⚠️ Granting licenses consumes paid seats. This is additive only — the target keeps everything it already has; nothing is revoked.
-
-**Not copied (manual setup required):**
-- Admin role (`isSuperAdmin`) — set manually if the target should be a super admin
-- Meeting types — configure individually in each workspace
-- Routing rule assignments — update router distributions manually
-- Scheduling link settings — create new links for this user
-
----
-
-## Step 6 — Execute (only if dry_run=false)
-
-If `dry_run=true`: stop here. Ask: *"Does this plan look right? Re-run with `dry_run=false` to apply the changes."*
-
-If `dry_run=false`: proceed with writes.
-
-For each workspace marked `ADD`:
-
-```
-tool: workspace-add-users
-args:
-  workspaceId: <sourceWorkspaces[N].id>
-  userIds: [<targetId>]
-```
-
-For each team marked `ADD`:
-
-```
-tool: team-add-users
-args:
-  teamId: <sourceTeams[N].id>
-  userIds: [<targetId>]
-```
-
-If `copy_licenses=true` and `licensesToGrant` is non-empty, make a single license write for the target. Send the **merged additive** object — the target's current licenses OR'd with the grant set — so existing licenses are preserved and nothing is revoked:
-
-```
-tool: user-update-licenses
-args:
-  update:
-    <targetId>:
-      distro: <targetLicenses.distro OR (distro in licensesToGrant)>
-      chiliCalOrg: <targetLicenses.chiliCalOrg OR (chiliCalOrg in licensesToGrant)>
-      concierge: <targetLicenses.concierge OR (concierge in licensesToGrant)>
-      conciergeLive: <targetLicenses.conciergeLive OR (conciergeLive in licensesToGrant)>
-      chat: <targetLicenses.chat OR (chat in licensesToGrant)>
-      handoff: <targetLicenses.handoff OR (handoff in licensesToGrant)>
-```
-
-If `user-update-licenses` fails for insufficient seats, report which licenses could not be granted; the membership writes above still stand.
-
----
-
-## Step 7 — Confirm result
-
-After all writes, re-fetch `workspace-list-users` for each modified workspace and `team-list-put` to confirm the target user now appears in each. When `copy_licenses=true`, also re-fetch the target via `user-find` (or `user-read`) and confirm each granted license now reads `true`. Report any writes that did not reflect in the confirmation fetch.
-
-### Result: `<targetEmail>` added to `N` workspaces and `N` teams (and granted `N` licenses)
-
-| Added to | Type | Confirmed |
-|----------|------|-----------|
-| ... | Workspace / Team / License | ✓ / ⚠ |
-
-**Human decision point**
-
-*"User copy complete. Manual follow-up required: add the user to any distribution (round-robin) queues in the router builder, and create their personal scheduling links. Want me to run `/user-details` to confirm the new user's full configuration?"*
-
----
+No workspace, team, or license is written until the human confirms by re-running with
+`dry_run=false`. This matches the `human_decision_point`: review the plan and confirm the
+target user is correctly identified and the workspace/team list (and any licenses) is what
+you expect. Confirmation prompt wording → `references/output-format.md` § Dry-run stop /
+confirmation prompt.
 
 ## Data handling
 
 - **PII present:** user emails used for lookup and display
-- **Storage:** ephemeral
-- **Writes:** workspace and team membership records in Chili Piper, and — when `copy_licenses=true` — user license assignments
+- **Storage:** ephemeral — nothing persists after the skill completes
+- **Writes:** workspace and team membership records in Chili Piper, and — when `copy_licenses=true` — user license assignments. Additive only; the admin role (`isSuperAdmin`) is never copied.

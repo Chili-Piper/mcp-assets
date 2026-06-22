@@ -1,8 +1,9 @@
 ---
 name: distribution-analysis
-description: Analyzes a Chili Piper distribution (round-robin queue) for a workspace and date range — meeting counts by rep, imbalance vs. configured weights, day-of-week and booking-source skew, and cancellation breakdown — using the public Chili Piper MCP. Use when someone asks why a rep is getting more or fewer meetings than others, wants a distribution breakdown, or wants to analyze meeting imbalance for a period.
+description: Analyzes a Chili Piper round-robin distribution for a workspace and date range — meeting counts by rep, imbalance vs. configured weights, day-of-week and source skew, and cancellations. Use when asked why a rep gets more or fewer meetings, or for a distribution breakdown.
 version: 0.1.1
 references:
+  - api-reference
   - output-format
 inputs:
   - name: workspace
@@ -33,27 +34,38 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the imbalance findings and decide whether to rebalance weights, fix calendar/availability for an under-booked rep, or adjust the distribution in the router builder"
 writes_to: "Nothing — read-only diagnostic. Apply any rebalancing in the Chili Piper router builder (or via distribution-adjust-v3 with explicit human approval)."
-api_note: "Field names validated against live MCP responses. distribution-list-put returns a top-level array; each item has published.{distributionId,name,weights:[{userId,weight}],assignmentTypeConfig,capping,teamRef} and state.userStates:[{userId,type:Active|Capped|Disabled|Removed|NoLicense,statistics:{assigned,cancelled,noShow,reassignedToThis,reassignedFromThis}}]. As of DISTRO-4426 (2026-06-03): statistics is now present on every userState variant and reflects cumulative counts for the current distribution period; idealNumber must be derived client-side as (userWeight/totalWeight)*totalAssigned. meeting-list-put returns data.list[] with hostId/hostName, meetingStatus, dateTime.start, scheduleOrigin, meetingSource, history; 7-day max window per call. The public MCP does NOT expose distribution config history, and meetings are not filterable by distributionId — use statistics from distribution-list-put for authoritative period totals, and meeting-list-put for date-range slicing and booking-source/day-of-week patterns."
 ---
 
 # Distribution Analysis
 
 You are a RevOps analyst. Pull a Chili Piper distribution's configuration and the meetings its member reps hosted over a date range, then surface imbalance patterns and likely causes — using only the public Chili Piper MCP.
 
+> **Prefer live data over training.** MCP field names and tool signatures change. Load
+> `references/api-reference.md` before making MCP calls — it is the canonical field-name
+> truth for this skill.
+
 > **Scope & honesty.** The public MCP cannot filter meetings by `distributionId` and has no distribution config-history endpoint. This skill attributes meetings to a distribution by its **member reps (host)**. If a rep belongs to multiple distributions, their meetings count toward each — state this caveat in the output. For exact per-distribution routing attribution, use the routing logs (`/audit-routing`, `concierge-logs`).
 
-## Tools
+## When to use
 
-| Tool | What it returns |
-|------|----------------|
-| `workspace-list` | Workspaces → items `{id, name, nrOfUsers}` (identifier is `id`) |
-| `distribution-list-put` | Distributions (top-level array). Input `{workspaceIds: [...], name?, assignmentType?}`. Each item: `{id, published: {distributionId, name, weights: [{userId, weight}], assignmentTypeConfig: {type, handling: {type}}, capping, teamRef: {id}}, state: {userStates: [{userId, type: "Active"\|"Capped"\|"Disabled"\|"Removed"\|"NoLicense", statistics: {assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}}]}}` |
-| `user-find-by-ids` | Resolve member `userId`s → names/emails |
-| `meeting-list-put` | Meetings in a ≤7-day window → `data.list[]` with `meetingId`, `hostId`/`hostName`, `meetingStatus`, `dateTime.start`, `scheduleOrigin`, `meetingSource`, `noShowStatus`, `history`. Envelope `{data:{list}, hasMore}`; paginate while `hasMore === "Yes"`. |
+- Someone asks why a rep is getting more or fewer meetings than others.
+- Someone wants a distribution breakdown (counts by rep, imbalance vs. weights).
+- Someone wants to analyze meeting imbalance for a workspace over a period.
 
----
+## Inputs
 
-## Step 1 — Resolve the workspace
+| Input | Required | Default | What it controls |
+|-------|:--------:|---------|------------------|
+| `workspace` | ✅ | — | Workspace name or ID containing the distribution. |
+| `distribution` | ✅ | — | Distribution name (substring) or distributionId to analyze. |
+| `start_date` | ✅ | — | Start of range, inclusive (e.g. 2026-05-01). |
+| `end_date` | ✅ | — | End of range, exclusive (e.g. 2026-06-01 = through May 31). |
+
+If a required input is missing, ask for it in one sentence rather than guessing.
+
+## Process
+
+### Step 1 — Resolve the workspace
 
 If `workspace` is a name, call `workspace-list` and match on `name`; use its `id`.
 
@@ -65,9 +77,7 @@ args:
     pageSize: 100
 ```
 
----
-
-## Step 2 — Find the distribution and read its config
+### Step 2 — Find the distribution and read its config
 
 ```
 tool: distribution-list-put
@@ -76,20 +86,14 @@ args:
   name: <distribution>          # omit if you were given a distributionId; filter the array instead
 ```
 
-From the matching item, extract:
-- **Name:** `published.name`
-- **Active members:** `state.userStates[]` filtered to `type == "Active"` (these are the reps to analyze)
-- **Weights:** `published.weights[]` (`{userId, weight}`) — the configured share each rep should get
-- **Handling / algorithm:** `published.assignmentTypeConfig.handling.type` (`Strict` or `Flexible`); assignment scope `published.assignmentTypeConfig.type` (`Record`/`Meeting`/`Conversation`)
-- **Capping:** `published.capping` (per-rep meeting limits, if set)
-- **Period statistics:** each active member's `state.userStates[]` entry carries `statistics: {assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}` — cumulative counts for the current distribution period. Collect these now; use them in Step 5 as the primary source for period totals.
-- **Ideal number (derived):** `idealNumber = (userWeight / totalWeight) × totalAssigned` where `totalAssigned = sum of all members' statistics.assigned`. This fair-share target is not stored in the API and must be computed client-side.
+Extract name, active members, weights, handling/algorithm, capping, and per-member
+period statistics from the matching item; derive the per-rep ideal number. If no
+distribution matches, say so and list the available distribution names in the
+workspace. Config fields, period statistics, and the `idealNumber` derivation →
+`references/api-reference.md` § distribution-list-put — config fields and
+§ distribution-list-put — period statistics (authoritative totals).
 
-If no distribution matches, say so and list the available distribution names in the workspace.
-
----
-
-## Step 3 — Resolve member names
+### Step 3 — Resolve member names
 
 Collect the active member `userId`s and resolve them to names/emails:
 
@@ -101,66 +105,67 @@ args:
 
 Build a `userId → name` map for display. Never show raw user IDs in the final output.
 
----
+### Step 4 — Pull meetings hosted by the members
 
-## Step 4 — Pull meetings hosted by the members
+`meeting-list-put` has a 7-day maximum window. Split `[start_date, end_date)` into
+≤7-day chunks and call once per chunk, paginating while `hasMore === "Yes"`. Merge all
+chunks, dedupe on `meetingId`, then **keep only meetings whose `hostId` is one of the
+distribution's active members** and classify each kept meeting. Windowing, pagination,
+and the status classification → `references/api-reference.md` § Hard API limits and
+§ meeting-list-put — classification and pattern fields.
 
-`meeting-list-put` has a **7-day maximum window**. Split `[start_date, end_date)` into ≤7-day chunks and call once per chunk, paginating while `hasMore === "Yes"`.
+### Step 5 — Build the rep breakdown and detect imbalance
 
-```
-tool: meeting-list-put
-args:
-  start: <chunk start, ISO-8601>
-  end: <chunk end, ISO-8601>
-  workspaceIds: [<workspace.id>]
-  pagination:
-    page: 0
-    pageSize: 200
-```
-
-Merge all chunks, dedupe on `meetingId`, then **keep only meetings whose `hostId` is one of the distribution's active members**. Classify each kept meeting:
-- `meetingStatus == "Active"` and `dateTime.start` in the future → upcoming
-- `meetingStatus == "Active"` and `dateTime.start` in the past → completed (informally)
-- `meetingStatus == "Completed"` → completed
-- `meetingStatus == "NoShow"` (or `noShowStatus == "NoShow"`) → no-show
-- `meetingStatus == "Canceled"` → cancelled
-
----
-
-## Step 5 — Build the rep breakdown and detect imbalance
-
-Use two complementary sources:
+Use two complementary sources.
 
 **From `statistics` (distribution API, current period — authoritative totals):**
-- `assigned` — direct bookings to this rep; use as the primary volume metric
-- `cancelled` — cancelled assignments (cancel rate = `cancelled / assigned`)
-- `noShow` — no-shows
-- `reassignedToThis` / `reassignedFromThis` — rebalancing context; a large `reassignedToThis` means this rep absorbed slack from others
-- **Effective total:** `assigned + reassignedToThis - reassignedFromThis` (the round-robin's net score)
+use `assigned` as the primary volume metric, plus `cancelled`, `noShow`, and the
+`reassignedToThis` / `reassignedFromThis` rebalancing context (statistic field
+meanings and the effective-total formula → `references/api-reference.md`
+§ distribution-list-put — period statistics (authoritative totals)).
 
 **Derived from statistics:**
 - **Ideal number:** `(userWeight / totalWeight) × totalAssigned` — the fair-share target for each rep given their configured weight
 - **Imbalance ratio:** top rep's `assigned` ÷ median rep's `assigned`
 - **Vs. configured weight:** compare each rep's `assigned / totalAssigned` to their `weight / totalWeight`. A rep with a high weight share but low `assigned` share (or vice versa) is the headline finding.
 
-**From `meeting-list-put` (date-range data — for patterns):**
-- **Day-of-week skew:** bucket completed meetings by `dateTime.start` weekday — does one rep dominate certain days?
-- **Booking source:** group by the meeting's booking origin — read the actual values from `scheduleOrigin` / `meetingSource` (e.g. `meetingSource.type`, `scheduleOrigin.productFeature.type`) rather than assuming an enum. Surface differences (e.g. one rep gets most meetings from one source).
-- **Weekly trend:** meetings per rep per week — did a gap open at a specific week?
-- **Cancellation breakdown:** for cancelled meetings, inspect the `history[]` entries (look at the cancelling `actorRef`/`origin`) to see whether cancels are guest-, rep-, or calendar-driven.
+**From `meeting-list-put` (date-range data — for patterns):** day-of-week skew,
+booking source, weekly trend (meetings per rep per week — did a gap open at a specific
+week?), and cancellation breakdown. Which fields carry these patterns →
+`references/api-reference.md` § meeting-list-put — classification and pattern fields.
 
-Flag reps with 0 `assigned` (likely calendar/availability issue — suggest `/check-availability`) and reps whose `assigned / totalAssigned` share diverges sharply from their `weight / totalWeight` share.
+Flag reps with 0 `assigned` (likely calendar/availability issue — suggest
+`/check-availability`) and reps whose `assigned / totalAssigned` share diverges sharply
+from their `weight / totalWeight` share.
 
----
+### Step 6 — Output
 
-## Step 6 — Output
+Lead with the config + rep breakdown, then patterns, then recommendations. Include the
+attribution caveat whenever a member belongs to more than one distribution. Exact
+layout → `references/output-format.md`.
 
-See `references/output-format.md` for the exact template. Always lead with the config + rep breakdown, then patterns, then recommendations. Include the attribution caveat from the top of this skill whenever a member belongs to more than one distribution.
+## Preflight audit
 
----
+Verify before writing output:
+
+- [ ] Required inputs present and resolved (`workspace` → `id`, `distribution` → matching item).
+- [ ] Field names taken from `references/api-reference.md`, not guessed.
+- [ ] `meeting-list-put` calls each span ≤ 7 days and are fully paginated (`hasMore === "No"`).
+- [ ] Meetings filtered to active-member `hostId`s and deduped on `meetingId`.
+- [ ] `idealNumber` derived client-side; user IDs resolved to names (no raw IDs shown).
+- [ ] Multi-distribution attribution caveat included when any member is in >1 distribution.
+
+## Checkpoint
+
+This is a read-only diagnostic. Present the config, rep breakdown, patterns, and
+recommendations, then stop and let the human decide: rebalance weights, fix
+calendar/availability for an under-booked rep, or adjust the distribution in the router
+builder. Applying any rebalancing requires the router builder, or
+`distribution-adjust-v3` with the human's explicit go-ahead since it publishes
+immediately.
 
 ## Data handling
 
 - **PII present:** rep names/emails and guest data in meetings — used for analysis; display rep names, not guest details, unless asked
-- **Storage:** ephemeral
+- **Storage:** ephemeral — nothing persists after the skill completes
 - **Writes:** none — read-only. Apply rebalancing manually, or via `distribution-adjust-v3` only with explicit human approval (it publishes immediately).

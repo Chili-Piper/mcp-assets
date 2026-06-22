@@ -1,7 +1,19 @@
-"""Validates that every skills/<name>/SKILL.md has well-formed, complete frontmatter.
+"""Validate skill frontmatter AND progressive-disclosure structure.
 
 Run from the repo root:  python .github/scripts/validate_skill_frontmatter.py
-Exits non-zero if any skill is malformed, so it can gate CI.
+
+Two classes of check (see docs/methodology.md for the why):
+
+  ERRORS (exit non-zero — gate CI):
+    - SKILL.md exists with well-formed, complete frontmatter
+    - frontmatter `name` matches the directory
+    - every `references:` entry has a matching references/<name>.md  (and vice versa,
+      so a reference is never orphaned or unlisted — canonical, one-way wiring)
+    - no references/*.md exceeds the 200-line load budget
+
+  WARNINGS (printed, do NOT fail — they flag structural debt to pay down):
+    - SKILL.md over 200 lines (push deep detail into references/)
+    - frontmatter `description` over 280 chars (it's a discovery line, one sentence)
 """
 
 import os
@@ -18,6 +30,11 @@ REQUIRED_FIELDS = [
     "writes_to",     # where outputs go, or "Nothing — read-only"
 ]
 
+# Progressive-disclosure file budgets (docs/methodology.md "File budgets")
+REFERENCE_MAX_LINES = 200   # hard — a reference must load whole
+SKILL_MAX_LINES = 200       # soft — over this, split into references/
+DESCRIPTION_MAX_CHARS = 280  # soft — the description is a router, not a summary
+
 
 def parse_frontmatter(filepath):
     with open(filepath, encoding="utf-8") as f:
@@ -33,21 +50,27 @@ def parse_frontmatter(filepath):
         raise ValueError(f"invalid YAML frontmatter: {exc}")
 
 
+def line_count(filepath):
+    with open(filepath, encoding="utf-8") as f:
+        return sum(1 for _ in f)
+
+
 def validate_skill(skill_dir):
-    errors = []
+    """Return (errors, warnings) for one skill directory."""
+    errors, warnings = [], []
     name = os.path.basename(skill_dir)
     skill_md = os.path.join(skill_dir, "SKILL.md")
 
     if not os.path.isfile(skill_md):
-        return [f"{name}: missing SKILL.md"]
+        return [f"{name}: missing SKILL.md"], warnings
 
     try:
         fm = parse_frontmatter(skill_md)
     except ValueError as exc:
-        return [f"{name}/SKILL.md: {exc}"]
+        return [f"{name}/SKILL.md: {exc}"], warnings
 
     if fm is None:
-        return [f"{name}/SKILL.md: missing or unterminated YAML frontmatter"]
+        return [f"{name}/SKILL.md: missing or unterminated YAML frontmatter"], warnings
 
     for field in REQUIRED_FIELDS:
         if field not in fm or fm[field] in (None, "", []):
@@ -58,7 +81,52 @@ def validate_skill(skill_dir):
             f"{name}/SKILL.md: frontmatter name '{fm['name']}' does not match directory '{name}'"
         )
 
-    return errors
+    # --- progressive-disclosure structure: references <-> frontmatter consistency ---
+    declared = fm.get("references") or []
+    if not isinstance(declared, list):
+        errors.append(f"{name}/SKILL.md: 'references' must be a list of basenames")
+        declared = []
+    declared = [str(r) for r in declared]
+
+    ref_dir = os.path.join(skill_dir, "references")
+    on_disk = sorted(
+        f[:-3] for f in os.listdir(ref_dir)
+        if f.endswith(".md")
+    ) if os.path.isdir(ref_dir) else []
+
+    for ref in declared:
+        if ref not in on_disk:
+            errors.append(
+                f"{name}/SKILL.md: references lists '{ref}' but references/{ref}.md does not exist"
+            )
+    for ref in on_disk:
+        if ref not in declared:
+            errors.append(
+                f"{name}: references/{ref}.md exists but is not listed in SKILL.md frontmatter 'references'"
+            )
+
+    # --- file budgets ---
+    for ref in on_disk:
+        ref_path = os.path.join(ref_dir, f"{ref}.md")
+        n = line_count(ref_path)
+        if n > REFERENCE_MAX_LINES:
+            errors.append(
+                f"{name}/references/{ref}.md: {n} lines exceeds the {REFERENCE_MAX_LINES}-line budget"
+            )
+
+    n_skill = line_count(skill_md)
+    if n_skill > SKILL_MAX_LINES:
+        warnings.append(
+            f"{name}/SKILL.md: {n_skill} lines (> {SKILL_MAX_LINES}) — consider moving detail into references/"
+        )
+
+    desc = fm.get("description") or ""
+    if len(desc) > DESCRIPTION_MAX_CHARS:
+        warnings.append(
+            f"{name}/SKILL.md: description is {len(desc)} chars (> {DESCRIPTION_MAX_CHARS}) — tighten to one routing sentence"
+        )
+
+    return errors, warnings
 
 
 def main():
@@ -66,7 +134,7 @@ def main():
         print(f"No '{SKILLS_DIR}/' directory found — nothing to validate.")
         return 0
 
-    all_errors = []
+    all_errors, all_warnings = [], []
     skill_dirs = sorted(
         os.path.join(SKILLS_DIR, d)
         for d in os.listdir(SKILLS_DIR)
@@ -74,15 +142,23 @@ def main():
     )
 
     for skill_dir in skill_dirs:
-        all_errors.extend(validate_skill(skill_dir))
+        errs, warns = validate_skill(skill_dir)
+        all_errors.extend(errs)
+        all_warnings.extend(warns)
+
+    if all_warnings:
+        print("Progressive-disclosure warnings (not failing):\n")
+        for w in all_warnings:
+            print(f"  ! {w}")
+        print()
 
     if all_errors:
-        print("Skill frontmatter validation FAILED:\n")
+        print("Skill validation FAILED:\n")
         for err in all_errors:
             print(f"  ✗ {err}")
         return 1
 
-    print(f"✓ All {len(skill_dirs)} skills have valid frontmatter.")
+    print(f"✓ All {len(skill_dirs)} skills have valid frontmatter and structure.")
     return 0
 
 

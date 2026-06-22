@@ -2,6 +2,29 @@
 
 All notable changes to the official Chili Piper Skills are recorded here. The repo follows [Keep a Changelog](https://keepachangelog.com/); each skill also carries its own `version` in its `SKILL.md` (and matching `GPT.md`).
 
+## [1.2.0]
+
+### Added
+- **Progressive-disclosure authoring standard.** Documented the convention every skill
+  follows — Anthropic's Agent Skills progressive disclosure (load only what the current
+  step needs) — in `docs/methodology.md` (the principles, the loading stages, file
+  budgets, the required SKILL.md shape), with `docs/SKILL.template.md` (a copy-to-start
+  stage contract) and an `AGENTS.md` repo-orientation file. Linked from the README,
+  `CONTRIBUTING.md`, and `skills/README.md`.
+
+### Changed
+- **Structural pass over every skill** to match the standard — each SKILL.md is now a
+  lean Inputs → Process → Outputs contract with deep detail (API field names, output
+  formats, procedures) split into on-demand `references/*.md` via selective section
+  routing, plus a preflight audit and an explicit checkpoint. Behavior, MCP tool calls,
+  and field names are unchanged; per-skill `version`s are unchanged (so SKILL↔GPT parity
+  holds).
+- **`validate_skill_frontmatter.py` now also checks skill structure** — fails CI on
+  reference⇄frontmatter mismatch or any `references/*.md` over the 200-line load budget;
+  warns (non-failing) on oversized SKILL.md files and over-long descriptions.
+- Bumped the **plugin version** (`1.1.0 → 1.2.0`) so org distribution pushes this update
+  to installed clients.
+
 ## [1.1.0]
 
 ### Added

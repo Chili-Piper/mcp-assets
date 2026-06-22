@@ -2,6 +2,10 @@
 name: user-offboarding
 description: Safely removes a departing Chili Piper rep — surfaces open meetings that need reassignment, removes them from workspaces and teams, and produces an audit trail — making rep offboarding repeatable and zero-leak
 version: 0.1.5
+references:
+  - api-reference
+  - offboarding-procedure
+  - output-format
 inputs:
   - name: user
     type: string
@@ -26,202 +30,109 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review open meetings and the removal plan before setting dry_run=false — confirm reassignment target and that no meetings will be orphaned"
 writes_to: "Chili Piper workspace/team membership records; meeting cancellation records if open meetings cannot be reassigned"
-api_note: "The MCP does not have a direct 'reassign meeting' endpoint. Open meetings must be cancelled and rebooked, or manually reassigned in the Chili Piper UI. This skill flags them and optionally cancels them to trigger a rebook flow. As of DISTRO-4472 (2026-05-21): meeting-export-v2-put hostIds and status filters are confirmed live (server-side filtering, no post-fetch scan needed); team-list-put member filter is confirmed live. distribution-list-put now accepts optional name and assignmentType filters. Distribution queue membership still requires manual update in the router builder — the skill flags distributions for human review. As of DISTRO-4488 (2026-05-25): team-create is now available via MCP — creates a team in a given workspace with optional initial members. As of DISTRO-4492 (2026-05-27): team-delete is now available via MCP — permanently deletes a team; requires team.remove permission; fails if any active distributions still reference the team (use distribution-update-v3 to reassign first). Only use team-delete when the team itself should be retired, not just when a user leaves. As of DISTRO-4426 (2026-06-03): distribution-list-put state.userStates now includes statistics:{assigned,cancelled,noShow,reassignedToThis,reassignedFromThis} on all user state variants."
+api_note: "The MCP does not have a direct 'reassign meeting' endpoint. Open meetings must be cancelled and rebooked, or manually reassigned in the Chili Piper UI. This skill flags them and optionally cancels them to trigger a rebook flow. Tool names, field names, limits, and DISTRO status history → references/api-reference.md."
 ---
 
 # User Offboarding
 
 You are a RevOps offboarding specialist. Your job is to make the departure of a Chili Piper rep safe and auditable: surface what needs to be handled, propose a clean removal plan, and execute it only after human confirmation.
 
-## API reference
+> **This is a destructive, write skill.** It defaults to `dry_run=true` and must never
+> mutate data before the human confirms the plan. See **Checkpoint** below.
 
-| Tool | What it returns |
-|------|----------------|
-| `user-find` | Search by email or name → `id`, `email`, `name` |
-| `user-read` | Full profile → `workspaces` (array of workspaceId strings), `licenses`; no calendar/CRM connection status |
-| `meeting-export-v2-put` | CSV of meetings — server-side filters (confirmed live as of DISTRO-4472): `hostIds`, `assigneeIds`, `bookerIds`, `meetingTypeIds`, `status`. Returns `{filename, data: "<CSV>"}`. Use `status: ["Active"]` to fetch only upcoming meetings at risk. |
-| `workspace-list` | All workspaces → items `{id, name, nrOfUsers}` — the identifier is `id` (NOT `workspaceId`) |
-| `workspace-list-users` | Users in a workspace |
-| `workspace-remove-users` | Remove a user from a workspace |
-| `team-list-put` | Teams filtered by `member: [userId]` (server-side, confirmed live as of DISTRO-4472) → only teams this user belongs to; also accepts optional `name: string` filter |
-| `team-remove-users` | Remove a user from a team |
-| `team-create` | Create a new team in a workspace → `{id, workspaceId, name, members, metadata}` — accepts `workspaceId` (req), `name` (req), `members` (opt, initial user IDs) |
-| `team-delete` | Permanently delete a team → `{id, workspaceId, name, members, metadata}` — the deleted record; requires `team.remove` permission; fails if active distributions still reference the team; use only when retiring the team itself, not just removing a member |
-| `meeting-cancel` | Cancel a meeting (triggers rebook flow if configured) |
-| `distribution-list-put` | Distributions — input takes `workspaceIds` (array) + optional `name`, `assignmentType`. Returns a top-level array; members are in `published.weights[]` (`{userId, weight}`) and `state.userStates[]` (`{userId, type: "Active"\|"Capped"\|"Disabled"\|"Removed"\|"NoLicense", statistics: {assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}}`). For flagging only — distribution membership cannot be modified via MCP. |
+> **Prefer live data over training.** MCP field names and tool signatures change. Load
+> `references/api-reference.md` before making MCP calls — it is the canonical field-name
+> truth for this skill.
 
----
+## When to use
 
-## Step 1 — Resolve the departing user
+- A rep is leaving and you need to remove them from Chili Piper cleanly, with an audit trail.
+- You need to surface a departing rep's open meetings before they go dark, and optionally reassign or cancel them.
+- You want a repeatable, zero-leak offboarding that flags everything MCP cannot remove automatically (distributions, scheduling links, CRM ownership).
 
-```
-tool: user-find
-args:
-  query: <user input>
-```
+## Inputs
 
-If multiple results: list and ask human to confirm. If zero: stop.
+| Input | Required | Default | What it controls |
+|-------|:--------:|---------|------------------|
+| `user` | ✅ | — | Email, name, or user ID of the departing rep |
+| `reassign_to` | — | — | Rep who should receive open meetings; if omitted, meetings are flagged for manual reassignment |
+| `dry_run` | — | `true` | If true, show what would be done without making any changes; always recommended before first run |
 
-If `reassign_to` is provided, resolve that user too via a second `user-find` call.
+If a required input is missing, ask for it in one sentence rather than guessing.
 
----
+## Process
 
-## Step 2 — Find open meetings
+Numbered steps. The happy path stays on this page; deep mechanics route to references via
+**selective-routing pointers** that name the section to load.
 
-Fetch meetings for the next 30 days in ≤ 6-day chunks using `meeting-export-v2-put` with `hostIds` and `status: ["Active"]`. This returns only this rep's upcoming meetings — no client-side filtering needed.
+### Step 1 — Resolve the departing user
 
-For each chunk (today→+6d, +6→+12d, +12→+18d, +18→+24d, +24→+30d):
+`user-find` on `user`; if `reassign_to` is set, resolve it too. Multiple results → confirm
+with the human; zero → stop. Full mechanics → `references/offboarding-procedure.md`
+§ Resolve the departing user. Field names → `references/api-reference.md` § Tools and what they return.
 
-```
-tool: meeting-export-v2-put
-args:
-  start: <chunk start, ISO-8601>
-  end: <chunk end, ISO-8601>
-  hostIds: [<departing user's userId>]
-  status: ["Active"]
-```
+### Step 2 — Find open meetings
 
-Response: `{filename: "...", data: "<CSV>"}`. Parse `data` as CSV — read the header row first to identify columns. No pagination needed per chunk.
+Fetch the next 30 days of `status: ["Active"]` meetings for the rep in ≤ 6-day chunks via
+`meeting-export-v2-put`, then merge and dedupe on `Meeting ID`. Windowing + CSV rules →
+`references/api-reference.md` § Hard API limits. Procedure → `references/offboarding-procedure.md` § Find open meetings.
 
-Merge records across all chunks. Deduplicate on the `Meeting ID` column. These are the meetings at risk.
+### Step 3 — Find workspace and team memberships
 
----
+`user-read` for `workspaces`, confirm via `workspace-list-users`; `team-list-put` with the
+`member` filter for teams. Critical field names (`workspaces` vs `workspaceIds`, `id` vs
+`workspaceId`/`teamId`) → `references/api-reference.md` § Critical field name differences.
+Procedure → `references/offboarding-procedure.md` § Find workspace and team memberships.
 
-## Step 3 — Find workspace and team memberships
+### Step 4 — Find distribution memberships (flag only)
 
-```
-tool: user-read
-args:
-  userId: <userId>
-```
+`distribution-list-put` per workspace; flag where the userId appears in
+`published.weights[]` or active `state.userStates[]`. Distribution membership cannot be
+modified via MCP. Details → `references/offboarding-procedure.md` § Find distribution memberships (flag only).
 
-Extract `workspaces` (array of workspace ID strings — the field is `workspaces`, not `workspaceIds`). For each workspace confirm membership via `workspace-list-users`.
+### Step 5 — Present the offboarding plan (the dry-run diff)
 
-```
-tool: team-list-put
-args:
-  member: [<userId>]
-  pagination:
-    page: 0
-    pageSize: 100
-```
+Render the plan — open meetings, workspace/team removals, distribution flags, and the
+manual-only list — verbatim. Exact layout → `references/output-format.md` § Offboarding plan.
 
-The `member` filter returns only teams containing this user — no client-side filtering needed.
+### Step 6 — Execute (only if dry_run=false)
 
----
+Run the checkpoint first. Then cancel open meetings (`meeting-cancel`), remove from
+workspaces (`workspace-remove-users`) and teams (`team-remove-users`); optionally retire an
+empty team with `team-delete` only on explicit human confirmation. Write argument shapes →
+`references/api-reference.md` § Write tools — argument shapes. Procedure →
+`references/offboarding-procedure.md` § Execute (only if dry_run=false).
 
-## Step 4 — Find distribution memberships (flag only)
+### Step 7 — Confirm and produce audit trail
 
-```
-tool: distribution-list-put
-args:
-  workspaceIds: [<workspace id>]
-```
+Re-check memberships after removal and report any that failed; render the completion audit
+trail. Layout → `references/output-format.md` § Completion audit trail.
 
-The response is a top-level array. Flag distributions where this user's `userId` appears in `published.weights[]` or in `state.userStates[]` with `type: "Active"`. Optionally use the `name` filter to look for a specific distribution. Distribution membership cannot be updated via MCP — flag these for manual removal in the router builder.
+## Preflight audit
 
----
+Verify before mutating data. Every line must be a clear pass/fail:
 
-## Step 5 — Present the offboarding plan (always shown before writes)
+- [ ] Required input `user` present and resolved to a single userId; `reassign_to` resolved if supplied.
+- [ ] Field names taken from `references/api-reference.md`, not guessed.
+- [ ] Meeting fetch respects the ≤ 6-day windowing; records merged and deduped on `Meeting ID`.
+- [ ] **Removal dry-run diff produced and shown** — the full Offboarding Plan (open meetings, workspace removals, team removals, distribution flags) per `references/output-format.md` § Offboarding plan.
+- [ ] **Audit-trail capture is in place** — open meetings, workspaces, and teams to be touched are enumerated so the post-write completion audit can confirm each.
+- [ ] No write tool has been called while `dry_run=true`.
 
-### Offboarding Plan: `<name>` (`<email>`)
+## Checkpoint
 
-**Open meetings (`N` upcoming)**
+`human_decision_point`: review open meetings and the removal plan before setting
+`dry_run=false` — confirm the reassignment target and that no meetings will be orphaned.
 
-| Date | Guest | Meeting type | Action |
-|------|-------|-------------|--------|
-| ... | | | Reassign to `<reassign_to>` / ⚠ Flag for manual reassignment |
-
-**Workspace removals**
-
-| Workspace | Action |
-|-----------|--------|
-| ... | REMOVE |
-
-**Team removals**
-
-| Team | Workspace | Action |
-|------|-----------|--------|
-| ... | | REMOVE |
-
-**Distribution memberships (manual action required)**
-
-> These distributions must be updated manually in the Chili Piper router builder — MCP cannot modify distribution membership directly:
-
-| Distribution | Workspace | Action needed |
-|-------------|-----------|---------------|
-| ... | | Remove from distribution queue |
-
-**Not handled by this skill (manual):**
-- Ownership of existing Salesforce leads/contacts — re-assign in Salesforce
-- Personal scheduling links — deactivate or transfer in Chili Piper admin
-- Meeting types — archive if not needed by other reps
-- Router rule ownership conditions — audit routers that reference this user explicitly
-
----
-
-## Step 6 — Execute (only if dry_run=false)
-
-If `dry_run=true`: stop here and ask: *"Does this plan look right? Set `dry_run=false` to apply. Reminder: distribution queue removal and scheduling link deactivation require manual steps in the Chili Piper UI."*
-
-**Cancel open meetings** (if no reassign_to, or if meeting API does not support reassignment):
-
-For each open meeting:
-```
-tool: meeting-cancel
-args:
-  meetingId: <meeting id>
-```
-
-Note: cancellation may trigger a rebook notification to the guest depending on router configuration.
-
-**Remove from workspaces:**
-```
-tool: workspace-remove-users
-args:
-  workspaceId: <id>
-  userIds: [<userId>]
-```
-
-**Remove from teams:**
-```
-tool: team-remove-users
-args:
-  teamId: <id>
-  userIds: [<userId>]
-```
-
-> **Optional — retire empty teams:** If removing this user leaves a team with zero members and the team should be retired (not just emptied), you can delete it with `team-delete`. Ask the human to confirm before doing so — deletion is irreversible and will fail if any active distribution still references the team.
->
-> ```
-> tool: team-delete
-> args:
->   teamId: <teamId>
-> ```
-
----
-
-## Step 7 — Confirm and produce audit trail
-
-Re-check memberships after removal. Report any that failed.
-
-### Offboarding Complete: `<name>`
-
-| Action | Count | Status |
-|--------|-------|--------|
-| Open meetings cancelled/flagged | N | ✓ / ⚠ |
-| Workspaces removed | N | ✓ |
-| Teams removed | N | ✓ |
-| Distributions requiring manual removal | N | ⚠ Manual |
-
-**Human decision point**
-
-*"Manual steps still required: distribution queue removal and scheduling link deactivation in the CP admin UI. Should I run `/routing-audit` to check whether the rep's absence creates any routing gaps?"*
-
----
+**Write/destructive skill — stop here.** Show the dry-run diff (the Offboarding Plan) and
+require **explicit human confirmation before any destructive action**. If `dry_run=true`,
+stop and ask: *"Does this plan look right? Set `dry_run=false` to apply. Reminder:
+distribution queue removal and scheduling link deactivation require manual steps in the
+Chili Piper UI."* Only proceed to writes when the human confirms with `dry_run=false`.
+`team-delete` requires a second, explicit confirmation because it is irreversible.
 
 ## Data handling
 
 - **PII present:** user email, guest emails in meeting list
 - **Storage:** ephemeral — no data persists; keep a copy of the audit output if needed
-- **Writes:** workspace/team removals; meeting cancellations (if dry_run=false); optional team deletion if human confirms
+- **Writes:** workspace/team removals; meeting cancellations (only when `dry_run=false`); optional team deletion only if the human explicitly confirms. Defaults to `dry_run=true` — nothing is mutated without confirmation.
