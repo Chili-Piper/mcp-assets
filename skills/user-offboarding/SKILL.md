@@ -1,7 +1,7 @@
 ---
 name: user-offboarding
 description: Safely removes a departing Chili Piper rep — surfaces open meetings that need reassignment, removes them from workspaces and teams, and produces an audit trail — making rep offboarding repeatable and zero-leak
-version: 0.1.5
+version: 0.1.6
 references:
   - api-reference
   - offboarding-procedure
