@@ -72,12 +72,13 @@ or guess workspace names.
 
 ---
 
-## Local timezone detection
+## Output timezone
 
-```bash
-cat /etc/timezone 2>/dev/null || readlink /etc/localtime 2>/dev/null | sed 's|.*zoneinfo/||'
-```
+Display timestamps in the `timezone` input when provided — an IANA identifier such as
+`America/Chicago` or `Europe/London`. When the input is omitted, **default to UTC** and
+label timestamps `UTC`.
 
-Store the IANA result (e.g. `America/Chicago`). Convert **all timestamps** in output to
-this timezone. If the command fails, fall back to `date +%z` and note the UTC offset
-used.
+Conversion is a pure date computation from the IANA name. **Never shell out**
+(`cat /etc/timezone`, `readlink /etc/localtime`, `date +%z`) to discover a timezone — that
+reads the *agent host's* timezone (often a UTC cloud runner), not the rep's, and grants the
+skill unnecessary shell access. Always label the zone used so the reader is never guessing.

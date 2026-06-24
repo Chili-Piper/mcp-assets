@@ -1,7 +1,7 @@
 ---
 name: user-meetings
 description: Shows all meetings assigned to a specific rep for a period — volume, statuses, and no-show rate — to surface rep-level pipeline health and flag reps who may need coaching or routing changes
-version: 0.4.0
+version: 0.5.0
 references:
   - api-reference
   - output-format
@@ -19,6 +19,11 @@ inputs:
     type: string
     description: "Workspace name or ID to scope. Omit for org-wide."
     required: false
+  - name: timezone
+    type: string
+    description: "IANA timezone for displaying timestamps (e.g. America/Chicago). Omit to display in UTC."
+    required: false
+    default: "UTC"
 outputs:
   - name: summary
     description: Meeting volume, completion rate, and no-show rate for the period
@@ -29,7 +34,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review anomaly flags and decide: coaching conversation, territory/routing adjustment, or no action needed"
 writes_to: "Nothing — read-only diagnostic"
-api_note: "As of DISTRO-4472 (2026-05-21) meeting-export-v2-put supports these server-side filters (all confirmed live): hostIds, assigneeIds, bookerIds, meetingTypeIds, status. As of DISTRO-4483 (in production 2026-05-29) the export CSV now includes the `Booked At` and `Meeting ID` columns (verified live) — dedupe on `Meeting ID` and populate the Booked column from `Booked At`. Times displayed in local timezone detected via bash."
+api_note: "As of DISTRO-4472 (2026-05-21) meeting-export-v2-put supports these server-side filters (all confirmed live): hostIds, assigneeIds, bookerIds, meetingTypeIds, status. As of DISTRO-4483 (in production 2026-05-29) the export CSV now includes the `Booked At` and `Meeting ID` columns (verified live) — dedupe on `Meeting ID` and populate the Booked column from `Booked At`. Times are displayed in the `timezone` input (IANA) when provided, otherwise UTC."
 ---
 
 # User Meetings
@@ -72,9 +77,9 @@ If multiple results, list them and ask the human to confirm. Store the resolved 
 
 Always call `workspace-list` at the start. Build a `workspaceId → name` map. Never invent or guess workspace names. → `references/api-reference.md` § Workspace resolution.
 
-### Step 1c — Detect local timezone
+### Step 1c — Resolve the output timezone
 
-Detect the IANA timezone and convert all output timestamps to it. → `references/api-reference.md` § Local timezone detection.
+Use the `timezone` input (IANA, e.g. `America/Chicago`) when provided; otherwise default to UTC. Convert all output timestamps to that zone and label them with it. Do not shell out to detect a timezone. → `references/api-reference.md` § Output timezone.
 
 ### Step 2 — Fetch meetings per 7-day chunk
 
@@ -104,7 +109,7 @@ Verify before writing output:
 
 - [ ] `user` resolved to a single `userId`, `email`, and `name`.
 - [ ] `workspace-list` called; `workspaceId → name` map built (never guess names).
-- [ ] Local timezone detected; all timestamps converted to it.
+- [ ] Output timezone resolved (`timezone` input or UTC default); all timestamps converted and labeled.
 - [ ] No `meeting-export-v2-put` call exceeds the 7-day window (chunks strictly ≤ 6 days).
 - [ ] Records merged and deduped on the `Meeting ID` column.
 - [ ] Field/column names taken from `references/api-reference.md`, not guessed.
