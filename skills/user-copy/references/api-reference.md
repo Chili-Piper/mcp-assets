@@ -123,6 +123,13 @@ args:
 
 ## Licenses — `user-update-licenses`
 
+> ⚠️ **Destructive operation — applies immediately.** `user-update-licenses` writes the
+> target user's license state in real time; any license dropped from the object sent is
+> **revoked at once, with no undo**. This is why license copying is **additive-only and
+> opt-in** (`copy_licenses=true`) and why the object below is built by OR-ing the target's
+> current licenses with the grant set. Confirm the target and the resulting license set with
+> the human before issuing the write.
+
 Only used when `copy_licenses=true`. Make a **single** license write for the target. Send
 the **merged additive** object — the target's current licenses OR'd with the grant set —
 so existing licenses are preserved and nothing is revoked:

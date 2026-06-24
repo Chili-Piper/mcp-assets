@@ -1,7 +1,7 @@
 ---
 name: user-copy
 description: Copies a user's Chili Piper workspace and team memberships (and, optionally, product licenses) to a new or existing user — eliminating manual re-configuration when onboarding a rep onto an existing territory or replacing a departing rep
-version: 0.1.4
+version: 0.1.5
 references:
   - api-reference
   - output-format
