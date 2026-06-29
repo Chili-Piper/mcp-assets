@@ -4,6 +4,10 @@
 
 Maintained by Chili Piper. These are ready-to-use AI specialists — meeting diagnostics, routing audits, user onboarding/offboarding, no-show analysis, and more — that run against your own Chili Piper account through the official Chili Piper MCP.
 
+**Two pieces, one workflow.** The [Chili Piper MCP](mcp-servers/chili-piper/) is the *connection* into your account — set it up once. **Skills** are the vetted *recipes* that use it well. Connect the MCP, install the skills, then just ask.
+
+> 📚 **On the Help Center:** [How do I connect Chili Piper via MCP?](https://help.chilipiper.com/hc/en-us/articles/50430350863635-How-do-I-connect-Chili-Piper-via-MCP) — plus the companion **Chili Piper Skills (AI recipes)** article *(publishing soon)*.
+
 > **Sponsored and maintained by Chili Piper.** This repository lives under the verified [`Chili-Piper`](https://github.com/Chili-Piper) GitHub organization.
 
 ---
@@ -31,6 +35,7 @@ Every skill is built on **[progressive disclosure](docs/methodology.md)** (Anthr
 | [distribution-analysis](skills/distribution-analysis/) | Analyze a round-robin distribution — meeting counts by rep, imbalance vs. weights, skew, cancellations | ✅ |
 | [availability-inspector](skills/availability-inspector/) | Diagnose why a rep or team shows no available slots | ✅ |
 | [concierge-debugger](skills/concierge-debugger/) | Trace why a specific lead didn't book | ✅ |
+| [distro-debugger](skills/distro-debugger/) | Debug why a CRM record was (or wasn't) routed through a distribution — rule stage by rule stage | ✅ |
 | [org-meeting](skills/org-meeting/) | Org-wide meeting volume and health snapshot | ✅ |
 | [user-details](skills/user-details/) | Full profile for any Chili Piper user | ✅ |
 | [user-meetings](skills/user-meetings/) | Rep-level meeting volume and health metrics | ✅ |
