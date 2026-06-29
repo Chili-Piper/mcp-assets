@@ -1,7 +1,7 @@
 ---
 name: User Meetings
 description: Shows all meetings assigned to a specific rep for a period — volume, statuses, and no-show rate — to surface rep-level pipeline health and flag reps who may need coaching or routing changes.
-version: 0.4.0
+version: 0.5.0
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Show me all meetings for john@company.com in the last 30 days"
@@ -94,6 +94,8 @@ For high no-show rate with < 10 meetings: add note "Small sample — may not be 
 ---
 
 ## Step 6 — Output format
+
+Display all timestamps in the timezone the user names (IANA, e.g. `America/Chicago`); if none is given, show times in **UTC** and label the column accordingly. Do not guess the user's timezone.
 
 ### Meetings for `<name>` (`<email>`) | `<date range>`
 
