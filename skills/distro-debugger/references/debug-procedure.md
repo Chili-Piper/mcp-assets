@@ -91,7 +91,23 @@ Extract the trace fields → `references/api-reference.md` § Evaluation trace f
 
 ## Enrich with router context
 
-If workspace was resolved, fetch the router name:
+Fetch the router's name and check its activation state:
+
+```
+tool: distro-list-routers
+args:
+  workspaceId: <workspace id>
+```
+
+Match `router_id` against `id` to surface the human-readable router name. Capture `status`
+and check it immediately (status values → `references/api-reference.md` § Router status values):
+
+- `Active` → router is live; proceed to stage walk.
+- `Inactive` → **stop and flag as root cause**: the router is not active and is not routing records. Routers created via MCP/API start as Inactive by default and require explicit activation. Report this as the diagnosis — the fix is to activate the router via `distro-router-activate`.
+- `Activating` / `Deactivating` → transient state; inform the human that routing may be temporarily unavailable and to retry in a few minutes.
+- `Error{message}` → escalate to engineering with the router ID and the error message.
+
+If the router is not found in `distro-list-routers` (e.g., it was deleted or is from an older pre-CRUD architecture), fall back to `distribution-list-put` to resolve the display name:
 
 ```
 tool: distribution-list-put
@@ -137,8 +153,11 @@ For each stage in `stages[]`, in order:
 > Fix: add a distribution to the rule, or adjust rep capping/availability.
 
 **`NotTriggered`:**
-> The router flow did not fire. The record may not have met the trigger criteria, or the router was not active for this record type.
-> Check the router trigger configuration against the record's source, object type, or entry conditions.
+> The router flow did not fire. First check the router `status` from Step 3:
+> - **`Inactive`** → root cause: the router is not active. Routers created via MCP/API start as Inactive by default and must be explicitly activated via `distro-router-activate`. Fix: activate the router.
+> - **`Activating` / `Deactivating`** → transient; ask the human to retry after the state transition completes.
+> - **`Error{message}`** → escalate to Chili Piper support with the router ID and error message.
+> If the router is `Active`, check the router trigger configuration against the record's source, object type, or entry conditions.
 
 **`DelayInProgress` / `WorkingHours` / `SlaInProgress`:**
 > The record is still in-flight — it hasn't failed, it's waiting.

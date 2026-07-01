@@ -1,7 +1,7 @@
 ---
 name: distro-debugger
 description: Debugs why a CRM record was routed (or not routed) through a Chili Piper distribution — accepts a log ID, Salesforce record ID, or contact/lead name, explains each rule stage, and recommends a targeted fix
-version: 0.3.0
+version: 0.3.1
 references:
   - api-reference
   - debug-procedure
@@ -44,6 +44,7 @@ outputs:
 tools_required: [chili-piper-mcp, salesforce-mcp]
 human_decision_point: "Review the diagnosis and decide: fix the distribution rule, manually reassign the record, or escalate to engineering"
 writes_to: "Nothing — read-only diagnostic"
+api_note: "2026-07-01 (DISTRO-4581, PR #939): distro-list-routers now returns a status field per router — Active | Inactive | Activating | Deactivating | Error{message}. Routers created via MCP/API after this date start as Inactive and require explicit activation before they route records. Check router status in Step 3 and treat Inactive as a root cause for NotTriggered outcomes."
 ---
 
 # Distribution Debugger
@@ -93,7 +94,7 @@ Call `distro-log-get` with `logId` + `routerId` → `references/debug-procedure.
 
 ### Step 3 — Enrich with router context
 
-Resolve the human-readable router name → `references/debug-procedure.md` § Enrich with router context.
+Resolve the human-readable router name and check its activation state → `references/debug-procedure.md` § Enrich with router context. Router status values → `references/api-reference.md` § Router status values.
 
 ### Step 4 — Walk the evaluation stages
 
@@ -115,6 +116,7 @@ Verify before writing output:
 - [ ] Field names taken from `references/api-reference.md`, not guessed.
 - [ ] `date_range` converted to ISO8601 `from`/`to` before any `distro-logs` call.
 - [ ] `distro-log-get` called with both `logId` and `routerId`.
+- [ ] Router `status` checked in Step 3; if not `Active`, flag immediately before diagnosing stages.
 - [ ] Diagnosis branch chosen from the literal `status` value (no assumed status enum).
 
 ## Checkpoint
