@@ -56,6 +56,18 @@ the Chili Piper MCP tools this skill uses.
 
 ## Write tools — argument shapes
 
+> ⚠️ **Destructive & irreversible — there is no bulk undo.** Run these only after the
+> `dry_run` plan is confirmed by the human (see SKILL.md § Checkpoint), and only on the
+> resolved IDs in that plan:
+> - **`workspace-remove-users`** — immediately revokes the user's access to all resources in
+>   that workspace.
+> - **`team-remove-users`** — removes the user from the team; may change live routing/distribution
+>   eligibility.
+> - **`meeting-cancel`** — cannot be undone and directly affects external guests; may trigger a
+>   rebook notification (see below).
+> - **`team-delete`** — irreversible; deletes the team for everyone (fails if an active
+>   distribution still references it).
+
 ```
 tool: workspace-remove-users
 args:
