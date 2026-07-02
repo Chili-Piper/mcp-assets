@@ -1,0 +1,49 @@
+# Write procedures — handoff-router-configuration
+
+> ⚠️ **Destructive & irreversible — there is no bulk undo.** Handoff routers are
+> **always-live**: there is no Inactive state and no separate activation step, so every
+> write below changes live handoff routing the moment it succeeds. Run these only after
+> the dry-run plan is confirmed by the human (see SKILL.md § Checkpoint):
+> - **`handoff-router-create`** — the new router starts routing live handoffs on success.
+> - **`handoff-router-update`** — full-replace: any row not in the payload is **gone**,
+>   and the new config is live immediately.
+> - **`handoff-router-delete`** — permanently removes the router and its routing.
+
+## Building routing rows
+
+1. Parse `changes` into rows: each row = a rule (condition) → an outcome.
+2. Resolve every ID from live calls — never invent:
+   - rule names → `rule-list` (`filter: {ruleBuilderVersion: ["ExplicitV1"], workspaceId}`) → `ruleId`
+   - distribution names → `distribution-list-put` (top-level array; `published.name` / `id`)
+   - rep names/emails → `user-find` → `userId`
+   - meeting type names → `meeting-type-list` → `meetingTypeId`
+3. Every `Schedule` outcome needs **both** an `assignment` (`{type: Distribution, distributionId}` or `{type: User, userId}`) **and** a `meetingTypeId`. If the human didn't name a meeting type, ask — don't default silently.
+4. Optional per-row extras only when asked: `timeout: {minutes, onTimeout: Landing|Url}`, `crmActions: [ConvertLead | Notify{slackChannel}]`.
+5. `catchAll` is **required** on every create/update — if the human didn't specify one, ask what unmatched handoffs should do.
+6. When a name resolves to nothing or to several candidates, list the closest matches and ask.
+
+## Create
+
+1. Payload: `{workspaceId, name, routing}` (routing per above).
+2. `handoff-router-create` → on success the router is **live**. Say so.
+3. Verify: `handoff-router-get` → rows/catch-all match the plan (`representable: true` expected for API-created routers).
+
+## Update (full-replace)
+
+1. `handoff-router-get` → representability gate (api-reference § Representability).
+2. Reconstruct the **complete** desired `routing` from the current summary + requested changes. Convert each read row (`outcome: Schedule{distributionId|userId, meetingTypeId}`) back to a write row; the plan lists every row as kept / changed / added / removed.
+3. `handoff-router-update` with `{name?, routing}` — always include `routing`.
+4. Verify by re-`get`; compare to plan.
+
+## Delete
+
+1. Show the router's current routing in the plan (it disappears with the router).
+2. `handoff-router-delete` → verify with `handoff-router-list` (gone).
+3. There is no deactivate step to soften this — deletion is the only removal, and it is irreversible.
+
+## Error handling
+
+- Typed 400s (`HandoffRouterConversionError`) name the offending part — surface verbatim, fix the plan, re-present; never blind-retry a write.
+- `RouterPublishRejected` — the config was structurally valid but publish refused it; report the message and stop.
+- 403 → missing `handoff.*` permission; name the operation and the fix (Admin Center → API Keys).
+- After any failure mid-apply, re-read (`handoff-router-get`) and report the actual current state — never assume.

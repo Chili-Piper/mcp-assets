@@ -112,6 +112,7 @@ Every skill carries a QA maturity level (tracked in [`../docs/QA.md`](../docs/QA
 |-------|-------------|:--------:|
 | [meeting-type-management](meeting-type-management/SKILL.md) | Manages team meeting types and their email/SMS reminders — durations, invite text, limits (writes/destructive) | `draft` |
 | [distro-router-configuration](distro-router-configuration/SKILL.md) | Manages Distro lead-routing routers — full lifecycle with async status polling (writes/destructive) | `draft` |
+| [handoff-router-configuration](handoff-router-configuration/SKILL.md) | Manages Handoff routers — rep-to-rep routing rules; always-live writes (writes/destructive) | `draft` |
 
 > ⚠️ `user-copy`, `user-offboarding`, and the configuration-management skills modify Chili Piper data. All default to `dry_run: true` and require explicit human confirmation before any write.
 

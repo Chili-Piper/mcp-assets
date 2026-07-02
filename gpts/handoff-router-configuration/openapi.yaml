@@ -1,0 +1,3214 @@
+# Generated from the Chili Piper Edge API OpenAPI spec by
+# .github/scripts/generate_gpt_openapi.py — do not edit by hand.
+openapi: 3.1.0
+info:
+  title: Chili Piper — Handoff Router Configuration Actions
+  version: 1.273.1
+  description: GPT Actions for the handoff-router-configuration GPT — a subset of the Chili Piper Edge
+    API. Authenticate with a Bearer API key (Admin Center → API Keys).
+servers:
+- url: https://fire.chilipiper.com/api/fire-edge
+  description: Production
+security:
+- apiKeyAuth: []
+paths:
+  /v1/org/workspace:
+    get:
+      tags:
+      - workspace
+      summary: Read all workspaces
+      description: "[operation: workspace-list]\n\n\n\nREAD-ONLY\n\n\n\nReturns all workspaces in the\
+        \ org. Hierarchy: Tenant → Workspaces → Teams → Users.\n\n- page (opt), pageSize (opt, default\
+        \ 200)\n\n→\n\n    [{workspaceId, name, settings}]\n\nsee: workspace-list-users (members), workspace-add/remove-users\
+        \ (manage membership), meeting-list/export (filter by workspaceId), concierge-logs (filter by\
+        \ workspaceId)"
+      operationId: workspaceList
+      parameters:
+      - name: page
+        in: query
+        description: Page number. First page has index 0.
+        required: false
+        schema:
+          default: 0
+          type: integer
+          format: int64
+          minimum: 0
+        example: 0
+      - name: pageSize
+        in: query
+        description: Number of items per page. Maximum is 50
+        required: false
+        schema:
+          default: 10
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        example: 10
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResult_Workspace'
+        '400':
+          description: 'Invalid value for: query parameter page, Invalid value for: query parameter pageSize'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - workspace.read
+  /v1/org/handoff/routers/handoff/list:
+    get:
+      tags:
+      - handoff
+      summary: Lists all handoff routers
+      description: "[operation: handoff-router-list]\n\n\n\nREAD-ONLY\n\n\n\nReturns Handoff routers —\
+        \ each router's identity plus a lossy per-row summary of what its routing does. A handoff router\
+        \ routes SDR-to-AE handoffs to teams/users via rules.\n\n- workspaceId (opt): restrict to one\
+        \ workspace (must belong to this tenant); if omitted, fans out across all workspaces\n\n→\n\n\
+        \    [{id, workspaceId, name?, routing: {known, representable, rows: [{ruleId?, ruleType?, outcome}],\
+        \ catchAll?: {outcome}}}]\n\n  Note: the routing summary is fully populated and has the same lossy-by-design\
+        \ shape as handoff-router-get\n\nsee: workspace-list (find a workspaceId), handoff-router-get\
+        \ (fetch one), handoff-router-update (replace config)"
+      operationId: handoffRouterList
+      parameters:
+      - name: workspaceId
+        in: query
+        description: Filter handoff routers by workspace ID. Omit to list across all of the tenant's workspaces.
+        required: false
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HandoffRouter'
+        '400':
+          description: 'Invalid value for: query parameter workspaceId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - handoff.read
+  /v1/org/handoff/routers/handoff/{routerId}:
+    get:
+      tags:
+      - handoff
+      summary: Get handoff router
+      description: "[operation: handoff-router-get]\n\n\n\nREAD-ONLY\n\n\n\nFetches a single Handoff router\
+        \ by id — its identity plus a lossy per-row summary of what its routing does.\n\n- routerId (req):\
+        \ the router's id; use handoff-router-list\n\n→\n\n    {id, workspaceId, name?, routing: {known,\
+        \ representable, rows: [{ruleId?, ruleType?, outcome}], catchAll?: {outcome}}}\n    outcome (one\
+        \ of): {type: \"Schedule\", distributionId?, userId?, meetingTypeId?} | {type: \"Redirect\", url?}\
+        \ | {type: \"OwnerAssign\"} | {type: \"ContactOptions\"} | {type: \"CrmAction\"} | {type: \"Other\"\
+        , kind}\n\n  Note: the summary is lossy by design — it NAMES each row's outcome (including ones\
+        \ Edge can't itself produce) so you can see what the router does even when it was built in the\
+        \ app\n\n  Note: routing.representable is true only when the current routing — both the draft\
+        \ tree and the published tree — is exactly what Edge's create/update would have produced; when\
+        \ false, an update with a new routing may be rejected (edit it in the Handoff app instead). A\
+        \ router that has no routing tree yet also reports representable=false, but an update setting\
+        \ routing on it is still accepted (nothing is destroyed).\n\nsee: handoff-router-list (browse\
+        \ to find a routerId), handoff-router-update (replace routing if representable)"
+      operationId: handoffRouterGet
+      parameters:
+      - name: routerId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandoffRouter'
+        '400':
+          description: 'Invalid value for: path parameter routerId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - handoff.read
+    put:
+      tags:
+      - handoff
+      summary: Update handoff router
+      description: "[operation: handoff-router-update]\n\n\n\nMUTATING — IDEMPOTENT\n\n\n\nUpdates a Handoff\
+        \ router and PUBLISHES it — the new config is live immediately. Only the fields you supply change;\
+        \ omitted fields are preserved.\n\n- routerId (req): the router's id (path)\n\n- name (opt): new\
+        \ display name\n\n- routing (opt): when present, fully REPLACES the routing matrix (it is not\
+        \ a partial merge); when omitted, the current routing is kept. Each row's rule, when it matches,\
+        \ runs that row's `outcome`; the catch-all `outcome` runs when no row matches:\n\n    {routes:\
+        \ [{ruleId, outcome}], catchAll: outcome}\n\n  outcome:\n\n    {type: \"Schedule\", assignment,\
+        \ meetingTypeId, crmActions?}\n\n  Schedule assigns the lead and books a meeting type. assignment\
+        \ is {type: \"Distribution\", distributionId} or {type: \"User\", userId}. crmActions (opt) is\
+        \ an ordered post-booking chain, each {type: \"ConvertLead\"}. ruleId is required on every row;\
+        \ an always-match route is the catchAll. routes may be empty (then only the catchAll applies).\n\
+        \n  Note: handoff routers support only Schedule outcomes — no Redirect, no no-show timeout, and\
+        \ ConvertLead is the only CRM action (concierge routers support the full set). Supplying any of\
+        \ those is rejected (400).\n\n→\n\n    {id, workspaceId, name?, routing: {known, representable,\
+        \ rows: [{ruleId?, ruleType?, outcome}], catchAll?: {outcome}}}\n\n  Note: the returned routing\
+        \ is the lossy per-row summary (same shape as handoff-router-get), not the matrix you sent\n\n\
+        ⚠ full-replace + publishes live immediately: supplying routing replaces the ENTIRE matrix, not\
+        \ a partial merge\n\n⚠ REJECTED (409) when the router's existing routing — its DRAFT tree or its\
+        \ PUBLISHED tree — isn't representable in this simplified model (advanced routing built in the\
+        \ Handoff app) — to avoid silently destroying it, edit those routers in the Handoff app instead.\
+        \ Check routing.representable via handoff-router-get first. A name-only update (no routing) always\
+        \ succeeds.\n\n⚠ every update publishes the router's current DRAFT — if the draft carries unpublished\
+        \ edits made in the Handoff app, those go live as a side effect, even on a name-only patch\n\n\
+        ⚠ if the final publish step fails, the changes are saved on an UNPUBLISHED draft and a typed 422\
+        \ error is returned — fix or delete the draft in the Handoff app\n\nsee: handoff-router-get (check\
+        \ routing.representable before replacing), rule-list (find ruleIds), distribution-list (find distributionIds),\
+        \ user-find (find userIds), meeting-type-list (find meetingTypeIds)"
+      operationId: handoffRouterUpdate
+      parameters:
+      - name: routerId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HandoffRouterUpdate'
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandoffRouter'
+        '400':
+          description: 'Invalid value for: path parameter routerId, Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - handoff.modify
+    delete:
+      tags:
+      - handoff
+      summary: Remove handoff router
+      description: '[operation: handoff-router-delete]
+
+
+
+
+        MUTATING — DESTRUCTIVE
+
+
+
+
+        Deletes a Handoff router by id.
+
+
+        - routerId (req): the router''s id (path)
+
+
+        ⚠ irreversible via API; any embeds or links pointing at this router stop working
+
+
+        see: handoff-router-list or handoff-router-get (confirm the id before deleting)'
+      operationId: handoffRouterDelete
+      parameters:
+      - name: routerId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: path parameter routerId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - handoff.remove
+  /v1/org/handoff/routers/handoff:
+    post:
+      tags:
+      - handoff
+      summary: Create handoff router
+      description: "[operation: handoff-router-create]\n\n\n\nMUTATING\n\n\n\nCreates a Handoff router\
+        \ with a name and a simplified routing matrix, and PUBLISHES it — the router is live (functional)\
+        \ immediately; there is no unpublished-draft step.\n\n- workspaceId (req): the workspace to create\
+        \ the router in; must be a team workspace of this tenant (400 otherwise)\n\n- name (req): display\
+        \ name\n\n- routing (req): the routing matrix — ordered rules evaluated top-down, plus a mandatory\
+        \ catch-all fallback. Each row's rule, when it matches, runs that row's `outcome`; the catch-all\
+        \ `outcome` runs when no row matches:\n\n    {routes: [{ruleId, outcome}], catchAll: outcome}\n\
+        \n  outcome:\n\n    {type: \"Schedule\", assignment, meetingTypeId, crmActions?}\n\n  Schedule\
+        \ assigns the lead and books a meeting type. assignment is {type: \"Distribution\", distributionId}\
+        \ (round-robin / ownership / whatever the distribution does) or {type: \"User\", userId} (a specific\
+        \ host). crmActions (opt) is an ordered post-booking chain, each {type: \"ConvertLead\"}. ruleId\
+        \ is required on every row; an always-match route is the catchAll. routes may be empty (then only\
+        \ the catchAll applies).\n\n  Note: handoff routers support only Schedule outcomes — no Redirect,\
+        \ no no-show timeout, and ConvertLead is the only CRM action (concierge routers support the full\
+        \ set). Supplying any of those is rejected (400).\n\n→\n\n    {id, workspaceId, name?, routing:\
+        \ {known, representable, rows: [{ruleId?, ruleType?, outcome}], catchAll?: {outcome}}}\n\n  Note:\
+        \ the returned routing is the lossy per-row summary (same shape as handoff-router-get), not the\
+        \ matrix you sent\n\n⚠ if the final publish step fails, the router is left behind as an UNPUBLISHED\
+        \ draft and a typed 422 error is returned — retrying the create mints ANOTHER draft; fix or delete\
+        \ the leftover draft in the Handoff app\n\nsee: handoff-router-list (find a workspaceId), rule-list\
+        \ (find ruleIds), distribution-list (find distributionIds), user-find (find userIds), meeting-type-list\
+        \ (find meetingTypeIds), handoff-router-update (replace config afterwards)"
+      operationId: handoffRouterCreate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HandoffRouterCreate'
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandoffRouter'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - handoff.create
+  /v1/org/rule/list:
+    get:
+      tags:
+      - rule
+      summary: List rules
+      description: "[operation: rule-list]\n\n\n\nREAD-ONLY\n\n\n\nReturns active routing rules (ExplicitV1\
+        \ builder only; legacy excluded).\n\n- page (opt): 0-indexed page number, default 0\n\n- pageSize\
+        \ (opt): rules per page, default 200\n\n- workspaceId (opt): filter to rules in a specific workspace\n\
+        \n- name (opt): filter rules by name\n\n→\n\n    {results: [{type, id, workspaceId, name, conditions,\
+        \ ruleBuilderVersion, product?, metadata: {revision, ...}, teamId?}], total, page, pageSize}\n\
+        \n⚠ always call immediately before rule-modify/rule-delete to get a fresh revision — stale revision\
+        \ causes conflict error\n\nsee: rule-get (fetch single rule by id), rule-modify (update rule),\
+        \ rule-delete (remove rule)"
+      operationId: ruleList
+      parameters:
+      - name: page
+        in: query
+        description: Page number. First page has index 0.
+        required: false
+        schema:
+          default: 0
+          type: integer
+          format: int64
+          minimum: 0
+      - name: pageSize
+        in: query
+        description: Number of items per page.
+        required: false
+        schema:
+          default: 200
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+      - name: workspaceId
+        in: query
+        description: Filter rules by workspace ID.
+        required: false
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      - name: name
+        in: query
+        description: Filter rules by name.
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResult_RuleView'
+        '400':
+          description: 'Invalid value for: query parameter page, Invalid value for: query parameter pageSize,
+            Invalid value for: query parameter workspaceId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - rule.read
+  /v2/org/distribution/list:
+    put:
+      tags:
+      - distribution
+      summary: List all distributions (PUT)
+      description: "[operation: distribution-list-put]\n\n\n\nREAD-ONLY\n\n\n\nReturns all published distributions\
+        \ in the org. Accepts filter params in request body to avoid query-string length limits.\n\n-\
+        \ body.workspaceIds (opt): filter by workspace\n\n- body.name (opt): filter by distribution name\
+        \ (substring match)\n\n- body.assignmentType (opt): filter by assignment type; \"Record\" | \"\
+        Meeting\" | \"Conversation\"\n\n- body.page (opt), body.pageSize (opt, default 200)\n\n→\n\n \
+        \   {results: [{distributionId, name, teamId, assignees, assignmentTypeConfig, capping}]}\n\n\
+        see: distribution-list (GET equivalent)"
+      operationId: distributionListPut
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResult_Distribution'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - distribution.read
+  /v1/org/meeting-types/list:
+    get:
+      tags:
+      - meeting-type
+      summary: List meeting types
+      description: "[operation: meeting-type-list]\n\n\n\nREAD-ONLY\n\n\n\nReturns team meeting types\
+        \ (personal meeting types are excluded).\n\n- workspaceId (opt): list only meeting types in this\
+        \ workspace; omit to fan out across all of the tenant's workspaces\n\n→\n\n    [{id, workspaceId,\
+        \ name, description?, inviteTitle, inviteDescription, status, duration, location: {default: {type,\
+        \ index, host?, value?}, others: [{type, index, host?, value?}]}, buffers: {before?, after?},\
+        \ meetingLimit?: {limitBy: \"Email\"|\"Domain\", timeframe: \"Hourly\"|\"Daily\"|\"Weekly\"|\"\
+        Monthly\"|\"Yearly\", count}, sharedWith?: {type: \"Workspace\"}|{type: \"Teams\", teamIds}, reminders?:\
+        \ [{id, workspaceId, channel, trigger: {kind, offset?}, name, title?, body}]}]\n\n  Note: reminders\
+        \ are not fetched on list (the field is null) — use meeting-type-get to read a meeting type's\
+        \ reminders; null means \"not fetched\", never \"no reminders\".\n\n  Note: meetingLimit.timeframe\
+        \ is approximate — the backend's reset schedule (e.g. every-2-weeks) is summarised to the nearest\
+        \ timeframe; finer reset details (every-N, anchor day) are not surfaced.\n\n  Note: sharedWith\
+        \ (the sharing scope: whole workspace vs specific teams) is read from the meeting type's admin\
+        \ (one-on-one) scheduling link; it is null when no such link, or more than one, is found — null\
+        \ means \"indeterminate\", not \"workspace\".\n\nsee: meeting-type-get (fetch a single meeting\
+        \ type), meeting-type-create (add one), meeting-type-update (edit one)"
+      operationId: meetingTypeList
+      parameters:
+      - name: workspaceId
+        in: query
+        description: Filter meeting types by workspace ID. Omit to list across all of the tenant's workspaces.
+        required: false
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MeetingType'
+        '400':
+          description: 'Invalid value for: query parameter workspaceId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - meeting-type.read
+  /v1/org/user/find:
+    get:
+      tags:
+      - user
+      summary: Finds user
+      description: '[operation: user-find]
+
+
+
+
+        READ-ONLY
+
+
+
+
+        Searches users by free-text query matched against email and name (partial matches supported).
+        Paginated.
+
+
+        - query (req): partial email or name
+
+
+        - page (opt), pageSize (opt, default 200)
+
+
+        → paginated list of users, each with: {id, name, email, isSuperAdmin, licenses, workspaces, salesforce
+        (opt), hubspot (opt), slug (opt), managedWorkspaces, managedTeams}
+
+
+        see: user-read (full profile), user-find-by-ids (batch by ID), user-find-by-filter (advanced multi-field
+        filtering)'
+      operationId: userFind
+      parameters:
+      - name: query
+        in: query
+        description: Search by email or name
+        required: true
+        schema:
+          type: string
+      - name: page
+        in: query
+        description: Page number. First page has index 0.
+        required: false
+        schema:
+          default: 0
+          type: integer
+          format: int64
+          minimum: 0
+        example: 0
+      - name: pageSize
+        in: query
+        description: Number of items per page. Maximum is 50
+        required: false
+        schema:
+          default: 10
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        example: 10
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResult_User'
+        '400':
+          description: 'Invalid value for: query parameter query, Invalid value for: query parameter page,
+            Invalid value for: query parameter pageSize'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - user.read
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      description: 'API key in Authorization header. Format: ''Authorization: Bearer <api-key>'' — the
+        word ''Bearer'' followed by a space and the key is required. Sending the key without the Bearer
+        prefix returns 401.'
+      name: Authorization
+      in: header
+  schemas:
+    RouteAssignment_Distribution:
+      title: RouteAssignment_Distribution
+      type: object
+      required:
+      - distributionId
+      - type
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        type:
+          type: string
+          const: Distribution
+    DataObject:
+      title: DataObject
+      oneOf:
+      - $ref: '#/components/schemas/CustomMatchedObjectRef'
+      - $ref: '#/components/schemas/MatchedObject'
+      - $ref: '#/components/schemas/NormalDataObject'
+      - $ref: '#/components/schemas/RelatedChildObjectRef'
+      - $ref: '#/components/schemas/RelatedDataObject'
+    UserCalibration:
+      title: UserCalibration
+      type: object
+      required:
+      - userId
+      - calibration
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        calibration:
+          type: integer
+          format: int32
+    MeetingBookingLimit:
+      title: MeetingBookingLimit
+      type: object
+      required:
+      - limitBy
+      - timeframe
+      - count
+      properties:
+        limitBy:
+          $ref: '#/components/schemas/MeetingBookingLimitBy'
+        timeframe:
+          $ref: '#/components/schemas/MeetingBookingLimitTimeframe'
+        count:
+          type: integer
+          format: int32
+    CrmAction_ConvertLead:
+      title: CrmAction_ConvertLead
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: ConvertLead
+    ListRequest:
+      title: ListRequest
+      type: object
+      properties:
+        workspaceIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        name:
+          type: string
+        assignmentType:
+          $ref: '#/components/schemas/DistributionAssignmentType'
+    CrmAction_Notify:
+      title: CrmAction_Notify
+      type: object
+      required:
+      - type
+      properties:
+        slackChannel:
+          type: string
+        type:
+          type: string
+          const: Notify
+    DistributionUserState_Removed:
+      title: DistributionUserState_Removed
+      description: User was removed from the team entirely — historical record, no assignments will go
+        to this user.
+      type: object
+      required:
+      - userId
+      - total
+      - removedAt
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        removedAt:
+          type: string
+          format: date-time
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: Removed
+    Option_String:
+      title: Option_String
+      type: string
+    ConditionGroup:
+      title: ConditionGroup
+      type: object
+      required:
+      - id
+      - operator
+      - conditions
+      - type
+      properties:
+        id:
+          $ref: '#/components/schemas/ConditionGroupId'
+        name:
+          $ref: '#/components/schemas/Option_String'
+        operator:
+          $ref: '#/components/schemas/LogicalOperator'
+        conditions:
+          $ref: '#/components/schemas/NonEmptyList_OwnershipConditionsRequest'
+        type:
+          type: string
+          const: ConditionGroup
+    CalendarPlatformConference:
+      title: CalendarPlatformConference
+      type: object
+      required:
+      - index
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        type:
+          type: string
+          const: CalendarPlatformConference
+    ChiliProduct:
+      title: ChiliProduct
+      type: string
+      enum:
+      - Chat
+      - ChiliCal
+      - Concierge
+      - Distro
+      - Handoff
+    MeetingType:
+      title: MeetingType
+      type: object
+      required:
+      - id
+      - workspaceId
+      - name
+      - inviteTitle
+      - inviteDescription
+      - status
+      - duration
+      - location
+      - buffers
+      properties:
+        id:
+          $ref: '#/components/schemas/MeetingTypeId'
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+        description:
+          type: string
+        inviteTitle:
+          type: string
+        inviteDescription:
+          type: string
+        status:
+          $ref: '#/components/schemas/MeetingTypeStatus'
+        duration:
+          type: string
+        location:
+          $ref: '#/components/schemas/MeetingLocations'
+        buffers:
+          $ref: '#/components/schemas/MeetingBuffers'
+        meetingLimit:
+          $ref: '#/components/schemas/MeetingBookingLimit'
+        sharedWith:
+          $ref: '#/components/schemas/SharedWith'
+        reminders:
+          type: array
+          items:
+            $ref: '#/components/schemas/Reminder'
+    TimeoutRedirect_Url:
+      title: TimeoutRedirect_Url
+      type: object
+      required:
+      - url
+      - type
+      properties:
+        url:
+          examples:
+          - https://example.com
+          type: string
+        type:
+          type: string
+          const: Url
+    RelativeMonth:
+      title: RelativeMonth
+      type: object
+      required:
+      - offset
+      - length
+      - type
+      properties:
+        offset:
+          type: integer
+          format: int32
+        length:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        timeZone:
+          $ref: '#/components/schemas/Option_String'
+        type:
+          type: string
+          const: RelativeMonth
+    User1:
+      title: User
+      type: object
+      required:
+      - id
+      - name
+      - email
+      - isSuperAdmin
+      - licenses
+      properties:
+        id:
+          $ref: '#/components/schemas/UserId'
+        name:
+          type: string
+          minLength: 1
+        email:
+          $ref: '#/components/schemas/Email'
+        isSuperAdmin:
+          type: boolean
+        managedWorkspaces:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        managedTeams:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        licenses:
+          $ref: '#/components/schemas/UserLicenses'
+        salesforce:
+          $ref: '#/components/schemas/SalesforceUser'
+        hubspot:
+          $ref: '#/components/schemas/HubspotUser'
+        slug:
+          type: string
+          pattern: '[-0-9a-z_]+'
+        workspaces:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        personalWorkspaceId:
+          type: string
+          pattern: '[^\s\\/]+'
+    OwnershipCondition:
+      title: OwnershipCondition
+      type: object
+      required:
+      - conditionId
+      - type
+      properties:
+        conditionId:
+          $ref: '#/components/schemas/ConditionId'
+        ownership:
+          $ref: '#/components/schemas/Option_OwnershipReference'
+        teamId:
+          $ref: '#/components/schemas/Option_TeamId'
+        searchOwnershipBy:
+          $ref: '#/components/schemas/SearchOwnershipByDTO'
+        type:
+          type: string
+          const: OwnershipCondition
+    RouterRoutingSummary:
+      title: RouterRoutingSummary
+      type: object
+      required:
+      - known
+      - representable
+      properties:
+        known:
+          type: boolean
+        representable:
+          type: boolean
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoutingRowSummary'
+        catchAll:
+          $ref: '#/components/schemas/RoutingCatchAllSummary'
+    Workspace:
+      title: Workspace
+      type: object
+      required:
+      - id
+      - name
+      - metadata
+      properties:
+        id:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+        emoji:
+          type: string
+        logo:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+    Record:
+      title: Record
+      type: object
+      required:
+      - handling
+      - type
+      properties:
+        handling:
+          $ref: '#/components/schemas/RecordHandling'
+        type:
+          type: string
+          const: Record
+    CustomMatchedObjectRef:
+      title: CustomMatchedObjectRef
+      description: 'custom matched object ref - format: $id__$tpe
+
+
+        available types: LeadToAccountMatchingConfigType,ContactToDuplicateContactMatchingConfigType,LeadToDuplicateContactMatchingConfigType,ProspectToContactMatchingConfigType,LeadToDuplicateLeadMatchingConfigType,ContactToDuplicateLeadMatchingConfigType,ProspectToLeadMatchingConfigType,LeadToRelatedLeadMatchingConfigType,LeadToOpportunityMatchingConfigType,ContactToOpportunityMatchingConfigType,LeadToCaseMatchingConfigType,ContactToCaseMatchingConfigType,RelatedChildConfigType'
+      type: string
+    UserWeight:
+      title: UserWeight
+      type: object
+      required:
+      - userId
+      - weight
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        weight:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 10000
+    Distribution:
+      title: Distribution
+      type: object
+      required:
+      - id
+      - published
+      - state
+      - prioritization
+      properties:
+        id:
+          $ref: '#/components/schemas/DistributionId'
+        published:
+          $ref: '#/components/schemas/ConfigurationDTO'
+        state:
+          $ref: '#/components/schemas/DistributionState'
+        prioritization:
+          $ref: '#/components/schemas/Prioritization'
+    NormalDataObject:
+      title: NormalDataObject
+      description: Standard CRM object name, e.g. "Account", "Contact", "Lead", "Opportunity", "Case".
+        Use for direct conditions on any Salesforce/CRM object. Do NOT use MatchedAccount/MatchedContact/etc.
+        here — those are special matching-config references.
+      type: string
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
+    SimpleMetadata:
+      title: SimpleMetadata
+      type: object
+      required:
+      - createdAt
+      - createdBy
+      - updatedAt
+      - updatedBy
+      - revision
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: '#/components/schemas/CallerRef'
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: '#/components/schemas/CallerRef'
+        revision:
+          type: integer
+          format: int32
+    DistributionState:
+      title: DistributionState
+      type: object
+      properties:
+        userStates:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistributionUserState'
+        lastReset:
+          type: string
+          format: date-time
+    RelativeYear:
+      title: RelativeYear
+      type: object
+      required:
+      - offset
+      - length
+      - type
+      properties:
+        offset:
+          type: integer
+          format: int32
+        length:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        timeZone:
+          $ref: '#/components/schemas/Option_String'
+        type:
+          type: string
+          const: RelativeYear
+    ZoomOneTimeLink:
+      title: ZoomOneTimeLink
+      type: object
+      required:
+      - index
+      - host
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        host:
+          $ref: '#/components/schemas/MeetingLocationHost'
+        type:
+          type: string
+          const: ZoomOneTimeLink
+    Option_TeamId:
+      $ref: '#/components/schemas/TeamId'
+    Levels:
+      title: Levels
+      type: object
+      required:
+      - current
+      - nextAssignmentDelta
+      - total
+      properties:
+        current:
+          description: Earned score plus prolonged-reservation projection, before manual calibration.
+          type: number
+        nextAssignmentDelta:
+          description: Score increment that will be added if this user receives the next assignment. Forward-looking;
+            not included in `current` or `total`.
+          type: number
+        calibrationDelta:
+          description: Manual-calibration adjustment applied on top of `current`. Absent when no calibration
+            is in effect. When present, `total = current + calibrationDelta`.
+          type: number
+        total:
+          description: Current score with manual calibration applied.
+          type: number
+    WebexLink:
+      title: WebexLink
+      type: object
+      required:
+      - index
+      - host
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        host:
+          $ref: '#/components/schemas/MeetingLocationHost'
+        type:
+          type: string
+          const: WebexLink
+    ConditionGroup1:
+      title: ConditionGroup
+      type: object
+      required:
+      - id
+      - operator
+      - conditions
+      - type
+      properties:
+        id:
+          $ref: '#/components/schemas/ConditionGroupId'
+        name:
+          $ref: '#/components/schemas/Option_String'
+        operator:
+          $ref: '#/components/schemas/LogicalOperator'
+        conditions:
+          $ref: '#/components/schemas/NonEmptyList_NonOwnershipConditionsRequest'
+        type:
+          type: string
+          const: ConditionGroup
+    DistributionUserState_NoLicense:
+      title: DistributionUserState_NoLicense
+      description: User is still on the team but has lost their license, so they cannot receive assignments.
+        Re-licensing restores them.
+      type: object
+      required:
+      - userId
+      - total
+      - licenseRemovedAt
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        licenseRemovedAt:
+          type: string
+          format: date-time
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: NoLicense
+    Meeting:
+      title: Meeting
+      type: object
+      required:
+      - handling
+      - limits
+      - type
+      properties:
+        handling:
+          $ref: '#/components/schemas/MeetingHandling'
+        limits:
+          $ref: '#/components/schemas/MeetingLimit'
+        type:
+          type: string
+          const: Meeting
+    DataSource:
+      title: DataSource
+      type: string
+      enum:
+      - SF
+      - DF
+      - CP
+      - HS
+      - MK
+    RoutingOutcome_Other:
+      title: RoutingOutcome_Other
+      type: object
+      required:
+      - kind
+      - type
+      properties:
+        kind:
+          type: string
+        type:
+          type: string
+          const: Other
+    RouteOutcome_Redirect:
+      title: RouteOutcome_Redirect
+      type: object
+      required:
+      - url
+      - type
+      properties:
+        url:
+          examples:
+          - https://example.com
+          type: string
+        type:
+          type: string
+          const: Redirect
+    PaginatedResult_User:
+      title: PaginatedResult_User
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User1'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    RouteTimeout:
+      title: RouteTimeout
+      type: object
+      required:
+      - minutes
+      - onTimeout
+      properties:
+        minutes:
+          type: integer
+          format: int32
+        onTimeout:
+          $ref: '#/components/schemas/TimeoutRedirect'
+    HubspotUser:
+      title: HubspotUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        id:
+          type: integer
+          format: int64
+    AskTheGuest:
+      title: AskTheGuest
+      type: object
+      required:
+      - index
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        type:
+          type: string
+          const: AskTheGuest
+    RuleView:
+      title: RuleView
+      oneOf:
+      - $ref: '#/components/schemas/NonOwnershipRule'
+      - $ref: '#/components/schemas/OwnershipRule'
+      discriminator:
+        propertyName: type
+        mapping:
+          NonOwnershipRule: '#/components/schemas/NonOwnershipRule'
+          OwnershipRule: '#/components/schemas/OwnershipRule'
+    RoutingRowSummary:
+      title: RoutingRowSummary
+      type: object
+      required:
+      - outcome
+      properties:
+        ruleId:
+          type: string
+          pattern: '[^\s\\/]+'
+        ruleType:
+          type: string
+        outcome:
+          $ref: '#/components/schemas/RoutingOutcome'
+    DistributionId:
+      title: DistributionId
+      examples:
+      - 7f8a1b2c-3d4e-4f5a-8b9c-0d1e2f3a4b5c
+      type: string
+      pattern: '[^\s\\/]+'
+    RoutingOutcome:
+      title: RoutingOutcome
+      oneOf:
+      - $ref: '#/components/schemas/RoutingOutcome_ContactOptions'
+      - $ref: '#/components/schemas/RoutingOutcome_CrmAction'
+      - $ref: '#/components/schemas/RoutingOutcome_Other'
+      - $ref: '#/components/schemas/RoutingOutcome_OwnerAssign'
+      - $ref: '#/components/schemas/RoutingOutcome_Redirect'
+      - $ref: '#/components/schemas/RoutingOutcome_Schedule'
+      discriminator:
+        propertyName: type
+        mapping:
+          ContactOptions: '#/components/schemas/RoutingOutcome_ContactOptions'
+          CrmAction: '#/components/schemas/RoutingOutcome_CrmAction'
+          Other: '#/components/schemas/RoutingOutcome_Other'
+          OwnerAssign: '#/components/schemas/RoutingOutcome_OwnerAssign'
+          Redirect: '#/components/schemas/RoutingOutcome_Redirect'
+          Schedule: '#/components/schemas/RoutingOutcome_Schedule'
+    ReassignmentType:
+      title: ReassignmentType
+      type: string
+      enum:
+      - SameUser
+      - AnyTeamMember
+    HandoffRouter:
+      title: HandoffRouter
+      type: object
+      required:
+      - id
+      - workspaceId
+      - routing
+      properties:
+        id:
+          $ref: '#/components/schemas/HandoffRouterId'
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+        routing:
+          $ref: '#/components/schemas/RouterRoutingSummary'
+    ReminderChannel:
+      title: ReminderChannel
+      type: string
+      enum:
+      - Email
+      - Sms
+    ConfigurationDTO:
+      title: ConfigurationDTO
+      type: object
+      required:
+      - distributionId
+      - workspaceId
+      - assignmentTypeConfig
+      - teamRef
+      - metadata
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        assignmentTypeConfig:
+          $ref: '#/components/schemas/DistributionAssignmentTypeConfig'
+        teamRef:
+          $ref: '#/components/schemas/TeamRef'
+        weights:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserWeight'
+        name:
+          type: string
+        manualCalibration:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserCalibration'
+        capping:
+          $ref: '#/components/schemas/DistributedAssignmentLimit'
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+    Flexible:
+      title: Flexible
+      type: object
+      required:
+      - reassignmentType
+      - allowPickingAssignee
+      - type
+      properties:
+        reassignmentType:
+          $ref: '#/components/schemas/ReassignmentType'
+        allowPickingAssignee:
+          type: boolean
+        type:
+          type: string
+          const: Flexible
+    Option_OwnershipReference:
+      $ref: '#/components/schemas/OwnershipReference'
+    RelativeDay:
+      title: RelativeDay
+      type: object
+      required:
+      - offset
+      - length
+      - type
+      properties:
+        offset:
+          type: integer
+          format: int32
+        length:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        timeZone:
+          $ref: '#/components/schemas/Option_String'
+        type:
+          type: string
+          const: RelativeDay
+    NonOwnershipConditionsRequest:
+      title: NonOwnershipConditionsRequest
+      oneOf:
+      - $ref: '#/components/schemas/ConditionGroup1'
+      - $ref: '#/components/schemas/EvaluableCondition'
+      - $ref: '#/components/schemas/ObjectExistsCondition'
+      - $ref: '#/components/schemas/SingleParameterCondition'
+      - $ref: '#/components/schemas/StaticValueCondition'
+      - $ref: '#/components/schemas/ValueCondition'
+      discriminator:
+        propertyName: type
+        mapping:
+          ConditionGroup: '#/components/schemas/ConditionGroup1'
+          EvaluableCondition: '#/components/schemas/EvaluableCondition'
+          ObjectExistsCondition: '#/components/schemas/ObjectExistsCondition'
+          SingleParameterCondition: '#/components/schemas/SingleParameterCondition'
+          StaticValueCondition: '#/components/schemas/StaticValueCondition'
+          ValueCondition: '#/components/schemas/ValueCondition'
+    NonEmptyList_OwnershipConditionsRequest:
+      title: NonEmptyList_OwnershipConditionsRequest
+      type: array
+      minItems: 1
+      items:
+        $ref: '#/components/schemas/OwnershipConditionsRequest'
+    OwnershipRule:
+      title: OwnershipRule
+      type: object
+      required:
+      - id
+      - workspaceId
+      - name
+      - conditions
+      - ruleBuilderVersion
+      - metadata
+      - type
+      properties:
+        id:
+          $ref: '#/components/schemas/RuleId'
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        teamId:
+          $ref: '#/components/schemas/Option_TeamId'
+        name:
+          type: string
+        conditions:
+          $ref: '#/components/schemas/OwnershipConditionsRequest'
+        ruleBuilderVersion:
+          $ref: '#/components/schemas/RuleBuilderVersion'
+        product:
+          $ref: '#/components/schemas/Option_ChiliProduct'
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+        type:
+          type: string
+          const: OwnershipRule
+    Operator:
+      title: Operator
+      type: string
+      enum:
+      - <
+      - '>'
+      - <=
+      - '>='
+      - startsWithAnyOf
+      - endsWithAnyOf
+      - isAnyOf
+      - isNotAnyOf
+      - equal
+      - notEqual
+      - contains
+      - doesNotContain
+      - containsAnyOf
+      - containsNoneOf
+      - startsWith
+      - endsWith
+    PaginatedResult_Workspace:
+      title: PaginatedResult_Workspace
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workspace'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    Weekly:
+      title: Weekly
+      type: object
+      required:
+      - every
+      - startsOn
+      - resetDayOfWeek
+      - timezone
+      - type
+      properties:
+        every:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        startsOn:
+          type: string
+          format: date
+        resetDayOfWeek:
+          examples:
+          - MONDAY
+          type: string
+          enum:
+          - MONDAY
+          - TUESDAY
+          - WEDNESDAY
+          - THURSDAY
+          - FRIDAY
+          - SATURDAY
+          - SUNDAY
+        timezone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Weekly
+    EvaluableCondition:
+      title: EvaluableCondition
+      type: object
+      required:
+      - conditionId
+      - dataReference
+      - operator
+      - evaluable
+      - type
+      properties:
+        conditionId:
+          $ref: '#/components/schemas/ConditionId'
+        dataReference:
+          $ref: '#/components/schemas/DataReference'
+        operator:
+          $ref: '#/components/schemas/Operator'
+        evaluable:
+          $ref: '#/components/schemas/Evaluable'
+        type:
+          type: string
+          const: EvaluableCondition
+    RoutingOutcome_OwnerAssign:
+      title: RoutingOutcome_OwnerAssign
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: OwnerAssign
+    DefinedInMeetingType:
+      title: DefinedInMeetingType
+      type: object
+      required:
+      - index
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        value:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          const: DefinedInMeetingType
+    SharedWith_Teams:
+      title: SharedWith_Teams
+      type: object
+      required:
+      - type
+      properties:
+        teamIds:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        type:
+          type: string
+          const: SharedWith_Teams
+    SalesforceUser:
+      title: SalesforceUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        id:
+          type: string
+          pattern: '[^\s\\/]+'
+    GongLink:
+      title: GongLink
+      type: object
+      required:
+      - index
+      - host
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        host:
+          $ref: '#/components/schemas/MeetingLocationHost'
+        type:
+          type: string
+          const: GongLink
+    RelatedDataObject:
+      title: RelatedDataObject
+      description: 'Related object path in slash-separated string format: <relation1>/<relation2>/.../topObject.
+        The topObject is the last segment; relations precede it. Example: "Account/Lead" means Lead with
+        Account as a relation. Each segment is a SimpleDataObject (NormalDataObject, MatchedObject, CustomMatchedObjectRef,
+        or RelatedChildObjectRef).'
+      type: string
+    StaticValue:
+      title: StaticValue
+    RoutingOutcome_ContactOptions:
+      title: RoutingOutcome_ContactOptions
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: ContactOptions
+    MeetingTypeId:
+      title: MeetingTypeId
+      examples:
+      - 4a8f2b3c-7d1e-4f9b-8a2c-3d5e6f789012
+      type: string
+      format: uuid
+    Strict1:
+      title: Strict
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Strict
+    MeetingHandling:
+      title: MeetingHandling
+      oneOf:
+      - $ref: '#/components/schemas/Flexible'
+      - $ref: '#/components/schemas/Strict'
+      discriminator:
+        propertyName: type
+        mapping:
+          Flexible: '#/components/schemas/Flexible'
+          Strict: '#/components/schemas/Strict'
+    HostsDefaultPhysicalLocation:
+      title: HostsDefaultPhysicalLocation
+      type: object
+      required:
+      - index
+      - host
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        host:
+          $ref: '#/components/schemas/MeetingLocationHost'
+        type:
+          type: string
+          const: HostsDefaultPhysicalLocation
+    DistributionUserState_Capped:
+      title: DistributionUserState_Capped
+      description: User has reached their assignment cap for the current period and is temporarily excluded
+        until the cap resets.
+      type: object
+      required:
+      - userId
+      - total
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: Capped
+    Evaluable:
+      title: Evaluable
+      oneOf:
+      - $ref: '#/components/schemas/RelativeDay'
+      - $ref: '#/components/schemas/RelativeMonth'
+      - $ref: '#/components/schemas/RelativeQuarter'
+      - $ref: '#/components/schemas/RelativeWeek'
+      - $ref: '#/components/schemas/RelativeYear'
+      discriminator:
+        propertyName: type
+        mapping:
+          RelativeDay: '#/components/schemas/RelativeDay'
+          RelativeMonth: '#/components/schemas/RelativeMonth'
+          RelativeQuarter: '#/components/schemas/RelativeQuarter'
+          RelativeWeek: '#/components/schemas/RelativeWeek'
+          RelativeYear: '#/components/schemas/RelativeYear'
+    TeamRef:
+      title: TeamRef
+      type: object
+      required:
+      - id
+      - revision
+      properties:
+        id:
+          $ref: '#/components/schemas/TeamId'
+        revision:
+          type: integer
+          format: int32
+    HourlyRolling:
+      title: HourlyRolling
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: HourlyRolling
+    CrmAction:
+      title: CrmAction
+      oneOf:
+      - $ref: '#/components/schemas/CrmAction_ConvertLead'
+      - $ref: '#/components/schemas/CrmAction_Notify'
+      discriminator:
+        propertyName: type
+        mapping:
+          ConvertLead: '#/components/schemas/CrmAction_ConvertLead'
+          Notify: '#/components/schemas/CrmAction_Notify'
+    RelatedChildObjectRef:
+      title: RelatedChildObjectRef
+      type: string
+      pattern: '[a-zA-Z0-9_]+__rc'
+    LogicalOperator:
+      title: LogicalOperator
+      type: string
+      enum:
+      - and
+      - or
+    NonEmptyList_NonOwnershipConditionsRequest:
+      title: NonEmptyList_NonOwnershipConditionsRequest
+      type: array
+      minItems: 1
+      items:
+        $ref: '#/components/schemas/NonOwnershipConditionsRequest'
+    DistributionAssignmentTypeConfig:
+      title: DistributionAssignmentTypeConfig
+      oneOf:
+      - $ref: '#/components/schemas/Conversation'
+      - $ref: '#/components/schemas/Meeting'
+      - $ref: '#/components/schemas/Record'
+      discriminator:
+        propertyName: type
+        mapping:
+          Conversation: '#/components/schemas/Conversation'
+          Meeting: '#/components/schemas/Meeting'
+          Record: '#/components/schemas/Record'
+    SearchOwnershipByDTO:
+      title: SearchOwnershipByDTO
+      default: CrmIdOrEmail
+      type: string
+      enum:
+      - CrmIdOrEmail
+      - SalesforceIdOrEmail
+      - TeamMemberFullNames
+    MeetingTypeStatus:
+      title: MeetingTypeStatus
+      type: string
+      enum:
+      - Active
+      - Inactive
+    Monthly:
+      title: Monthly
+      type: object
+      required:
+      - every
+      - startsOn
+      - resetDay
+      - timezone
+      - type
+      properties:
+        every:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        startsOn:
+          type: string
+          format: date
+        resetDay:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 28
+        timezone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Monthly
+    RingCentralLink:
+      title: RingCentralLink
+      type: object
+      required:
+      - index
+      - host
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        host:
+          $ref: '#/components/schemas/MeetingLocationHost'
+        type:
+          type: string
+          const: RingCentralLink
+    RouteAssignment:
+      title: RouteAssignment
+      oneOf:
+      - $ref: '#/components/schemas/RouteAssignment_Distribution'
+      - $ref: '#/components/schemas/RouteAssignment_User'
+      discriminator:
+        propertyName: type
+        mapping:
+          Distribution: '#/components/schemas/RouteAssignment_Distribution'
+          User: '#/components/schemas/RouteAssignment_User'
+    DataReference:
+      title: DataReference
+      type: object
+      required:
+      - source
+      - object
+      - field
+      properties:
+        source:
+          $ref: '#/components/schemas/DataSource'
+        object:
+          $ref: '#/components/schemas/DataObject'
+        field:
+          $ref: '#/components/schemas/DataField'
+    RelativeQuarter:
+      title: RelativeQuarter
+      type: object
+      required:
+      - offset
+      - length
+      - type
+      properties:
+        offset:
+          type: integer
+          format: int32
+        length:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        timeZone:
+          $ref: '#/components/schemas/Option_String'
+        type:
+          type: string
+          const: RelativeQuarter
+    RouterRouting:
+      title: RouterRouting
+      type: object
+      required:
+      - catchAll
+      properties:
+        routes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RouteRow'
+        catchAll:
+          $ref: '#/components/schemas/RouteOutcome'
+    TeamsMeetingLink:
+      title: TeamsMeetingLink
+      type: object
+      required:
+      - index
+      - host
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        host:
+          $ref: '#/components/schemas/MeetingLocationHost'
+        type:
+          type: string
+          const: TeamsMeetingLink
+    ConditionGroupId:
+      title: ConditionGroupId
+      type: string
+      pattern: '[^\s\\/]+'
+    Option_ChiliProduct:
+      $ref: '#/components/schemas/ChiliProduct'
+    Daily:
+      title: Daily
+      type: object
+      required:
+      - every
+      - startsOn
+      - resetLocalTime
+      - timezone
+      - type
+      properties:
+        every:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        startsOn:
+          type: string
+          format: date
+        resetLocalTime:
+          type: string
+        timezone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Daily
+    RelativeWeek:
+      title: RelativeWeek
+      type: object
+      required:
+      - offset
+      - length
+      - type
+      properties:
+        offset:
+          type: integer
+          format: int32
+        length:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        timeZone:
+          $ref: '#/components/schemas/Option_String'
+        type:
+          type: string
+          const: RelativeWeek
+    UserLicenses:
+      title: UserLicenses
+      type: object
+      required:
+      - chiliCalOrg
+      - handoff
+      properties:
+        distro:
+          type: boolean
+        chiliCalOrg:
+          type: boolean
+        concierge:
+          type: boolean
+        conciergeLive:
+          type: boolean
+        chat:
+          type: boolean
+        handoff:
+          type: boolean
+        tier:
+          $ref: '#/components/schemas/Tier'
+    StaticValueCondition:
+      title: StaticValueCondition
+      type: object
+      required:
+      - conditionId
+      - dataReference
+      - operator
+      - value
+      - type
+      properties:
+        conditionId:
+          $ref: '#/components/schemas/ConditionId'
+        dataReference:
+          $ref: '#/components/schemas/DataReference'
+        operator:
+          $ref: '#/components/schemas/Operator'
+        value:
+          $ref: '#/components/schemas/StaticValue'
+        type:
+          type: string
+          const: StaticValueCondition
+    DataField:
+      title: DataField
+      type: string
+      pattern: '[^\s\\/]+'
+    DistributionUserState_Disabled:
+      title: DistributionUserState_Disabled
+      description: User has been explicitly disabled in this distribution (weight set to 0). Still on
+        the team but won't receive assignments until re-enabled.
+      type: object
+      required:
+      - userId
+      - total
+      - disabledAt
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        disabledAt:
+          type: string
+          format: date-time
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: Disabled
+    SharedWith:
+      title: SharedWith
+      oneOf:
+      - $ref: '#/components/schemas/SharedWith_Teams'
+      - $ref: '#/components/schemas/SharedWith_Workspace'
+      discriminator:
+        propertyName: type
+        mapping:
+          SharedWith_Teams: '#/components/schemas/SharedWith_Teams'
+          SharedWith_Workspace: '#/components/schemas/SharedWith_Workspace'
+    MeetingBookingLimitBy:
+      title: MeetingBookingLimitBy
+      type: string
+      enum:
+      - Email
+      - Domain
+    RouteOutcome_Schedule:
+      title: RouteOutcome_Schedule
+      type: object
+      required:
+      - assignment
+      - meetingTypeId
+      - type
+      properties:
+        assignment:
+          $ref: '#/components/schemas/RouteAssignment'
+        meetingTypeId:
+          $ref: '#/components/schemas/MeetingTypeId'
+        timeout:
+          $ref: '#/components/schemas/RouteTimeout'
+        crmActions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CrmAction'
+        type:
+          type: string
+          const: Schedule
+    DistributionUserState:
+      title: DistributionUserState
+      oneOf:
+      - $ref: '#/components/schemas/DistributionUserState_Active'
+      - $ref: '#/components/schemas/DistributionUserState_Capped'
+      - $ref: '#/components/schemas/DistributionUserState_Disabled'
+      - $ref: '#/components/schemas/DistributionUserState_NoLicense'
+      - $ref: '#/components/schemas/DistributionUserState_Removed'
+      discriminator:
+        propertyName: type
+        mapping:
+          Active: '#/components/schemas/DistributionUserState_Active'
+          Capped: '#/components/schemas/DistributionUserState_Capped'
+          Disabled: '#/components/schemas/DistributionUserState_Disabled'
+          NoLicense: '#/components/schemas/DistributionUserState_NoLicense'
+          Removed: '#/components/schemas/DistributionUserState_Removed'
+    MeetingLocations:
+      title: MeetingLocations
+      type: object
+      required:
+      - default
+      properties:
+        default:
+          $ref: '#/components/schemas/MeetingLocation'
+        others:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeetingLocation'
+    OwnershipReference:
+      title: OwnershipReference
+      type: object
+      required:
+      - source
+      - object
+      - field
+      properties:
+        source:
+          $ref: '#/components/schemas/DataSource'
+        object:
+          $ref: '#/components/schemas/DataObject'
+        field:
+          $ref: '#/components/schemas/DataField'
+    ValueCondition:
+      title: ValueCondition
+      type: object
+      required:
+      - conditionId
+      - lhsReference
+      - operator
+      - rhsReference
+      - type
+      properties:
+        conditionId:
+          $ref: '#/components/schemas/ConditionId'
+        lhsReference:
+          $ref: '#/components/schemas/DataReference'
+        operator:
+          $ref: '#/components/schemas/Operator'
+        rhsReference:
+          $ref: '#/components/schemas/DataReference'
+        type:
+          type: string
+          const: ValueCondition
+    ConditionId:
+      title: ConditionId
+      type: string
+      pattern: '[^\s\\/]+'
+    TimeoutRedirect:
+      title: TimeoutRedirect
+      oneOf:
+      - $ref: '#/components/schemas/TimeoutRedirect_Landing'
+      - $ref: '#/components/schemas/TimeoutRedirect_Url'
+      discriminator:
+        propertyName: type
+        mapping:
+          Landing: '#/components/schemas/TimeoutRedirect_Landing'
+          Url: '#/components/schemas/TimeoutRedirect_Url'
+    MeetingLimitReset:
+      title: MeetingLimitReset
+      oneOf:
+      - $ref: '#/components/schemas/Daily'
+      - $ref: '#/components/schemas/Monthly'
+      - $ref: '#/components/schemas/Weekly'
+      discriminator:
+        propertyName: type
+        mapping:
+          Daily: '#/components/schemas/Daily'
+          Monthly: '#/components/schemas/Monthly'
+          Weekly: '#/components/schemas/Weekly'
+    DistributedAssignmentLimit:
+      title: DistributedAssignmentLimit
+      type: object
+      required:
+      - resetPeriodicity
+      properties:
+        userCaps:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/UserLimit'
+        resetPeriodicity:
+          $ref: '#/components/schemas/DistributedAssignmentLimitReset'
+    Weekly1:
+      title: Weekly
+      type: object
+      required:
+      - timeZone
+      - dayOfWeek
+      - type
+      properties:
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        dayOfWeek:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 7
+        type:
+          type: string
+          const: Weekly
+    SingleParameterCondition:
+      title: SingleParameterCondition
+      type: object
+      required:
+      - conditionId
+      - dataReference
+      - operator
+      - type
+      properties:
+        conditionId:
+          $ref: '#/components/schemas/ConditionId'
+        dataReference:
+          $ref: '#/components/schemas/DataReference'
+        operator:
+          $ref: '#/components/schemas/SingleOperator'
+        type:
+          type: string
+          const: SingleParameterCondition
+    UserStatistics:
+      title: UserStatistics
+      type: object
+      required:
+      - assigned
+      - cancelled
+      - noShow
+      - reassignedToThis
+      - reassignedFromThis
+      properties:
+        assigned:
+          description: Number of assignments booked directly to this user in the current period.
+          type: integer
+          format: int32
+        cancelled:
+          description: Number of assignments that were later cancelled.
+          type: integer
+          format: int32
+        noShow:
+          description: Number of assignments where the invitee did not show up.
+          type: integer
+          format: int32
+        reassignedToThis:
+          description: Number of assignments that were reassigned to this user from another.
+          type: integer
+          format: int32
+        reassignedFromThis:
+          description: Number of assignments originally made to this user that were reassigned away.
+          type: integer
+          format: int32
+    DistributionUserState_Active:
+      title: DistributionUserState_Active
+      description: User is active in the distribution and eligible for assignments. Carries the user's
+        current level.
+      type: object
+      required:
+      - userId
+      - total
+      - level
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        level:
+          $ref: '#/components/schemas/Levels'
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: Active
+    TeamId:
+      title: TeamId
+      examples:
+      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
+      type: string
+      pattern: '[^\s\\/]+'
+    Strict:
+      title: Strict
+      type: object
+      required:
+      - hideAssignee
+      - type
+      properties:
+        hideAssignee:
+          type: boolean
+        type:
+          type: string
+          const: Strict
+    Daily1:
+      title: Daily
+      type: object
+      required:
+      - timeZone
+      - type
+      properties:
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Daily
+    TimeoutRedirect_Landing:
+      title: TimeoutRedirect_Landing
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Landing
+    DataObjectReference:
+      title: DataObjectReference
+      type: object
+      required:
+      - source
+      - object
+      properties:
+        source:
+          $ref: '#/components/schemas/DataSource'
+        object:
+          $ref: '#/components/schemas/DataObject'
+    MeetingLocation:
+      title: MeetingLocation
+      oneOf:
+      - $ref: '#/components/schemas/AskTheGuest'
+      - $ref: '#/components/schemas/CalendarPlatformConference'
+      - $ref: '#/components/schemas/DefinedInMeetingType'
+      - $ref: '#/components/schemas/GoToMeetingLink'
+      - $ref: '#/components/schemas/GongLink'
+      - $ref: '#/components/schemas/HostsDefaultConferenceDetails'
+      - $ref: '#/components/schemas/HostsDefaultPhysicalLocation'
+      - $ref: '#/components/schemas/RingCentralLink'
+      - $ref: '#/components/schemas/TeamsMeetingLink'
+      - $ref: '#/components/schemas/WebexLink'
+      - $ref: '#/components/schemas/ZoomOneTimeLink'
+      discriminator:
+        propertyName: type
+        mapping:
+          AskTheGuest: '#/components/schemas/AskTheGuest'
+          CalendarPlatformConference: '#/components/schemas/CalendarPlatformConference'
+          DefinedInMeetingType: '#/components/schemas/DefinedInMeetingType'
+          GoToMeetingLink: '#/components/schemas/GoToMeetingLink'
+          GongLink: '#/components/schemas/GongLink'
+          HostsDefaultConferenceDetails: '#/components/schemas/HostsDefaultConferenceDetails'
+          HostsDefaultPhysicalLocation: '#/components/schemas/HostsDefaultPhysicalLocation'
+          RingCentralLink: '#/components/schemas/RingCentralLink'
+          TeamsMeetingLink: '#/components/schemas/TeamsMeetingLink'
+          WebexLink: '#/components/schemas/WebexLink'
+          ZoomOneTimeLink: '#/components/schemas/ZoomOneTimeLink'
+    WorkingHours:
+      title: WorkingHours
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: WorkingHours
+    OwnershipConditionsRequest:
+      title: OwnershipConditionsRequest
+      oneOf:
+      - $ref: '#/components/schemas/ConditionGroup'
+      - $ref: '#/components/schemas/EvaluableCondition'
+      - $ref: '#/components/schemas/ObjectExistsCondition'
+      - $ref: '#/components/schemas/OwnershipCondition'
+      - $ref: '#/components/schemas/SingleParameterCondition'
+      - $ref: '#/components/schemas/StaticValueCondition'
+      - $ref: '#/components/schemas/ValueCondition'
+      discriminator:
+        propertyName: type
+        mapping:
+          ConditionGroup: '#/components/schemas/ConditionGroup'
+          EvaluableCondition: '#/components/schemas/EvaluableCondition'
+          ObjectExistsCondition: '#/components/schemas/ObjectExistsCondition'
+          OwnershipCondition: '#/components/schemas/OwnershipCondition'
+          SingleParameterCondition: '#/components/schemas/SingleParameterCondition'
+          StaticValueCondition: '#/components/schemas/StaticValueCondition'
+          ValueCondition: '#/components/schemas/ValueCondition'
+    RuleId:
+      title: RuleId
+      examples:
+      - 3b4c5d6e-7f8a-4b9c-9d0e-1f2a3b4c5d6e
+      type: string
+      pattern: '[^\s\\/]+'
+    Reminder:
+      title: Reminder
+      type: object
+      required:
+      - id
+      - workspaceId
+      - channel
+      - trigger
+      - name
+      - body
+      properties:
+        id:
+          type: string
+          pattern: '[^\s\\/]+'
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        channel:
+          $ref: '#/components/schemas/ReminderChannel'
+        trigger:
+          $ref: '#/components/schemas/ReminderTrigger'
+        name:
+          type: string
+        title:
+          type: string
+        body:
+          type: string
+    MeetingLimitSet:
+      title: MeetingLimitSet
+      type: object
+      required:
+      - resetPeriodicity
+      - type
+      properties:
+        userCaps:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/UserLimit'
+        resetPeriodicity:
+          $ref: '#/components/schemas/MeetingLimitReset'
+        type:
+          type: string
+          const: MeetingLimitSet
+    RouteOutcome:
+      title: RouteOutcome
+      oneOf:
+      - $ref: '#/components/schemas/RouteOutcome_Redirect'
+      - $ref: '#/components/schemas/RouteOutcome_Schedule'
+      discriminator:
+        propertyName: type
+        mapping:
+          Redirect: '#/components/schemas/RouteOutcome_Redirect'
+          Schedule: '#/components/schemas/RouteOutcome_Schedule'
+    MeetingLimitUnset:
+      title: MeetingLimitUnset
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: MeetingLimitUnset
+    ObjectExistsCondition:
+      title: ObjectExistsCondition
+      type: object
+      required:
+      - conditionId
+      - reference
+      - exists
+      - type
+      properties:
+        conditionId:
+          $ref: '#/components/schemas/ConditionId'
+        reference:
+          $ref: '#/components/schemas/DataObjectReference'
+        exists:
+          type: boolean
+        type:
+          type: string
+          const: ObjectExistsCondition
+    GoToMeetingLink:
+      title: GoToMeetingLink
+      type: object
+      required:
+      - index
+      - host
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        host:
+          $ref: '#/components/schemas/MeetingLocationHost'
+        type:
+          type: string
+          const: GoToMeetingLink
+    HostsDefaultConferenceDetails:
+      title: HostsDefaultConferenceDetails
+      type: object
+      required:
+      - index
+      - host
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        host:
+          $ref: '#/components/schemas/MeetingLocationHost'
+        type:
+          type: string
+          const: HostsDefaultConferenceDetails
+    RoutingOutcome_Schedule:
+      title: RoutingOutcome_Schedule
+      type: object
+      required:
+      - type
+      properties:
+        distributionId:
+          type: string
+          pattern: '[^\s\\/]+'
+        userId:
+          type: string
+          pattern: '[^\s\\/]+'
+        meetingTypeId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          const: Schedule
+    MeetingBuffers:
+      title: MeetingBuffers
+      type: object
+      properties:
+        before:
+          type: string
+        after:
+          type: string
+    MeetingLocationHost:
+      title: MeetingLocationHost
+      type: string
+      enum:
+      - Host
+      - AssigneeIfExists
+      - BookerIfExists
+    RouteRow:
+      title: RouteRow
+      type: object
+      required:
+      - outcome
+      properties:
+        ruleId:
+          type: string
+          pattern: '[^\s\\/]+'
+        outcome:
+          $ref: '#/components/schemas/RouteOutcome'
+    Prioritization:
+      title: Prioritization
+      type: object
+      properties:
+        queue:
+          description: Ordered list of active user IDs in the order they will receive the next assignments.
+            This is the authoritative assignment-ordering surface; level fields are informational.
+          type: array
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        onVacation:
+          description: Users currently on vacation and skipped by the queue until they return.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        reachedCap:
+          description: Users who have reached their assignment cap for the current period and are skipped
+            until the cap resets.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+    PaginatedResult_Distribution:
+      title: PaginatedResult_Distribution
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Distribution'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    Email:
+      title: Email
+      examples:
+      - john.doe@acme.com
+      type: string
+      pattern: .+@.+
+    RuleBuilderVersion:
+      title: RuleBuilderVersion
+      type: string
+      enum:
+      - ExplicitV1
+    DistributionAssignmentType:
+      title: DistributionAssignmentType
+      type: string
+      enum:
+      - Record
+      - Meeting
+      - Conversation
+    HandoffRouterUpdate:
+      title: HandoffRouterUpdate
+      type: object
+      properties:
+        name:
+          type: string
+        routing:
+          $ref: '#/components/schemas/RouterRouting'
+    Conversation:
+      title: Conversation
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Conversation
+    RouteAssignment_User:
+      title: RouteAssignment_User
+      type: object
+      required:
+      - userId
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        type:
+          type: string
+          const: User
+    ReminderTrigger:
+      title: ReminderTrigger
+      type: object
+      required:
+      - kind
+      properties:
+        kind:
+          $ref: '#/components/schemas/ReminderTriggerKind'
+        offset:
+          type: string
+    RoutingOutcome_Redirect:
+      title: RoutingOutcome_Redirect
+      type: object
+      required:
+      - type
+      properties:
+        url:
+          examples:
+          - https://example.com
+          type: string
+        type:
+          type: string
+          const: Redirect
+    PaginatedResult_RuleView:
+      title: PaginatedResult_RuleView
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleView'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    DistributedAssignmentLimitReset:
+      title: DistributedAssignmentLimitReset
+      oneOf:
+      - $ref: '#/components/schemas/Daily1'
+      - $ref: '#/components/schemas/HourlyRolling'
+      - $ref: '#/components/schemas/Monthly1'
+      - $ref: '#/components/schemas/Weekly1'
+      discriminator:
+        propertyName: type
+        mapping:
+          Daily: '#/components/schemas/Daily1'
+          HourlyRolling: '#/components/schemas/HourlyRolling'
+          Monthly: '#/components/schemas/Monthly1'
+          Weekly: '#/components/schemas/Weekly1'
+    HandoffRouterId:
+      title: HandoffRouterId
+      examples:
+      - e1f2a3b4-c5d6-4e7f-b8a9-0b1c2d3e4f5a
+      type: string
+      pattern: '[^\s\\/]+'
+    NonOwnershipRule:
+      title: NonOwnershipRule
+      type: object
+      required:
+      - id
+      - workspaceId
+      - name
+      - conditions
+      - ruleBuilderVersion
+      - metadata
+      - type
+      properties:
+        id:
+          $ref: '#/components/schemas/RuleId'
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+        conditions:
+          $ref: '#/components/schemas/NonOwnershipConditionsRequest'
+        ruleBuilderVersion:
+          $ref: '#/components/schemas/RuleBuilderVersion'
+        product:
+          $ref: '#/components/schemas/Option_ChiliProduct'
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+        type:
+          type: string
+          const: NonOwnershipRule
+    Monthly1:
+      title: Monthly
+      type: object
+      required:
+      - timeZone
+      - type
+      properties:
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Monthly
+    SharedWith_Workspace:
+      title: SharedWith_Workspace
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: SharedWith_Workspace
+    RoutingCatchAllSummary:
+      title: RoutingCatchAllSummary
+      type: object
+      required:
+      - outcome
+      properties:
+        outcome:
+          $ref: '#/components/schemas/RoutingOutcome'
+    SingleOperator:
+      title: SingleOperator
+      type: string
+      enum:
+      - notEmpty
+      - empty
+    MeetingLimit:
+      title: MeetingLimit
+      oneOf:
+      - $ref: '#/components/schemas/MeetingLimitSet'
+      - $ref: '#/components/schemas/MeetingLimitUnset'
+      discriminator:
+        propertyName: type
+        mapping:
+          MeetingLimitSet: '#/components/schemas/MeetingLimitSet'
+          MeetingLimitUnset: '#/components/schemas/MeetingLimitUnset'
+    RecordHandling:
+      title: RecordHandling
+      oneOf:
+      - $ref: '#/components/schemas/Strict1'
+      - $ref: '#/components/schemas/WorkingHours'
+      discriminator:
+        propertyName: type
+        mapping:
+          Strict: '#/components/schemas/Strict1'
+          WorkingHours: '#/components/schemas/WorkingHours'
+    ReminderTriggerKind:
+      title: ReminderTriggerKind
+      type: string
+      enum:
+      - BeforeMeeting
+      - BeforeMeetingNoResponse
+      - MeetingBooked
+      - AfterMeeting
+    HandoffRouterCreate:
+      title: HandoffRouterCreate
+      type: object
+      required:
+      - workspaceId
+      - name
+      - routing
+      properties:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+        routing:
+          $ref: '#/components/schemas/RouterRouting'
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string
+    MatchedObject:
+      title: MatchedObject
+      description: Matched/related-object reference from a matching configuration (e.g. MatchedAccount
+        = account matched via Lead-to-Account config). NOT for ordinary Salesforce objects — use NormalDataObject
+        (plain string) for those.
+      type: string
+      enum:
+      - MatchedAccount
+      - MatchedCase
+      - MatchedOpportunity
+      - RelatedLead
+      - DuplicateLead
+      - DuplicateContact
+      - MatchedLead
+      - MatchedContact
+      - PrimaryOwner
+      - MatchedCompany
+      - MatchedDeal
+      - MatchedTicket
+    MeetingBookingLimitTimeframe:
+      title: MeetingBookingLimitTimeframe
+      type: string
+      enum:
+      - Hourly
+      - Daily
+      - Weekly
+      - Monthly
+      - Yearly
+    UserLimit:
+      title: UserLimit
+      type: object
+      required:
+      - userId
+      - limit
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        limit:
+          type: integer
+          format: int32
+          minimum: 0
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
+    RoutingOutcome_CrmAction:
+      title: RoutingOutcome_CrmAction
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: CrmAction
+    Tier:
+      title: Tier
+      type: string
+      enum:
+      - RoutingAndScheduling
+      - Experiences
+      - ChiliDataPlatform

@@ -5,6 +5,12 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Added
+- **`handoff-router-configuration` skill (new, writes) + paired GPT +
+  `/configure-handoff-router` command.** CRUD for Handoff (rep-to-rep) routers via the
+  new `handoff-router-*` MCP tools (DISTRO-4550). Always-live model — no Inactive state
+  or activation step exists, so the skill leads every plan with a live-on-apply warning;
+  full-replace updates with a representability gate; Schedule outcomes require an
+  assignment (distribution or user) plus a meeting type. Closes #42.
 - **`distro-router-configuration` skill (new, writes) + paired GPT +
   `/configure-distro-router` command.** Full lifecycle for Distro lead-routing routers
   via the new `distro-router-*` MCP tools (DISTRO-4551/4581) — create (starts Inactive),

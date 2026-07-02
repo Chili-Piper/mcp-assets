@@ -74,3 +74,4 @@ Neither script touches the Claude skills in `../skills/` — they only produce/v
 | [user-offboarding](user-offboarding/) | Safely removes a departing rep with audit trail |
 | [meeting-type-management](meeting-type-management/) | Manages team meeting types and their reminders (writes) |
 | [distro-router-configuration](distro-router-configuration/) | Manages Distro lead-routing routers across their lifecycle (writes) |
+| [handoff-router-configuration](handoff-router-configuration/) | Manages Handoff rep-to-rep routing configurations (writes) |
