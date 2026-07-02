@@ -1,7 +1,8 @@
 ---
 name: routing-audit
 description: Audits all Chili Piper concierge routers for coverage gaps — unmapped lead sources, stale ownership rules, unbalanced distributions, and catch-all overflows — before they show up as lost pipeline
-version: 0.2.1
+version: 0.2.2
+api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Step 4 and preflight updated to paginate for complete log coverage on high-volume routers"
 references:
   - api-reference
   - audit-procedure
@@ -97,7 +98,9 @@ potentially stale rules. Full procedure → `references/audit-procedure.md`
 
 For each router, pull `concierge-logs` over the `log_days` window and compute total leads,
 catch-all rate (`matchedPath.route.type == "CatchAllRoute"`), and rule-match rate
-(`RuleRoute`). Full procedure + flag thresholds → `references/audit-procedure.md`
+(`RuleRoute`). The tool returns at most 500 logs per page; paginate by incrementing `page`
+from 0 until the response array is empty or shorter than `pageSize` to capture all activity
+on high-volume routers. Full procedure + flag thresholds → `references/audit-procedure.md`
 § Analyzing logs for catch-all overflow. The 30-day limit + required `routerId` →
 `references/api-reference.md` § Hard API limits.
 
@@ -118,7 +121,7 @@ Verify before writing output:
 
 - [ ] Required inputs resolved (`workspace` → `id`, or all workspaces fetched).
 - [ ] Field names taken from `references/api-reference.md`, not guessed.
-- [ ] `concierge-logs` calls each pass `workspaceId` + `routerId` and span ≤ 30 days.
+- [ ] `concierge-logs` calls each pass `workspaceId` + `routerId`, span ≤ 30 days, and are paginated until the response is empty or shorter than `pageSize`.
 - [ ] `log_days` respected (default 7, capped at 30).
 - [ ] Each catch-all checked for a real destination (flag any that route to no one).
 - [ ] Distribution imbalance derived from `statistics.assigned` vs. configured weights.
