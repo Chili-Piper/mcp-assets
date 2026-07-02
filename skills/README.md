@@ -93,6 +93,7 @@ Every skill carries a QA maturity level (tracked in [`../docs/QA.md`](../docs/QA
 | [availability-inspector](availability-inspector/SKILL.md) | Diagnoses why a rep or team has no available slots | `verified` |
 | [concierge-debugger](concierge-debugger/SKILL.md) | Traces why a specific lead didn't book | `verified` |
 | [distro-debugger](distro-debugger/SKILL.md) | Debugs why a CRM record was routed (or not) through a distribution — rule stage by rule stage | `draft` |
+| [chat-conversation-inspector](chat-conversation-inspector/SKILL.md) | Inspects Chat AI conversation logs — routing outcomes, transcripts, abandonment analysis | `draft` |
 | [org-meeting](org-meeting/SKILL.md) | Org-wide (and single-tenant) meeting volume and health snapshot | `verified` |
 | [distribution-analysis](distribution-analysis/SKILL.md) | Analyzes a round-robin distribution — meeting counts by rep, imbalance vs. weights, skew, cancellations | `verified` |
 

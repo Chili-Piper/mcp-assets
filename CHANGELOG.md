@@ -5,6 +5,12 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Added
+- **`chat-conversation-inspector` skill (new, read-only) + paired GPT + `/inspect-chats`
+  command.** Inspects Chat AI conversation logs via the new `chat-logs` MCP tool
+  (DISTRO-4429) — routing-outcome breakdowns (Routed/NotRouted/Abandoned), per-playbook
+  abandonment ranking, full Bot/Guest transcripts, and abandonment analysis. Field names
+  taken from the live Edge spec (notably: single `conversationAssigneeId`, booked
+  meetings carry no `meetingId`, 0-indexed pages, `pageSize` ≤ 50). Closes #41.
 - **`/debug-distro` slash-command wrapper** for the `distro-debugger` skill, matching the
   wrapper convention every other skill already had.
 

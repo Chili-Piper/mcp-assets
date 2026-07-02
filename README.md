@@ -36,6 +36,7 @@ Every skill is built on **[progressive disclosure](docs/methodology.md)** (Anthr
 | [availability-inspector](skills/availability-inspector/) | Diagnose why a rep or team shows no available slots | ✅ |
 | [concierge-debugger](skills/concierge-debugger/) | Trace why a specific lead didn't book | ✅ |
 | [distro-debugger](skills/distro-debugger/) | Debug why a CRM record was (or wasn't) routed through a distribution — rule stage by rule stage | ✅ |
+| [chat-conversation-inspector](skills/chat-conversation-inspector/) | Inspect Chat AI conversation logs — routing outcomes, transcripts, abandonment analysis | ✅ |
 | [org-meeting](skills/org-meeting/) | Org-wide meeting volume and health snapshot | ✅ |
 | [user-details](skills/user-details/) | Full profile for any Chili Piper user | ✅ |
 | [user-meetings](skills/user-meetings/) | Rep-level meeting volume and health metrics | ✅ |
@@ -108,6 +109,7 @@ Every skill also has a slash-command wrapper, so they all surface when you type 
 | `/check-availability` | availability-inspector |
 | `/debug-concierge` | concierge-debugger |
 | `/debug-distro` | distro-debugger |
+| `/inspect-chats` | chat-conversation-inspector |
 | `/analyze-distribution` | distribution-analysis |
 | `/analyze-no-shows` | no-show-analyzer |
 | `/org-meeting-report` | org-meeting |
