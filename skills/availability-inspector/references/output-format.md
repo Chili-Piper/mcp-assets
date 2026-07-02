@@ -14,7 +14,7 @@ fields; use "—" for unavailable data.
 | Check | Status |
 |-------|--------|
 | Scheduling license | Active (chiliCalOrg / concierge / handoff) / ⚠ None |
-| Calendar status | Not readable from user-read — check failures map below |
+| Calendar status | Not readable from user-read — confirm with rep or admin |
 
 **Availability query result**
 
@@ -36,15 +36,11 @@ fields; use "—" for unavailable data.
 | `<YYYY-MM-DD>` | Sat | 0 |
 | **Total** | | **N** |
 
-**Failures**
-
-| User | Failure reason | Plain-English meaning |
-|------|---------------|----------------------|
-| ... | | |
-
 **Diagnosis**
 
-> [One-paragraph explanation of the specific blocker]
+> [One-paragraph explanation of the specific blocker, based on user profile and the
+> common-causes checklist. Note: the API no longer returns per-user failure codes — verify
+> the exact cause in Chili Piper admin.]
 
 **Fix**
 

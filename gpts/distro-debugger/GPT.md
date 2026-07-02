@@ -1,7 +1,7 @@
 ---
 name: Distribution Debugger
 description: Debugs why a CRM record was routed (or not routed) through a Chili Piper distribution — accepts a log ID, Salesforce record ID, or contact/lead name, explains each rule stage, and recommends a targeted fix.
-version: 0.3.0
+version: 0.3.1
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Why was this lead not assigned? Log ID: abc123, Router ID: xyz456"
@@ -120,6 +120,8 @@ workspaceId: <workspace id>
 
 Match `router_id` against `distributionId` to surface the human-readable router name.
 
+**Note:** If the log shows `NotTriggered` and the router was created or modified via the Edge MCP/API after 2026-06-30, the router may be Inactive by default. Ask the admin to verify the router's activation state in the Chili Piper UI or via the Edge API before proceeding to stage analysis.
+
 ---
 
 ## Step 4 — Walk the evaluation stages
@@ -142,7 +144,9 @@ For each stage in `stages[]`:
 
 **`NotRouted`:** Matched a rule but no assignment. Check `distributionMethod`: `NoUserAvailable` = reps at capacity; `NoDistribution` = rule has no distribution configured.
 
-**`NotTriggered`:** Router flow didn't fire. Check the router trigger configuration vs. the record's source/object type.
+**`NotTriggered`:** Router flow didn't fire. Check two possible causes:
+1. **Router is Inactive** — routers created or managed via the Edge MCP/API after 2026-06-30 start as Inactive by default and do not route any records until explicitly activated. Ask the admin to verify the router's status in the Chili Piper UI or via the Edge API (`distro-router-get`). Fix: activate the router via the UI or the Edge API `distro-router-activate`.
+2. **Trigger conditions not met** — if the router is confirmed Active, check the router trigger configuration vs. the record's source, object type, or entry conditions.
 
 **`DelayInProgress` / `WorkingHours` / `SlaInProgress`:** Record is still in-flight — not a failure. Inform the human and check back later.
 

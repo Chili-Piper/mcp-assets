@@ -1,7 +1,8 @@
 ---
 name: routing-audit
 description: Audits all Chili Piper concierge routers for coverage gaps — unmapped lead sources, stale ownership rules, unbalanced distributions, and catch-all overflows — before they show up as lost pipeline
-version: 0.2.1
+version: 0.2.2
+api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Step 4 and preflight updated to paginate for complete log coverage on high-volume routers. As of DISTRO-4549 (PR #898, 2026-06-18): routing.rules[] entries and routing.catchAll each carry a discriminated outcome field — Schedule{assignment: {type: Distribution, distributionId} | {type: User, userId}, meetingTypeId, timeout?: {minutes, onTimeout: Landing|{url}}, crmActions?: [...]} or Redirect{url}. Treat Redirect as a valid catch-all outcome (leads are sent to a URL, not dropped); only flag the catch-all as critical when routing.catchAll is absent or its outcome is null/missing."
 references:
   - api-reference
   - audit-procedure
@@ -89,15 +90,19 @@ shape → `references/api-reference.md` § concierge-list-routers — router obj
 
 The ordered rules (`router.routing.rules[]`) and the catch-all (`router.routing.catchAll`,
 a separate object) are already on each router from Step 2. For richer rule detail across a
-workspace, call `rule-list`. Confirm each catch-all actually routes somewhere and detect
-potentially stale rules. Full procedure → `references/audit-procedure.md`
+workspace, call `rule-list`. Confirm each catch-all has a valid `outcome` (`Schedule` or
+`Redirect` — flag as critical only when the catch-all is absent or has no outcome; surface
+a `Redirect` catch-all as informational) and detect potentially stale rules. Full procedure
+→ `references/audit-procedure.md`
 § Inspecting rules per router and § Detecting stale rules.
 
 ### Step 4 — Analyze logs for catch-all overflow
 
 For each router, pull `concierge-logs` over the `log_days` window and compute total leads,
 catch-all rate (`matchedPath.route.type == "CatchAllRoute"`), and rule-match rate
-(`RuleRoute`). Full procedure + flag thresholds → `references/audit-procedure.md`
+(`RuleRoute`). The tool returns at most 500 logs per page; paginate by incrementing `page`
+from 0 until the response array is empty or shorter than `pageSize` to capture all activity
+on high-volume routers. Full procedure + flag thresholds → `references/audit-procedure.md`
 § Analyzing logs for catch-all overflow. The 30-day limit + required `routerId` →
 `references/api-reference.md` § Hard API limits.
 
@@ -118,9 +123,9 @@ Verify before writing output:
 
 - [ ] Required inputs resolved (`workspace` → `id`, or all workspaces fetched).
 - [ ] Field names taken from `references/api-reference.md`, not guessed.
-- [ ] `concierge-logs` calls each pass `workspaceId` + `routerId` and span ≤ 30 days.
+- [ ] `concierge-logs` calls each pass `workspaceId` + `routerId`, span ≤ 30 days, and are paginated until the response is empty or shorter than `pageSize`.
 - [ ] `log_days` respected (default 7, capped at 30).
-- [ ] Each catch-all checked for a real destination (flag any that route to no one).
+- [ ] Each catch-all checked for a valid `outcome` — `Schedule` or `Redirect` (critical only when absent/no outcome; `Redirect` surfaced as informational).
 - [ ] Distribution imbalance derived from `statistics.assigned` vs. configured weights.
 
 ## Checkpoint

@@ -15,7 +15,7 @@ tools used by this skill.
 |------|----------------|
 | `distro-log-get` | Full evaluation trace for one log entry → `status`, `record`, `assignee`, `stages[]`, `enrichment`, `assignmentDecision`, `triggeredAt`. Requires `logId` + `routerId`. |
 | `distro-logs` | Paginated log list. Query: `workspaceId` (req), `page`, `pageSize`. Body: `search`, `status`, `distributionMethod`, `userIds`, `from`, `to` |
-| `distro-list-routers` | Routers in a workspace → use to resolve `workspaceId` and router names |
+| `distro-list-routers` | Routers in a workspace → `id`, `workspaceId`, `name`, `status` per router. Use to resolve router names and check activation state before diagnosing. |
 | `distribution-list-put` | Distributions in a workspace → `distributionId`, `name`, `assignees`, `capping` |
 | `workspace-list` | All workspaces → `workspaceId`, `name` |
 | `salesforce-query` | SOQL query to resolve a record name to a Salesforce ID |
@@ -38,6 +38,22 @@ tools used by this skill.
 |------|-------|
 | `distro-logs` | `page` default `0`, `pageSize` default `10`. `workspaceId` required — searches within one workspace at a time. |
 | `distro-log-get` | Requires both `logId` and `routerId`; a missing log may be outside the retention window. |
+
+---
+
+## Router status values (`distro-list-routers`)
+
+Each router returned by `distro-list-routers` carries a `status` field. Check this in
+Step 3 before walking stages — an inactive router is the root cause of `NotTriggered`
+outcomes.
+
+| Status | Meaning |
+|--------|---------|
+| `Active` | Router is live and routing records normally |
+| `Inactive` | Router is not routing — records will not be processed. **Root cause for `NotTriggered`.** Routers created via MCP/API default to Inactive and must be explicitly activated via `distro-router-activate`. |
+| `Activating` | Activation in progress (async) — routing may be temporarily unavailable |
+| `Deactivating` | Deactivation in progress (async) |
+| `Error{message}` | Router is in a technical error state — escalate to engineering with the router ID and error message |
 
 ---
 

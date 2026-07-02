@@ -23,9 +23,12 @@ Inspect each rule:
 - **Type:** `OwnershipRule` (routes by CRM owner) or `NonOwnershipRule`
   (territory/segment/round-robin)
 - **Conditions:** what fields/values trigger this rule (`conditions`)
-- **Catch-all health:** confirm `router.routing.catchAll` actually routes somewhere (a
-  team/distribution). A catch-all that points at no one — or is disabled — drops
-  unmatched leads. Flag this as **critical**.
+- **Catch-all health:** confirm `router.routing.catchAll` has a valid `outcome`. A
+  `Schedule` outcome assigns to a distribution or user and books a meeting (valid); a
+  `Redirect` outcome sends the lead to a URL — leads are not dropped (also valid). Flag as
+  **critical** only when `routing.catchAll` is absent or its `outcome` field is
+  null/missing. Surface a `Redirect` catch-all as **informational** — it may be intentional
+  (low-intent leads sent to a content page) but worth confirming with the admin.
 
 ## Detecting stale rules
 
@@ -63,7 +66,9 @@ Calculate:
 **Flag thresholds:**
 
 - Catch-all rate **> 20%**: routing rules may not cover important lead profiles
-- Catch-all routes to no one / disabled: leads are being dropped — **critical**
+- Catch-all absent or no valid `outcome`: leads are being dropped — **critical**
+- Catch-all with a `Redirect` outcome: leads sent to a URL, not booked — **informational**
+  (confirm it's intentional)
 
 ## Checking distribution balance
 

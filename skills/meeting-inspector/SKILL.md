@@ -1,7 +1,8 @@
 ---
 name: meeting-inspector
 description: Deep-dives into a single Chili Piper meeting — booking trigger, routing path, rep assignment, and outcome — to diagnose what happened and surface a next action.
-version: 0.3.0
+version: 0.3.1
+api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Quick API table and Step 3b updated"
 references:
   - api-reference
   - routing-trace
@@ -70,7 +71,7 @@ Provide either `meeting_id` or `guest_email`. If neither is given, ask for it in
 | `meeting-get` | Single meeting by ID — full detail |
 | `meeting-list-put` | Paginated meetings by date range (max 7 days per call) |
 | `concierge-list-routers` | All routers in a workspace |
-| `concierge-logs` | Routing decisions per router (max 30-day window) |
+| `concierge-logs` | Routing decisions per router (max 30-day window; max 500 logs per page — paginate with `page: 0, 1, ...`) |
 | `workspace-list` | All workspaces |
 
 See `references/api-reference.md` for full field names, status codes, trigger types, and known gotchas.
@@ -101,6 +102,27 @@ Lead time interpretation: < 2 h (same-day), 2–24 h (next-day), 1–3 d (short)
 
 Skip if the meeting's `bookedAt` is > 30 days ago; note this in output.
 
+**3a. List all routers:**
+```
+tool: concierge-list-routers
+args:
+  workspaceId: <resolved workspace ID, or omit for all>
+```
+
+**3b. For each router, call `concierge-logs`:**
+```
+tool: concierge-logs
+args:
+  workspaceId: <routers[N].workspaceId>
+  routerId: <routers[N].router.id>
+  start: 1 day before meeting's `bookedAt`
+  end: 1 day after meeting's `bookedAt`
+  page: 0
+  pageSize: 500
+```
+
+For a narrow ±1-day window a single page is virtually always sufficient; paginate only if the response is exactly `pageSize` entries.
+
 Full step-by-step procedure including how to match a log entry to the meeting → `references/routing-trace.md` § Matching a log entry to the meeting.
 
 ### Step 4 — Detect anomalies
@@ -126,7 +148,7 @@ Verify before writing output (this skill is read-only — no mutation step):
 - [ ] Exactly one meeting is resolved (either `meeting_id` given, or a single `guest_email` match chosen).
 - [ ] Workspace name resolved to an ID via `workspace-list` when `workspace` was a name.
 - [ ] Field names taken from `references/api-reference.md`, not guessed (`meetingStatus`, `meetingId`/`id`, `dateTime.start`, `hostId`/`hostEmail`/`hostName`).
-- [ ] No `meeting-list-put` call spans more than 7 days; no `concierge-logs` call spans more than 30 days.
+- [ ] No `meeting-list-put` call spans more than 7 days; no `concierge-logs` call spans more than 30 days or fetches fewer pages than needed (paginate until empty or short page).
 - [ ] Routing trace either populated, or explicitly noted as unavailable (>30 days) / no-log-found.
 - [ ] Every anomaly row in `references/anomaly-detection.md` § Anomaly table was checked.
 
