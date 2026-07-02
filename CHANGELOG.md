@@ -2,9 +2,15 @@
 
 All notable changes to the official Chili Piper Skills are recorded here. The repo follows [Keep a Changelog](https://keepachangelog.com/); each skill also carries its own `version` in its `SKILL.md` (and matching `GPT.md`).
 
-## [Unreleased]
+## [1.3.0]
 
 ### Added
+- **`scheduling-link-management` skill (new, writes) + paired GPT +
+  `/manage-scheduling-links` command.** Lifecycle for scheduling links across all four
+  admin link types — round-robin, admin one-on-one, group, ownership — via the new
+  `scheduling-link-*` create/update/delete MCP tools (DISTRO-4548), plus cross-type
+  audits including personal links (list-only). Dry-run first; every plan quotes the
+  affected booking URL (deletes and slug changes kill it instantly). Closes #37.
 - **`concierge-router-configuration` skill (new, writes) + paired GPT +
   `/configure-concierge-router` command.** CRUD for Concierge web-form routers via the
   new `concierge-router-*` MCP tools (DISTRO-4549) — routing rows, form fields, and

@@ -14,7 +14,7 @@ This file tracks the quality of every skill in this repo so we (and clients) alw
 
 1. **Static review** — for every MCP tool the skill calls, confirm (a) the tool name exists, (b) the input params match the live schema, (c) the response field names the skill reads match a **real read-only call** (the tools' own text descriptions are unreliable — see the verification log), (d) documented limits/windows are accurate.
 2. **Read-only live run** — execute the skill against a real tenant; confirm the output format and that no step errors. Log it below.
-3. **Write skills** (`user-copy`, `user-offboarding`, `meeting-type-management`, `distro-router-configuration`, `handoff-router-configuration`, `concierge-router-configuration`) — never execute write/destructive steps for QA. Verify the write tools exist and are called correctly, and that the dry-run/approval gates are present, by static review only.
+3. **Write skills** (`user-copy`, `user-offboarding`, `meeting-type-management`, `distro-router-configuration`, `handoff-router-configuration`, `concierge-router-configuration`, `scheduling-link-management`) — never execute write/destructive steps for QA. Verify the write tools exist and are called correctly, and that the dry-run/approval gates are present, by static review only.
 4. Update the status matrix and bump the skill's `version` if behavior changed.
 
 ---
@@ -42,6 +42,7 @@ _Last updated: 2026-07-02. Backfilled the missing `distro-debugger` row (shipped
 | distro-router-configuration | 0.1.0 | ⚠️ writes | ⏳ pending | n/a | `draft` | New (issue #44) — DISTRO-4581 lifecycle encoded (Inactive create, async deactivate, Inactive-only delete); dry-run/approval gates present |
 | handoff-router-configuration | 0.1.0 | ⚠️ writes | ⏳ pending | n/a | `draft` | New (issue #42) — always-live model (no status/activate); representability gate; dry-run/approval gates present |
 | concierge-router-configuration | 0.1.0 | ⚠️ writes | ⏳ pending | n/a | `draft` | New (issue #38) — always-live model; representability gate; write complement to concierge-debugger/routing-audit |
+| scheduling-link-management | 0.1.0 | ⚠️ writes | ⏳ pending | n/a | `draft` | New (issue #37) — 18 ops / 4 link types; sharedWith object (no sharingScope); creates reject personal workspaces; dry-run/approval gates present |
 
 9 of the 11 read-only skills are `verified` (static review + a passing end-to-end read-only run against a real tenant); `distro-debugger` and `chat-conversation-inspector` are `draft` pending their first logged QA pass. The 2 write skills (`user-copy`, `user-offboarding`) are `tested` (static review complete; intentionally never executed for QA).
 

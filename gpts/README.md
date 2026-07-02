@@ -76,3 +76,4 @@ Neither script touches the Claude skills in `../skills/` — they only produce/v
 | [distro-router-configuration](distro-router-configuration/) | Manages Distro lead-routing routers across their lifecycle (writes) |
 | [handoff-router-configuration](handoff-router-configuration/) | Manages Handoff rep-to-rep routing configurations (writes) |
 | [concierge-router-configuration](concierge-router-configuration/) | Manages Concierge web-form routing configurations (writes) |
+| [scheduling-link-management](scheduling-link-management/) | Manages scheduling links across all four admin types (writes) |

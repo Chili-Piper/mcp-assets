@@ -46,6 +46,7 @@ Every skill is built on **[progressive disclosure](docs/methodology.md)** (Anthr
 | [distro-router-configuration](skills/distro-router-configuration/) | Manage Distro lead-routing routers — create, update, activate/deactivate, delete | ⚠️ writes |
 | [handoff-router-configuration](skills/handoff-router-configuration/) | Manage Handoff routers — rep-to-rep handoff routing rules and meeting types | ⚠️ writes |
 | [concierge-router-configuration](skills/concierge-router-configuration/) | Manage Concierge routers — web-form routing rules, forms, and branding | ⚠️ writes |
+| [scheduling-link-management](skills/scheduling-link-management/) | Manage scheduling links — round-robin, admin one-on-one, group, ownership | ⚠️ writes |
 
 See [`skills/README.md`](skills/README.md) for the full index with QA/maturity status, and [`gpts/README.md`](gpts/README.md) for the ChatGPT versions.
 
@@ -125,8 +126,9 @@ Every skill also has a slash-command wrapper, so they all surface when you type 
 | `/configure-distro-router` | distro-router-configuration |
 | `/configure-handoff-router` | handoff-router-configuration |
 | `/configure-concierge-router` | concierge-router-configuration |
+| `/manage-scheduling-links` | scheduling-link-management |
 
-`/copy-user`, `/offboard-user`, `/manage-meeting-types`, `/configure-distro-router`, `/configure-handoff-router`, and `/configure-concierge-router` write to Chili Piper — they default to a dry run and confirm before applying.
+`/copy-user`, `/offboard-user`, `/manage-meeting-types`, `/configure-distro-router`, `/configure-handoff-router`, `/configure-concierge-router`, and `/manage-scheduling-links` write to Chili Piper — they default to a dry run and confirm before applying.
 
 ---
 
