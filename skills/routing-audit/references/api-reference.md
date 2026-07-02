@@ -13,7 +13,7 @@ Piper MCP tools this skill uses.
 | Tool | What it returns |
 |------|----------------|
 | `workspace-list` | All workspaces → items `{id, name, nrOfUsers}`. The identifier is **`id`** (NOT `workspaceId`); pass `id` as the `workspaceId` argument to other tools. |
-| `concierge-list-routers` | Routers in a workspace → `{routers: [{router: {id, name, slug, routing: {rules: [...], catchAll: {...}}}, workspaceId}]}`. routerId is `routers[N].router.id`; the router's rules and catch-all are on `routers[N].router.routing`. |
+| `concierge-list-routers` | Routers in a workspace → `{routers: [{router: {id, name, slug, routing: {rules: [...], catchAll: {outcome: ...}}}, workspaceId}]}`. routerId is `routers[N].router.id`; rules and catch-all on `routers[N].router.routing`. Each rule row and the catch-all carry `outcome`: `{type: "Schedule", assignment: {type: "Distribution", distributionId} \| {type: "User", userId}, meetingTypeId, timeout?: {minutes, onTimeout: "Landing"\|{url}}, crmActions?: [...]}` or `{type: "Redirect", url}`. |
 | `rule-list` | Active routing rules, **workspace-scoped** (no routerId). Input `{filter: {ruleBuilderVersion: ["ExplicitV1"] (required), workspaceId?, name?, type?}, pagination}`. Returns `{results: [{id, name, type, conditions, workspaceId, metadata: {revision}}], total}`. `type` is `OwnershipRule` or `NonOwnershipRule`. |
 | `concierge-logs` | Routing decisions → `status`, `matchedPath` (object), `guestEmail`, `triggeredAt`, `assignments`, `meetingId`. `matchedPath.route.type` is `RuleRoute` or `CatchAllRoute`. 30-day max window; requires `workspaceId` + `routerId`. |
 | `distribution-list-put` | Distributions — **top-level array** (no `results` wrapper). Each item `{id, published: {distributionId, name, weights: [{userId, weight}], assignmentTypeConfig: {type, handling: {type}}, capping, teamRef: {id}}, state: {userStates: [{userId, type: "Active"\|"Capped"\|"Disabled"\|"Removed"\|"NoLicense", statistics: {assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}}]}}`. Input takes `workspaceIds` (array) + optional `name`, `assignmentType` filters. |
@@ -43,6 +43,16 @@ For each router store: `routers[N].router.id` (routerId), `routers[N].router.nam
 `routers[N].router.slug`, `routers[N].workspaceId`, and the routing config at
 `routers[N].router.routing`. The catch-all (`routing.catchAll`) is a **separate object,
 not a rule** in `routing.rules[]`.
+
+**Routing outcomes (DISTRO-4549, 2026-06-18):** each `routing.rules[]` entry and the
+catch-all carry a discriminated `outcome` field:
+
+- `{type: "Schedule", assignment: {type: "Distribution", distributionId} | {type: "User", userId}, meetingTypeId, timeout?: {minutes, onTimeout: "Landing"|{url}}, crmActions?: [...]}`
+  — assign to a distribution or user and book a meeting type.
+- `{type: "Redirect", url}` — send the lead to a URL instead of booking.
+
+Both are valid catch-all outcomes: leads are handled either way. Only a catch-all that is
+absent or has a null/missing `outcome` drops leads.
 
 ## rule-list — rule detail fields
 

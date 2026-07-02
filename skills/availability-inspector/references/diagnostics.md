@@ -1,15 +1,15 @@
 # Availability Inspector — Diagnostics
 
-The "why no slots" cause/meaning/fix table and the multi-user interpretation rules for
-Step 3 of the availability-inspector skill.
+The "why no slots" cause/meaning/fix checklist and the multi-user interpretation rules for
+Step 4 of the availability-inspector skill.
 
-> The API returns a `failures: {userId: failure}` map but does not publish a fixed enum of
-> reason strings. Read the literal value returned and map it to the closest cause below; if
-> it doesn't match, surface the raw value.
+> `availability-slots-v2` does not return a per-user failure reason. When the results list
+> is empty, use the table below as a diagnostic checklist and verify each cause in the
+> Chili Piper admin.
 
 ---
 
-## Failure-reason causes table
+## Common-causes checklist (check manually — not returned by the API)
 
 | Likely cause | Meaning | Fix |
 |---------------|---------|-----|
@@ -24,29 +24,37 @@ Step 3 of the availability-inspector skill.
 
 ## Interpreting the result
 
-If slots are returned (non-empty list): report total availability count and earliest slot.
+If `results` is non-empty: report total availability count (`total`) and earliest slot.
 No blocker.
 
-If the slots list is empty: inspect the `failures` map. For each entry
-(`userId → failureReason`), look up the failure reason in the table above and produce a
-diagnosis + fix.
+If `results` is empty: the v2 API returns **no** `failures` map. Work through the
+common-causes checklist in order:
+
+1. **License check** (already done in Step 2): if no scheduling license, report that as the primary cause.
+2. **Calendar connection**: ask the rep or RevOps admin to confirm their Google/Outlook calendar is connected in Chili Piper Account Settings.
+3. **Working hours**: confirm working hours are set in ChiliCal and that the requested window overlaps.
+4. **Meeting limits**: verify per-distribution capping settings for this rep.
+5. **Calendar events**: look for back-to-back holds or out-of-office blocks in the rep's calendar.
 
 ## Multi-user (team) availability
 
 When multiple users were queried, a slot is only returned when ALL `required: true`
-attendees are available simultaneously. The `failures` map shows which user(s) are blocking.
+attendees are available simultaneously — so an empty team result may reflect any one member
+blocking.
 
 **Common multi-user pattern:**
 
 - Two users in the distribution
-- One has `CalendarNotConnected`
+- One has no calendar connected
 - Result: 0 slots returned, but only one user is the actual blocker
 
-Identify and surface the specific blocking user(s), not just "no slots available."
+If the team result is empty, re-query each member individually with the same window to
+identify which specific member(s) produce empty results — surface the blocking user(s), not
+just "no slots available."
 
 ## Per-day breakdown signals
 
-When slots ARE returned, bucket every entry in `startTimes` by the calendar date of its
+When slots ARE returned, bucket every entry in `results` by the calendar date of its
 `startTime` and count slots per day across the whole window (include zero-slot days so gaps
 are visible). This turns a raw "180 slots" into a pattern a human can act on:
 

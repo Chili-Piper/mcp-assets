@@ -1,7 +1,7 @@
 ---
 name: availability-inspector
 description: Checks why a rep or team is showing no available slots — diagnoses calendar connectivity, working hours, meeting limits, and distribution membership to find the specific blocker
-version: 0.1.1
+version: 0.1.2
 references:
   - api-reference
   - diagnostics
@@ -25,10 +25,8 @@ outputs:
     description: Whether slots were found, and in what quantity
   - name: per_day_breakdown
     description: Slot count per calendar day across the window (includes zero-slot days), surfacing working-hours patterns and gaps
-  - name: failures
-    description: Per-rep failure reasons if no slots found
   - name: diagnosis
-    description: Specific blocker identified with root cause
+    description: Specific blocker identified with root cause (based on user profile and empty-results pattern; v2 API no longer returns per-user failure codes)
   - name: fix
     description: Step-by-step resolution for the human
 tools_required: [chili-piper-mcp]
@@ -38,7 +36,7 @@ writes_to: "Nothing — read-only diagnostic"
 
 # Availability Inspector
 
-You are a Chili Piper calendar specialist. A rep or team is showing no available slots — your job is to call the availability API, read the `failures` map, and translate each failure reason into a plain-language diagnosis and a specific fix.
+You are a Chili Piper calendar specialist. A rep or team is showing no available slots — your job is to call the availability API, check the results, and translate any blockers into a plain-language diagnosis and a specific fix.
 
 > **Prefer live data over training.** MCP field names and tool signatures change. Load
 > `references/api-reference.md` before making MCP calls — it is the canonical field-name
@@ -80,28 +78,29 @@ args:
   userId: <resolved user ID>
 ```
 
-`user-read` does NOT return calendar status — that surfaces only in Step 3's failures map.
+`user-read` does NOT return calendar status — it is not available from this endpoint.
 Run the license check and proceed to Step 3 if the user looks valid.
 Response shape + license-check rule → `references/api-reference.md` § user-read note.
 
-### Step 3 — Call availability-slots
+### Step 3 — Call availability-slots-v2
 
-Build the request from the verified shape (object `expectedHost`, required
-`meetingTypeRef.id`, attendee `type` + `required`). To find a single rep's blocker, query
-just that rep as a `required: true` `ManuallyAssigned` attendee; for a team, a slot is only
-returned when ALL `required: true` attendees are free simultaneously, so `failures`
-pinpoints the blocker.
+Build the request from the verified shape (object `expectedHost`, attendee `type` +
+`required`; `meetingTypeRef` is **not needed in v2** — omit it). To find a single rep's
+blocker, query just that rep as a `required: true` `ManuallyAssigned` attendee; for a team,
+a slot is only returned when ALL `required: true` attendees are free simultaneously, so an
+empty result may reflect any one member blocking.
 
-- Request shape + field rules → `references/api-reference.md` § availability-slots request shape and § Critical field-name rules.
-- 1000-slot cap / 422 handling → `references/api-reference.md` § Hard API limits.
+- Request shape + field rules → `references/api-reference.md` § availability-slots-v2 request shape and § Critical field-name rules.
+- Pagination (`page` / `pageSize`, no slot cap) → `references/api-reference.md` § Pagination.
 
 ### Step 4 — Interpret the result
 
-Read `startTimes` and the `failures` map; map each failure reason to a diagnosis + fix, and
-for team queries surface the specific blocking user(s). When slots ARE returned, build the
-per-day breakdown.
+Read `results` and `total`. `availability-slots-v2` does **not** return a `failures` map —
+when `results` is empty, work through the common-causes checklist to diagnose, and for team
+queries re-query each member individually to find the blocker. When slots ARE returned,
+build the per-day breakdown.
 
-- Causes table + multi-user rules + per-day signals → `references/diagnostics.md` § Failure-reason causes table, § Multi-user (team) availability, § Per-day breakdown signals.
+- Causes checklist + multi-user rules + per-day signals → `references/diagnostics.md` § Common-causes checklist, § Multi-user (team) availability, § Per-day breakdown signals.
 
 ### Step 5 — Output
 
@@ -112,9 +111,9 @@ Exact layout → `references/output-format.md` § Template.
 Verify before writing output. Every line must be a clear pass/fail:
 
 - [ ] `user` resolved to a single user ID (Step 1 returned exactly one match, or the human confirmed).
-- [ ] Field names taken from `references/api-reference.md`, not guessed (object `expectedHost`, attendee `type` + `required`, `meetingTypeRef.id`).
-- [ ] `availability-slots` returned without a 422; if 422, the lookahead window or attendee count was reduced and the call re-run (≤ 1000 slots).
-- [ ] Each failure reason mapped from the literal value, with the raw value surfaced when it matches no known cause.
+- [ ] Field names taken from `references/api-reference.md`, not guessed (object `expectedHost`, attendee `type` + `required`; no `meetingTypeRef` in v2).
+- [ ] All pages retrieved when `total` exceeds `pageSize` (increment `page` from 0).
+- [ ] When `results` was empty, the common-causes checklist was worked through and the diagnosis notes that v2 returns no per-user failure codes.
 - [ ] Per-day breakdown included whenever slots were returned (zero-slot days present; partial days labelled).
 
 ## Checkpoint
