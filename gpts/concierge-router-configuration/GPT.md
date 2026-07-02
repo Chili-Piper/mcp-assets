@@ -1,6 +1,6 @@
 ---
 name: Concierge Router Configuration
-description: Creates, reads, updates, and deletes Chili Piper Concierge routers — the web-form routing configurations that decide which rep a form submission books with. Always-live writes with dry-run diffs, representability checks, and delete confirmation. The write complement to concierge-debugger and routing-audit.
+description: Creates, reads, updates, and deletes Chili Piper Concierge routers — the web-form routing configs that decide which rep a form submission books with. Always-live writes with dry-run diffs and representability checks; the write complement to concierge-debugger/routing-audit.
 version: 0.1.0
 platform: chatgpt-custom-gpt
 conversation_starters:
