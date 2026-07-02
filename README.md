@@ -43,6 +43,7 @@ Every skill is built on **[progressive disclosure](docs/methodology.md)** (Anthr
 | [user-copy](skills/user-copy/) | Copy a user's workspace/team memberships to another user | ⚠️ writes |
 | [user-offboarding](skills/user-offboarding/) | Safely remove a departing rep, with an audit trail | ⚠️ writes |
 | [meeting-type-management](skills/meeting-type-management/) | Manage team meeting types and their reminders — durations, invite text, booking limits | ⚠️ writes |
+| [distro-router-configuration](skills/distro-router-configuration/) | Manage Distro lead-routing routers — create, update, activate/deactivate, delete | ⚠️ writes |
 
 See [`skills/README.md`](skills/README.md) for the full index with QA/maturity status, and [`gpts/README.md`](gpts/README.md) for the ChatGPT versions.
 
@@ -119,8 +120,9 @@ Every skill also has a slash-command wrapper, so they all surface when you type 
 | `/copy-user` | user-copy |
 | `/offboard-user` | user-offboarding |
 | `/manage-meeting-types` | meeting-type-management |
+| `/configure-distro-router` | distro-router-configuration |
 
-`/copy-user`, `/offboard-user`, and `/manage-meeting-types` write to Chili Piper — they default to a dry run and confirm before applying.
+`/copy-user`, `/offboard-user`, `/manage-meeting-types`, and `/configure-distro-router` write to Chili Piper — they default to a dry run and confirm before applying.
 
 ---
 

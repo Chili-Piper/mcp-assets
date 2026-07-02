@@ -60,6 +60,9 @@ GPT_OPERATIONS = {
                                 "meeting-type-update", "meeting-type-delete", "meeting-type-attach-reminder",
                                 "meeting-type-detach-reminder", "meeting-type-reminder-list", "meeting-type-reminder-create",
                                 "meeting-type-reminder-update", "meeting-type-reminder-delete"],
+    "distro-router-configuration": ["workspace-list", "distro-list-routers", "distro-router-get", "distro-router-create",
+                                    "distro-router-update", "distro-router-delete", "distro-router-activate",
+                                    "distro-router-deactivate", "rule-list", "distribution-list-put"],
 }
 
 TITLES = {
@@ -77,6 +80,7 @@ TITLES = {
     "distro-debugger": "Chili Piper — Distribution Debugger Actions",
     "chat-conversation-inspector": "Chili Piper — Chat Conversation Inspector Actions",
     "meeting-type-management": "Chili Piper — Meeting Type Management Actions",
+    "distro-router-configuration": "Chili Piper — Distro Router Configuration Actions",
 }
 
 

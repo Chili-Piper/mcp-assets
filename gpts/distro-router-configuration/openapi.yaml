@@ -1,0 +1,3340 @@
+# Generated from the Chili Piper Edge API OpenAPI spec by
+# .github/scripts/generate_gpt_openapi.py — do not edit by hand.
+openapi: 3.1.0
+info:
+  title: Chili Piper — Distro Router Configuration Actions
+  version: 1.273.1
+  description: GPT Actions for the distro-router-configuration GPT — a subset of the Chili Piper Edge
+    API. Authenticate with a Bearer API key (Admin Center → API Keys).
+servers:
+- url: https://fire.chilipiper.com/api/fire-edge
+  description: Production
+security:
+- apiKeyAuth: []
+paths:
+  /v1/org/workspace:
+    get:
+      tags:
+      - workspace
+      summary: Read all workspaces
+      description: "[operation: workspace-list]\n\n\n\nREAD-ONLY\n\n\n\nReturns all workspaces in the\
+        \ org. Hierarchy: Tenant → Workspaces → Teams → Users.\n\n- page (opt), pageSize (opt, default\
+        \ 200)\n\n→\n\n    [{workspaceId, name, settings}]\n\nsee: workspace-list-users (members), workspace-add/remove-users\
+        \ (manage membership), meeting-list/export (filter by workspaceId), concierge-logs (filter by\
+        \ workspaceId)"
+      operationId: workspaceList
+      parameters:
+      - name: page
+        in: query
+        description: Page number. First page has index 0.
+        required: false
+        schema:
+          default: 0
+          type: integer
+          format: int64
+          minimum: 0
+        example: 0
+      - name: pageSize
+        in: query
+        description: Number of items per page. Maximum is 50
+        required: false
+        schema:
+          default: 10
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        example: 10
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResult_Workspace'
+        '400':
+          description: 'Invalid value for: query parameter page, Invalid value for: query parameter pageSize'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - workspace.read
+  /v1/org/distro/routers/list:
+    post:
+      tags:
+      - distro
+      summary: Lists all distro routers
+      description: "[operation: distro-list-routers]\n\n\n\nREAD-ONLY\n\n\n\nReturns all Distro routers\
+        \ in the org with id, name, activation status, and trigger.\n\n- no inputs\n\n→\n\n    {routers:\
+        \ [{id, name, status, trigger: {objectType, eventTypes: [{type, ...}], evaluation, delay}}]}\n\
+        \n  Note: status is the router's activation state — one of {type:\"Active\"} | {type:\"Inactive\"\
+        } | {type:\"Activating\"} | {type:\"Deactivating\"} | {type:\"Error\", message}. A router created\
+        \ via the API is Inactive until distro-router-activate is called.\n\n  Note: when an entry of\
+        \ trigger.eventTypes has type=Scheduled it carries schedulerId — that is the resourceSchedulerId\
+        \ expected by resource-scheduler-run.\n\nsee: resource-scheduler-run (run a scheduled router on\
+        \ demand using schedulerId from a Scheduled trigger), distro-router-activate / distro-router-deactivate\
+        \ (toggle a router's status)"
+      operationId: distroListRouters
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistroRoutersListResponse'
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - distro.read
+  /v1/org/distro/routers/{routerId}:
+    get:
+      tags:
+      - distro
+      summary: Get distro router
+      description: "[operation: distro-router-get]\n\n\n\nREAD-ONLY\n\n\n\nFetches a single Distro router\
+        \ by id — its identity, activation status, plus a lossy per-row summary of what its lead-routing\
+        \ does. Implemented by filtering the router list (there is no internal get-by-id endpoint).\n\n\
+        - routerId (req): the router's id (path); use distro-list-routers\n\n→\n\n    {id, workspaceId,\
+        \ name?, description?, status, routing: {known, representable, rows: [{ruleId?, outcome}], catchAll?:\
+        \ outcome, routingSteps: [routingStep]}}\n    status (one of): {type: \"Active\"} | {type: \"\
+        Inactive\"} | {type: \"Activating\"} | {type: \"Deactivating\"} | {type: \"Error\", message}\n\
+        \    outcome (one of): {type: \"Route\", distributionId?, actions: [action]} | {type: \"Unrepresentable\"\
+        , kind}\n    action (one of): {type: \"ReassignRecord\"} | {type: \"UpdateOwnership\", respectWorkingHours?,\
+        \ sendSlackNotification?, sendEmailNotification?, matchBy?} | {type: \"UpdateField\", field, value?,\
+        \ objectType?} | {type: \"UpdateFieldDynamic\", field, value: dynamicValue, objectType?} | {type:\
+        \ \"SendSlackToAssignee\"} | {type: \"SendEmailReminderToAssignee\"}\n    dynamicValue (one of):\
+        \ {type: \"RelativeDate\", unit: \"Day\"|\"Week\"|\"Month\"|\"Quarter\"|\"Year\", offset?, timeZone?}\
+        \ | {type: \"TemplateText\", text} | {type: \"VariableField\", variableId, field, relation?}\n\
+        \    routingStep (one of): {type: \"Enrichment\", id?, fieldMappings: [{variableId, field, waterfallId,\
+        \ overwriteExisting?, relation?}]} | {type: \"SpamCheck\", id?, salesforceWrite: {type: \"Off\"\
+        } | {type: \"Enabled\", scoreField?, otherFields: [{objectType, field, value?}]}} | {type: \"\
+        Unrepresentable\", kind}\n\n  Note: a Route outcome carries the distribution (who) and the CRM\
+        \ actions performed on the chosen assignee (what); it round-trips into distro-router-update. Unrepresentable\
+        \ rows use app-only features (SLAs, matchers, non-round-robin distributions, app-only actions)\
+        \ and carry a short kind, not the detail\n\n  Note: routingSteps are the pre-distribution steps\
+        \ (enrichment, spam-check) the router runs before the rows; they round-trip into distro-router-update.\
+        \ A routing step Edge cannot model reads back as {type:\"Unrepresentable\", kind}\n\n  Note: routing.representable\
+        \ is true only when the current routing is exactly what Edge's create/update would have produced\
+        \ (every row, the catch-all AND every routing step representable); when false, an update with\
+        \ a new routing is rejected (edit it in the Distro app instead)\n\n  Note: status is the router's\
+        \ activation state; a router created via the API is Inactive until distro-router-activate is called,\
+        \ and must be Inactive to be deleted\n\nsee: distro-list-routers (browse to find a routerId),\
+        \ distro-router-update (replace routing if representable), distro-router-activate / distro-router-deactivate\
+        \ (toggle status)"
+      operationId: distroRouterGet
+      parameters:
+      - name: routerId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistroRouterView'
+        '400':
+          description: 'Invalid value for: path parameter routerId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - distro.read
+    put:
+      tags:
+      - distro
+      summary: Update distro router
+      description: "[operation: distro-router-update]\n\n\n\nMUTATING — IDEMPOTENT\n\n\n\nUpdates a Distro\
+        \ router, then PUBLISHES it and PRESERVES its activation — an active router stays active (the\
+        \ new config goes live immediately), an inactive router stays inactive. Only the fields you supply\
+        \ change; omitted fields are preserved. Use distro-router-activate / distro-router-deactivate\
+        \ to change activation deliberately.\n\n- routerId (req): the router's id (path)\n\n- name (opt):\
+        \ new display name\n\n- description (opt): new description\n\n- routing (opt): when present, fully\
+        \ REPLACES the lead-routing matrix (trigger + routes + catch-all + routing steps; it is not a\
+        \ partial merge); when omitted, the current routing AND routing steps are kept. Each route/catch-all\
+        \ carries a distribution (who) AND CRM actions (what — at least one is required to publish):\n\
+        \n    {trigger: {objectType, eventTypes: [{type, ...}], evaluation?, delay?}, routes: [{ruleId,\
+        \ distributionId, actions: [action]}], catchAll: {distributionId, actions: [action]}, routingSteps?:\
+        \ [routingStep]}\n    action (one of): {type: \"ReassignRecord\"} | {type: \"UpdateOwnership\"\
+        , respectWorkingHours?, sendSlackNotification?, sendEmailNotification?, matchBy?} | {type: \"\
+        UpdateField\", field, value?, objectType?} | {type: \"UpdateFieldDynamic\", field, value: dynamicValue,\
+        \ objectType?} | {type: \"SendSlackToAssignee\"} | {type: \"SendEmailReminderToAssignee\"}\n \
+        \   dynamicValue (one of): {type: \"RelativeDate\", unit: \"Day\"|\"Week\"|\"Month\"|\"Quarter\"\
+        |\"Year\", offset?, timeZone?} | {type: \"TemplateText\", text} | {type: \"VariableField\", variableId,\
+        \ field, relation?}\n    routingStep (one of): {type: \"Enrichment\", id?, fieldMappings: [{variableId,\
+        \ field, waterfallId, overwriteExisting?, relation?}]} | {type: \"SpamCheck\", id?, salesforceWrite:\
+        \ {type: \"Off\"} | {type: \"Enabled\", scoreField?, otherFields: [{objectType, field, value?}]}}\n\
+        \n  trigger.objectType is the CRM object (Lead, Contact, Account, Opportunity, …); trigger.eventTypes\
+        \ is a non-empty list of trigger events ({type:\"NewRecord\"}, {type:\"UpdateField\", expression},\
+        \ {type:\"Signal\"}, {type:\"Scheduled\", schedulerId}). Each route row: if its rule matches,\
+        \ route via that distribution and run its actions. ruleId is required on every row; an always-match\
+        \ route is the catchAll. routes may be empty (then only the catchAll applies). No meeting type\
+        \ — Distro routes leads. trigger.evaluation (opt) is a ruleId used as the router's entry rule\
+        \ (records that fail it are not routed); trigger.delay (opt) delays evaluation — {type:\"AfterRecordEval\"\
+        |\"BeforeRecordEval\", duration}.\n\n  The distribution picks WHO; actions decide WHAT (assign\
+        \ owner, set a field, notify the assignee). At least one action per route AND on the catch-all\
+        \ is required — an actionless route fails to publish. See distro-router-create for the action\
+        \ and routing-step catalogue.\n\n  routingSteps (opt) within routing REPLACE the router's pre-distribution\
+        \ steps (enrichment, spam-check); an empty/absent list within a supplied routing CLEARS them,\
+        \ so to keep existing steps read them from distro-router-get first and send them back. Carry each\
+        \ step's id to keep it (and any variables that reference it) stable.\n\n→\n\n    {id, workspaceId,\
+        \ name?, description?, status, routing: {known, representable, rows: [{ruleId?, outcome}], catchAll?:\
+        \ outcome, routingSteps: [routingStep]}}\n\n  Note: status reflects the PRESERVED activation (an\
+        \ update never silently flips it); the returned routing is the per-row summary (same shape as\
+        \ distro-router-get) — representable rows echo back the distribution + actions and the routing\
+        \ steps, not necessarily the exact matrix object you sent\n\n⚠ full-replace: supplying routing\
+        \ replaces the ENTIRE matrix (trigger + routes + catch-all + routing steps), not a partial merge\n\
+        \n⚠ REJECTED (409) when the router's existing routing isn't representable in this simplified model\
+        \ (advanced routing built in the Distro app — app-only actions, SLAs, duplicate-matching, non-round-robin\
+        \ ownership distributions, etc.) — to avoid silently destroying it, edit those routers in the\
+        \ Distro app instead. Check routing.representable via distro-router-get first. A name/description-only\
+        \ update (no routing) always succeeds.\n\n⚠ every update publishes the router's current DRAFT\
+        \ — if the draft carries unpublished edits made in the Distro app, those go live as a side effect,\
+        \ even on a name/description-only patch; the representability guard can only inspect the published\
+        \ router, not the draft\n\n⚠ unlike create, a failed update is NOT rolled back (the router already\
+        \ existed): if the publish step fails the changes are saved on an UNPUBLISHED draft and the prior\
+        \ config stays live; if the router was active and the re-activation fails the new config is published\
+        \ but the router is left INACTIVE — a typed 422 error is returned in both cases; fix or activate\
+        \ the router in the Distro app\n\nsee: distro-router-get (check routing.representable and status\
+        \ before replacing), distro-router-activate / distro-router-deactivate (change activation), rule-list\
+        \ (find ruleIds), distribution-list (find distributionIds)"
+      operationId: distroRouterUpdate
+      parameters:
+      - name: routerId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DistroRouterUpdate'
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistroRouterView'
+        '400':
+          description: 'Invalid value for: path parameter routerId, Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - distro.modify
+    delete:
+      tags:
+      - distro
+      summary: Remove distro router
+      description: '[operation: distro-router-delete]
+
+
+
+
+        MUTATING — DESTRUCTIVE
+
+
+
+
+        Deletes a Distro router by id. The router must be INACTIVE — an active router cannot be deleted,
+        so deactivate it first (distro-router-deactivate) and wait until its status is inactive.
+
+
+        - routerId (req): the router''s id (path)
+
+
+        - force (opt): force deletion even if the router is in use
+
+
+        ⚠ REJECTED (409) when the router is still active (or mid-transition) — deactivate it first via
+        distro-router-deactivate, then delete once distro-router-get shows status inactive
+
+
+        ⚠ irreversible via API; any triggers or links pointing at this router stop working
+
+
+        see: distro-router-deactivate (deactivate before deleting), distro-list-routers or distro-router-get
+        (confirm the id and status before deleting)'
+      operationId: distroRouterDelete
+      parameters:
+      - name: routerId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      - name: force
+        in: query
+        description: 'Force deletion even if the router is referenced/in use (default: false).'
+        required: false
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: path parameter routerId, Invalid value for: query parameter
+            force'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - distro.remove
+  /v1/org/distro/routers:
+    post:
+      tags:
+      - distro
+      summary: Create distro router
+      description: "[operation: distro-router-create]\n\n\n\nMUTATING\n\n\n\nCreates a Distro router with\
+        \ a name and a lead-routing matrix, then PUBLISHES it — but leaves it INACTIVE (not yet routing).\
+        \ There is no unpublished-draft step (the publish is implicit), but activation is explicit: call\
+        \ distro-router-activate to make the router live. Distro routes CRM records (leads), so routes\
+        \ carry NO meeting type and the router needs a trigger.\n\n- workspaceId (req): the workspace\
+        \ to create the router in; must be a team workspace of this tenant (400 otherwise)\n\n- name (req):\
+        \ display name\n\n- routing (req): the lead-routing matrix — a trigger, ordered rules evaluated\
+        \ top-down, a mandatory catch-all, plus optional pre-distribution routing steps. Each route/catch-all\
+        \ carries a distribution (who) AND CRM actions (what — at least one is required to publish):\n\
+        \n    {trigger: {objectType, eventTypes: [{type, ...}], evaluation?, delay?}, routes: [{ruleId,\
+        \ distributionId, actions: [action]}], catchAll: {distributionId, actions: [action]}, routingSteps?:\
+        \ [routingStep]}\n    action (one of): {type: \"ReassignRecord\"} | {type: \"UpdateOwnership\"\
+        , respectWorkingHours?, sendSlackNotification?, sendEmailNotification?, matchBy?} | {type: \"\
+        UpdateField\", field, value?, objectType?} | {type: \"UpdateFieldDynamic\", field, value: dynamicValue,\
+        \ objectType?} | {type: \"SendSlackToAssignee\"} | {type: \"SendEmailReminderToAssignee\"}\n \
+        \   dynamicValue (one of): {type: \"RelativeDate\", unit: \"Day\"|\"Week\"|\"Month\"|\"Quarter\"\
+        |\"Year\", offset?, timeZone?} | {type: \"TemplateText\", text} | {type: \"VariableField\", variableId,\
+        \ field, relation?}\n    routingStep (one of): {type: \"Enrichment\", id?, fieldMappings: [{variableId,\
+        \ field, waterfallId, overwriteExisting?, relation?}]} | {type: \"SpamCheck\", id?, salesforceWrite:\
+        \ {type: \"Off\"} | {type: \"Enabled\", scoreField?, otherFields: [{objectType, field, value?}]}}\n\
+        \n  trigger.objectType is the CRM object (Lead, Contact, Account, Opportunity, …); trigger.eventTypes\
+        \ is a non-empty list of trigger events (e.g. {type:\"NewRecord\"}, {type:\"UpdateField\", expression},\
+        \ {type:\"Signal\"}, {type:\"Scheduled\", schedulerId}). Each route row: if its rule matches,\
+        \ route the record via that distribution and run its actions. ruleId is required on every row;\
+        \ an always-match route is the catchAll (used when no row matches). routes may be empty (then\
+        \ only the catchAll applies). No meeting type anywhere — Distro routes leads, it does not book\
+        \ meetings. trigger.evaluation (opt) is a ruleId used as the router's entry rule (records that\
+        \ fail it are not routed); trigger.delay (opt) delays evaluation — {type:\"AfterRecordEval\"|\"\
+        BeforeRecordEval\", duration}.\n\n  The distribution picks WHO gets the record; actions decide\
+        \ WHAT happens to the chosen assignee. Distro requires at least one action per route AND on the\
+        \ catch-all — an actionless route fails to publish. ReassignRecord (and UpdateOwnership, with\
+        \ optional working-hours / notification / Id-vs-Email match controls) assign the record's owner\
+        \ to the distributed user; UpdateField sets a CRM field to a static value (objectType defaults\
+        \ to the trigger object, omit value to clear it); UpdateFieldDynamic sets a field to a value resolved\
+        \ at routing time — a relative date ({type:\"RelativeDate\", unit, offset}), {!variable.Field}\
+        \ template text, or a variable-field reference; SendSlackToAssignee / SendEmailReminderToAssignee\
+        \ notify the chosen assignee.\n\n  routingSteps (opt, default empty) run before the rows: Enrichment\
+        \ writes data-waterfall output to CRM fields (its variableId / waterfallId reference the router's\
+        \ variables & configured waterfalls — passed through, not validated here); SpamCheck scores the\
+        \ record and, when Enabled, writes the score to scoreField plus any otherFields. Supply a step\
+        \ id to keep it stable; omit it to mint a fresh one.\n\n→\n\n    {id, workspaceId, name?, description?,\
+        \ status, routing: {known, representable, rows: [{ruleId?, outcome}], catchAll?: outcome, routingSteps:\
+        \ [routingStep]}}\n\n  Note: the created router's status is Inactive — it does NOT route records\
+        \ until you call distro-router-activate. The returned routing is the per-row summary (same shape\
+        \ as distro-router-get) — representable rows echo back the distribution + actions, and routingSteps\
+        \ echo back, not necessarily the exact matrix object you sent\n\n⚠ create is all-or-nothing: if\
+        \ any step (configure or publish — e.g. an invalid routing matrix) fails, the partially-created\
+        \ router is rolled back (force-deleted) and a typed 422 error is returned — nothing is left behind,\
+        \ so resolve the cause and retry\n\nsee: distro-router-activate (make the new router live), workspace-list\
+        \ (find a workspaceId), rule-list (find ruleIds), distribution-list (find distributionIds), distro-router-update\
+        \ (replace config afterwards)"
+      operationId: distroRouterCreate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DistroRouterCreate'
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistroRouterView'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - distro.create
+  /v1/org/distro/routers/{routerId}/activate:
+    post:
+      tags:
+      - distro
+      summary: Activate distro router
+      description: "[operation: distro-router-activate]\n\n\n\nMUTATING — IDEMPOTENT\n\n\n\nActivates\
+        \ a Distro router (status inactive → active), making it live so it routes records. A router created\
+        \ via distro-router-create is published but INACTIVE; this is how you turn it on. Idempotent —\
+        \ activating an already-active router is a no-op.\n\n- routerId (req): the router's id (path)\n\
+        \n→\n\n    {id, workspaceId, name?, description?, status, routing: {known, representable, rows,\
+        \ catchAll?, routingSteps}}\n\n  Note: status is one of {type:\"Active\"} | {type:\"Inactive\"\
+        } | {type:\"Activating\"} | {type:\"Deactivating\"} | {type:\"Error\", message}; activation completes\
+        \ asynchronously, so status may read Activating until the backend settles it to Active\n\n⚠ activation\
+        \ is REJECTED (422) if the backend validation fails (e.g. the trigger object type is not enabled\
+        \ for the workspace) — the router stays inactive; fix the cause and retry\n\nsee: distro-router-create\
+        \ (creates a router inactive), distro-router-deactivate (turn it off), distro-router-get (check\
+        \ status)"
+      operationId: distroRouterActivate
+      parameters:
+      - name: routerId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistroRouterView'
+        '400':
+          description: 'Invalid value for: path parameter routerId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - distro.modify
+  /v1/org/distro/routers/{routerId}/deactivate:
+    post:
+      tags:
+      - distro
+      summary: Deactivate distro router
+      description: "[operation: distro-router-deactivate]\n\n\n\nMUTATING — IDEMPOTENT\n\n\n\nDeactivates\
+        \ a Distro router (status active → inactive) so it stops routing records. Deactivation is also\
+        \ the prerequisite for deletion — an active router cannot be deleted, so deactivate it first.\
+        \ Idempotent — deactivating an already-inactive router is a no-op.\n\n- routerId (req): the router's\
+        \ id (path)\n\n- force (opt, default false): deactivate even if the router's revision is stale\n\
+        \n→\n\n    {id, workspaceId, name?, description?, status, routing: {known, representable, rows,\
+        \ catchAll?, routingSteps}}\n\n  Note: deactivation completes asynchronously, so status typically\
+        \ reads {type:\"Deactivating\"} on return and settles to {type:\"Inactive\"} shortly after — poll\
+        \ distro-router-get until Inactive before calling distro-router-delete\n\nsee: distro-router-activate\
+        \ (turn it back on), distro-router-delete (delete once inactive), distro-router-get (check status)"
+      operationId: distroRouterDeactivate
+      parameters:
+      - name: routerId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      - name: force
+        in: query
+        description: 'Force deactivation even if the router''s revision is stale (default: false).'
+        required: false
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistroRouterView'
+        '400':
+          description: 'Invalid value for: path parameter routerId, Invalid value for: query parameter
+            force'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - distro.modify
+  /v1/org/rule/list:
+    get:
+      tags:
+      - rule
+      summary: List rules
+      description: "[operation: rule-list]\n\n\n\nREAD-ONLY\n\n\n\nReturns active routing rules (ExplicitV1\
+        \ builder only; legacy excluded).\n\n- page (opt): 0-indexed page number, default 0\n\n- pageSize\
+        \ (opt): rules per page, default 200\n\n- workspaceId (opt): filter to rules in a specific workspace\n\
+        \n- name (opt): filter rules by name\n\n→\n\n    {results: [{type, id, workspaceId, name, conditions,\
+        \ ruleBuilderVersion, product?, metadata: {revision, ...}, teamId?}], total, page, pageSize}\n\
+        \n⚠ always call immediately before rule-modify/rule-delete to get a fresh revision — stale revision\
+        \ causes conflict error\n\nsee: rule-get (fetch single rule by id), rule-modify (update rule),\
+        \ rule-delete (remove rule)"
+      operationId: ruleList
+      parameters:
+      - name: page
+        in: query
+        description: Page number. First page has index 0.
+        required: false
+        schema:
+          default: 0
+          type: integer
+          format: int64
+          minimum: 0
+      - name: pageSize
+        in: query
+        description: Number of items per page.
+        required: false
+        schema:
+          default: 200
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+      - name: workspaceId
+        in: query
+        description: Filter rules by workspace ID.
+        required: false
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      - name: name
+        in: query
+        description: Filter rules by name.
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResult_RuleView'
+        '400':
+          description: 'Invalid value for: query parameter page, Invalid value for: query parameter pageSize,
+            Invalid value for: query parameter workspaceId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - rule.read
+  /v2/org/distribution/list:
+    put:
+      tags:
+      - distribution
+      summary: List all distributions (PUT)
+      description: "[operation: distribution-list-put]\n\n\n\nREAD-ONLY\n\n\n\nReturns all published distributions\
+        \ in the org. Accepts filter params in request body to avoid query-string length limits.\n\n-\
+        \ body.workspaceIds (opt): filter by workspace\n\n- body.name (opt): filter by distribution name\
+        \ (substring match)\n\n- body.assignmentType (opt): filter by assignment type; \"Record\" | \"\
+        Meeting\" | \"Conversation\"\n\n- body.page (opt), body.pageSize (opt, default 200)\n\n→\n\n \
+        \   {results: [{distributionId, name, teamId, assignees, assignmentTypeConfig, capping}]}\n\n\
+        see: distribution-list (GET equivalent)"
+      operationId: distributionListPut
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ListRequest'
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResult_Distribution'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - distribution.read
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      description: 'API key in Authorization header. Format: ''Authorization: Bearer <api-key>'' — the
+        word ''Bearer'' followed by a space and the key is required. Sending the key without the Bearer
+        prefix returns 401.'
+      name: Authorization
+      in: header
+  schemas:
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
+    RuleBuilderVersion:
+      title: RuleBuilderVersion
+      type: string
+      enum:
+      - ExplicitV1
+    Evaluable:
+      title: Evaluable
+      oneOf:
+      - $ref: '#/components/schemas/RelativeDay'
+      - $ref: '#/components/schemas/RelativeMonth'
+      - $ref: '#/components/schemas/RelativeQuarter'
+      - $ref: '#/components/schemas/RelativeWeek'
+      - $ref: '#/components/schemas/RelativeYear'
+      discriminator:
+        propertyName: type
+        mapping:
+          RelativeDay: '#/components/schemas/RelativeDay'
+          RelativeMonth: '#/components/schemas/RelativeMonth'
+          RelativeQuarter: '#/components/schemas/RelativeQuarter'
+          RelativeWeek: '#/components/schemas/RelativeWeek'
+          RelativeYear: '#/components/schemas/RelativeYear'
+    DistributedAssignmentLimitReset:
+      title: DistributedAssignmentLimitReset
+      oneOf:
+      - $ref: '#/components/schemas/Daily1'
+      - $ref: '#/components/schemas/HourlyRolling'
+      - $ref: '#/components/schemas/Monthly1'
+      - $ref: '#/components/schemas/Weekly1'
+      discriminator:
+        propertyName: type
+        mapping:
+          Daily: '#/components/schemas/Daily1'
+          HourlyRolling: '#/components/schemas/HourlyRolling'
+          Monthly: '#/components/schemas/Monthly1'
+          Weekly: '#/components/schemas/Weekly1'
+    DistroRoutersListResponse:
+      title: DistroRoutersListResponse
+      type: object
+      properties:
+        routers:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroRouter'
+    DistroAction_UpdateFieldDynamic:
+      title: DistroAction_UpdateFieldDynamic
+      type: object
+      required:
+      - field
+      - value
+      - type
+      properties:
+        field:
+          type: string
+        value:
+          $ref: '#/components/schemas/DistroDynamicFieldValue'
+        objectType:
+          $ref: '#/components/schemas/DistroSimpleObjectType'
+        type:
+          type: string
+          const: UpdateFieldDynamic
+    DistroRouterStatus_Active:
+      title: DistroRouterStatus_Active
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Active
+    DistributionAssignmentTypeConfig:
+      title: DistributionAssignmentTypeConfig
+      oneOf:
+      - $ref: '#/components/schemas/Conversation'
+      - $ref: '#/components/schemas/Meeting'
+      - $ref: '#/components/schemas/Record'
+      discriminator:
+        propertyName: type
+        mapping:
+          Conversation: '#/components/schemas/Conversation'
+          Meeting: '#/components/schemas/Meeting'
+          Record: '#/components/schemas/Record'
+    CustomMatchedObjectRef:
+      title: CustomMatchedObjectRef
+      description: 'custom matched object ref - format: $id__$tpe
+
+
+        available types: LeadToAccountMatchingConfigType,ContactToDuplicateContactMatchingConfigType,LeadToDuplicateContactMatchingConfigType,ProspectToContactMatchingConfigType,LeadToDuplicateLeadMatchingConfigType,ContactToDuplicateLeadMatchingConfigType,ProspectToLeadMatchingConfigType,LeadToRelatedLeadMatchingConfigType,LeadToOpportunityMatchingConfigType,ContactToOpportunityMatchingConfigType,LeadToCaseMatchingConfigType,ContactToCaseMatchingConfigType,RelatedChildConfigType'
+      type: string
+    MatchedObject:
+      title: MatchedObject
+      description: Matched/related-object reference from a matching configuration (e.g. MatchedAccount
+        = account matched via Lead-to-Account config). NOT for ordinary Salesforce objects — use NormalDataObject
+        (plain string) for those.
+      type: string
+      enum:
+      - MatchedAccount
+      - MatchedCase
+      - MatchedOpportunity
+      - RelatedLead
+      - DuplicateLead
+      - DuplicateContact
+      - MatchedLead
+      - MatchedContact
+      - PrimaryOwner
+      - MatchedCompany
+      - MatchedDeal
+      - MatchedTicket
+    DistroDynamicFieldValue_VariableField:
+      title: DistroDynamicFieldValue_VariableField
+      type: object
+      required:
+      - variableId
+      - field
+      - type
+      properties:
+        variableId:
+          type: string
+        field:
+          type: string
+        relation:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DistroSimpleObjectType'
+        type:
+          type: string
+          const: VariableField
+    DistroSpamSalesforceWrite_Enabled:
+      title: DistroSpamSalesforceWrite_Enabled
+      type: object
+      required:
+      - type
+      properties:
+        scoreField:
+          type: string
+        otherFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroSpamFieldUpdate'
+        type:
+          type: string
+          const: Enabled
+    DistroSimpleObjectType:
+      title: DistroSimpleObjectType
+      oneOf:
+      - $ref: '#/components/schemas/DistroSimpleObjectType_Account'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_AccountTeamMember'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_Case'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_Contact'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_CustomObject'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_DuplicateContact'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_DuplicateLead'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_Lead'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_Opportunity'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_OpportunityTeamMember'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_Task'
+      discriminator:
+        propertyName: type
+        mapping:
+          Account: '#/components/schemas/DistroSimpleObjectType_Account'
+          AccountTeamMember: '#/components/schemas/DistroSimpleObjectType_AccountTeamMember'
+          Case: '#/components/schemas/DistroSimpleObjectType_Case'
+          Contact: '#/components/schemas/DistroSimpleObjectType_Contact'
+          CustomObject: '#/components/schemas/DistroSimpleObjectType_CustomObject'
+          DuplicateContact: '#/components/schemas/DistroSimpleObjectType_DuplicateContact'
+          DuplicateLead: '#/components/schemas/DistroSimpleObjectType_DuplicateLead'
+          Lead: '#/components/schemas/DistroSimpleObjectType_Lead'
+          Opportunity: '#/components/schemas/DistroSimpleObjectType_Opportunity'
+          OpportunityTeamMember: '#/components/schemas/DistroSimpleObjectType_OpportunityTeamMember'
+          Task: '#/components/schemas/DistroSimpleObjectType_Task'
+    DataField:
+      title: DataField
+      type: string
+      pattern: '[^\s\\/]+'
+    Strict:
+      title: Strict
+      type: object
+      required:
+      - hideAssignee
+      - type
+      properties:
+        hideAssignee:
+          type: boolean
+        type:
+          type: string
+          const: Strict
+    TeamId:
+      title: TeamId
+      examples:
+      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
+      type: string
+      pattern: '[^\s\\/]+'
+    RelativeWeek:
+      title: RelativeWeek
+      type: object
+      required:
+      - offset
+      - length
+      - type
+      properties:
+        offset:
+          type: integer
+          format: int32
+        length:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        timeZone:
+          $ref: '#/components/schemas/Option_String'
+        type:
+          type: string
+          const: RelativeWeek
+    DistroRoutingStep_SpamCheck:
+      title: DistroRoutingStep_SpamCheck
+      type: object
+      required:
+      - salesforceWrite
+      - type
+      properties:
+        id:
+          type: string
+        salesforceWrite:
+          $ref: '#/components/schemas/DistroSpamSalesforceWrite'
+        type:
+          type: string
+          const: SpamCheck
+    Flexible:
+      title: Flexible
+      type: object
+      required:
+      - reassignmentType
+      - allowPickingAssignee
+      - type
+      properties:
+        reassignmentType:
+          $ref: '#/components/schemas/ReassignmentType'
+        allowPickingAssignee:
+          type: boolean
+        type:
+          type: string
+          const: Flexible
+    MeetingHandling:
+      title: MeetingHandling
+      oneOf:
+      - $ref: '#/components/schemas/Flexible'
+      - $ref: '#/components/schemas/Strict'
+      discriminator:
+        propertyName: type
+        mapping:
+          Flexible: '#/components/schemas/Flexible'
+          Strict: '#/components/schemas/Strict'
+    DistroRoutingTrigger:
+      title: DistroRoutingTrigger
+      type: object
+      required:
+      - objectType
+      - eventTypes
+      properties:
+        objectType:
+          $ref: '#/components/schemas/DistroSimpleObjectType'
+        eventTypes:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DistroTriggerEventType'
+        evaluation:
+          type: string
+          pattern: '[^\s\\/]+'
+        delay:
+          $ref: '#/components/schemas/DistroTriggerDelay'
+    DistroFieldUpdateExpression:
+      title: DistroFieldUpdateExpression
+      oneOf:
+      - $ref: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdate'
+      - $ref: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdateAnd'
+      - $ref: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdateOr'
+      discriminator:
+        propertyName: type
+        mapping:
+          FieldUpdate: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdate'
+          FieldUpdateAnd: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdateAnd'
+          FieldUpdateOr: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdateOr'
+    DistributionUserState_Disabled:
+      title: DistributionUserState_Disabled
+      description: User has been explicitly disabled in this distribution (weight set to 0). Still on
+        the team but won't receive assignments until re-enabled.
+      type: object
+      required:
+      - userId
+      - total
+      - disabledAt
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        disabledAt:
+          type: string
+          format: date-time
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: Disabled
+    RelativeDay:
+      title: RelativeDay
+      type: object
+      required:
+      - offset
+      - length
+      - type
+      properties:
+        offset:
+          type: integer
+          format: int32
+        length:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        timeZone:
+          $ref: '#/components/schemas/Option_String'
+        type:
+          type: string
+          const: RelativeDay
+    DistroTriggerDelay_AfterRecordEval:
+      title: DistroTriggerDelay_AfterRecordEval
+      type: object
+      required:
+      - duration
+      - type
+      properties:
+        duration:
+          type: string
+        type:
+          type: string
+          const: AfterRecordEval
+    MeetingLimitUnset:
+      title: MeetingLimitUnset
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: MeetingLimitUnset
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
+    ChiliProduct:
+      title: ChiliProduct
+      type: string
+      enum:
+      - Chat
+      - ChiliCal
+      - Concierge
+      - Distro
+      - Handoff
+    RelatedChildObjectRef:
+      title: RelatedChildObjectRef
+      type: string
+      pattern: '[a-zA-Z0-9_]+__rc'
+    DistroRouting:
+      title: DistroRouting
+      type: object
+      required:
+      - trigger
+      - catchAll
+      properties:
+        trigger:
+          $ref: '#/components/schemas/DistroRoutingTrigger'
+        routes:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroRouteRow'
+        catchAll:
+          $ref: '#/components/schemas/DistroCatchAll'
+        routingSteps:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroRoutingStep'
+    Operator:
+      title: Operator
+      type: string
+      enum:
+      - <
+      - '>'
+      - <=
+      - '>='
+      - startsWithAnyOf
+      - endsWithAnyOf
+      - isAnyOf
+      - isNotAnyOf
+      - equal
+      - notEqual
+      - contains
+      - doesNotContain
+      - containsAnyOf
+      - containsNoneOf
+      - startsWith
+      - endsWith
+    DistroTriggerEventType_NewRecordOrUpdateField:
+      title: DistroTriggerEventType_NewRecordOrUpdateField
+      type: object
+      required:
+      - expression
+      - type
+      properties:
+        expression:
+          $ref: '#/components/schemas/DistroFieldUpdateExpression'
+        type:
+          type: string
+          const: NewRecordOrUpdateField
+    ConditionGroup:
+      title: ConditionGroup
+      type: object
+      required:
+      - id
+      - operator
+      - conditions
+      - type
+      properties:
+        id:
+          $ref: '#/components/schemas/ConditionGroupId'
+        name:
+          $ref: '#/components/schemas/Option_String'
+        operator:
+          $ref: '#/components/schemas/LogicalOperator'
+        conditions:
+          $ref: '#/components/schemas/NonEmptyList_OwnershipConditionsRequest'
+        type:
+          type: string
+          const: ConditionGroup
+    DistroRelativeDateUnit_Quarter:
+      title: DistroRelativeDateUnit_Quarter
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Quarter
+    DistroTriggerEventType:
+      title: DistroTriggerEventType
+      oneOf:
+      - $ref: '#/components/schemas/DistroTriggerEventType_NewRecord'
+      - $ref: '#/components/schemas/DistroTriggerEventType_NewRecordOrUpdateField'
+      - $ref: '#/components/schemas/DistroTriggerEventType_Scheduled'
+      - $ref: '#/components/schemas/DistroTriggerEventType_Signal'
+      - $ref: '#/components/schemas/DistroTriggerEventType_UpdateField'
+      discriminator:
+        propertyName: type
+        mapping:
+          NewRecord: '#/components/schemas/DistroTriggerEventType_NewRecord'
+          NewRecordOrUpdateField: '#/components/schemas/DistroTriggerEventType_NewRecordOrUpdateField'
+          Scheduled: '#/components/schemas/DistroTriggerEventType_Scheduled'
+          Signal: '#/components/schemas/DistroTriggerEventType_Signal'
+          UpdateField: '#/components/schemas/DistroTriggerEventType_UpdateField'
+    RecordHandling:
+      title: RecordHandling
+      oneOf:
+      - $ref: '#/components/schemas/Strict1'
+      - $ref: '#/components/schemas/WorkingHours'
+      discriminator:
+        propertyName: type
+        mapping:
+          Strict: '#/components/schemas/Strict1'
+          WorkingHours: '#/components/schemas/WorkingHours'
+    DistroSimpleObjectType_AccountTeamMember:
+      title: DistroSimpleObjectType_AccountTeamMember
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: AccountTeamMember
+    PaginatedResult_Distribution:
+      title: PaginatedResult_Distribution
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Distribution'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    UserLimit:
+      title: UserLimit
+      type: object
+      required:
+      - userId
+      - limit
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        limit:
+          type: integer
+          format: int32
+          minimum: 0
+    Strict1:
+      title: Strict
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Strict
+    DistroRouterStatus_Deactivating:
+      title: DistroRouterStatus_Deactivating
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Deactivating
+    DistroSimpleObjectType_Opportunity:
+      title: DistroSimpleObjectType_Opportunity
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Opportunity
+    ConditionGroup1:
+      title: ConditionGroup
+      type: object
+      required:
+      - id
+      - operator
+      - conditions
+      - type
+      properties:
+        id:
+          $ref: '#/components/schemas/ConditionGroupId'
+        name:
+          $ref: '#/components/schemas/Option_String'
+        operator:
+          $ref: '#/components/schemas/LogicalOperator'
+        conditions:
+          $ref: '#/components/schemas/NonEmptyList_NonOwnershipConditionsRequest'
+        type:
+          type: string
+          const: ConditionGroup
+    DataObject:
+      title: DataObject
+      oneOf:
+      - $ref: '#/components/schemas/CustomMatchedObjectRef'
+      - $ref: '#/components/schemas/MatchedObject'
+      - $ref: '#/components/schemas/NormalDataObject'
+      - $ref: '#/components/schemas/RelatedChildObjectRef'
+      - $ref: '#/components/schemas/RelatedDataObject'
+    RuleView:
+      title: RuleView
+      oneOf:
+      - $ref: '#/components/schemas/NonOwnershipRule'
+      - $ref: '#/components/schemas/OwnershipRule'
+      discriminator:
+        propertyName: type
+        mapping:
+          NonOwnershipRule: '#/components/schemas/NonOwnershipRule'
+          OwnershipRule: '#/components/schemas/OwnershipRule'
+    DistroRelativeDateUnit_Week:
+      title: DistroRelativeDateUnit_Week
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Week
+    RouterId:
+      title: RouterId
+      examples:
+      - c5d6e7f8-a9b0-4c1d-ae2f-3a4b5c6d7e8f
+      type: string
+      pattern: '[^\s\\/]+'
+    LogicalOperator:
+      title: LogicalOperator
+      type: string
+      enum:
+      - and
+      - or
+    TeamRef:
+      title: TeamRef
+      type: object
+      required:
+      - id
+      - revision
+      properties:
+        id:
+          $ref: '#/components/schemas/TeamId'
+        revision:
+          type: integer
+          format: int32
+    OwnershipConditionsRequest:
+      title: OwnershipConditionsRequest
+      oneOf:
+      - $ref: '#/components/schemas/ConditionGroup'
+      - $ref: '#/components/schemas/EvaluableCondition'
+      - $ref: '#/components/schemas/ObjectExistsCondition'
+      - $ref: '#/components/schemas/OwnershipCondition'
+      - $ref: '#/components/schemas/SingleParameterCondition'
+      - $ref: '#/components/schemas/StaticValueCondition'
+      - $ref: '#/components/schemas/ValueCondition'
+      discriminator:
+        propertyName: type
+        mapping:
+          ConditionGroup: '#/components/schemas/ConditionGroup'
+          EvaluableCondition: '#/components/schemas/EvaluableCondition'
+          ObjectExistsCondition: '#/components/schemas/ObjectExistsCondition'
+          OwnershipCondition: '#/components/schemas/OwnershipCondition'
+          SingleParameterCondition: '#/components/schemas/SingleParameterCondition'
+          StaticValueCondition: '#/components/schemas/StaticValueCondition'
+          ValueCondition: '#/components/schemas/ValueCondition'
+    Prioritization:
+      title: Prioritization
+      type: object
+      properties:
+        queue:
+          description: Ordered list of active user IDs in the order they will receive the next assignments.
+            This is the authoritative assignment-ordering surface; level fields are informational.
+          type: array
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        onVacation:
+          description: Users currently on vacation and skipped by the queue until they return.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        reachedCap:
+          description: Users who have reached their assignment cap for the current period and are skipped
+            until the cap resets.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+    DistroRoutingStep:
+      title: DistroRoutingStep
+      oneOf:
+      - $ref: '#/components/schemas/DistroRoutingStep_Enrichment'
+      - $ref: '#/components/schemas/DistroRoutingStep_SpamCheck'
+      - $ref: '#/components/schemas/DistroRoutingStep_Unrepresentable'
+      discriminator:
+        propertyName: type
+        mapping:
+          Enrichment: '#/components/schemas/DistroRoutingStep_Enrichment'
+          SpamCheck: '#/components/schemas/DistroRoutingStep_SpamCheck'
+          Unrepresentable: '#/components/schemas/DistroRoutingStep_Unrepresentable'
+    Daily:
+      title: Daily
+      type: object
+      required:
+      - every
+      - startsOn
+      - resetLocalTime
+      - timezone
+      - type
+      properties:
+        every:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        startsOn:
+          type: string
+          format: date
+        resetLocalTime:
+          type: string
+        timezone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Daily
+    DistroOwnershipMatch:
+      title: DistroOwnershipMatch
+      oneOf:
+      - $ref: '#/components/schemas/DistroOwnershipMatch_Email'
+      - $ref: '#/components/schemas/DistroOwnershipMatch_Id'
+      discriminator:
+        propertyName: type
+        mapping:
+          Email: '#/components/schemas/DistroOwnershipMatch_Email'
+          Id: '#/components/schemas/DistroOwnershipMatch_Id'
+    DistributionAssignmentType:
+      title: DistributionAssignmentType
+      type: string
+      enum:
+      - Record
+      - Meeting
+      - Conversation
+    RelativeYear:
+      title: RelativeYear
+      type: object
+      required:
+      - offset
+      - length
+      - type
+      properties:
+        offset:
+          type: integer
+          format: int32
+        length:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        timeZone:
+          $ref: '#/components/schemas/Option_String'
+        type:
+          type: string
+          const: RelativeYear
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+    DistroTriggerEventType_NewRecord:
+      title: DistroTriggerEventType_NewRecord
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: NewRecord
+    DistroAction_UpdateField:
+      title: DistroAction_UpdateField
+      type: object
+      required:
+      - field
+      - type
+      properties:
+        field:
+          type: string
+        value: {}
+        objectType:
+          $ref: '#/components/schemas/DistroSimpleObjectType'
+        type:
+          type: string
+          const: UpdateField
+    DistroRelativeDateUnit_Month:
+      title: DistroRelativeDateUnit_Month
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Month
+    SingleOperator:
+      title: SingleOperator
+      type: string
+      enum:
+      - notEmpty
+      - empty
+    DistroTriggerEventType_Signal:
+      title: DistroTriggerEventType_Signal
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Signal
+    ObjectExistsCondition:
+      title: ObjectExistsCondition
+      type: object
+      required:
+      - conditionId
+      - reference
+      - exists
+      - type
+      properties:
+        conditionId:
+          $ref: '#/components/schemas/ConditionId'
+        reference:
+          $ref: '#/components/schemas/DataObjectReference'
+        exists:
+          type: boolean
+        type:
+          type: string
+          const: ObjectExistsCondition
+    UserStatistics:
+      title: UserStatistics
+      type: object
+      required:
+      - assigned
+      - cancelled
+      - noShow
+      - reassignedToThis
+      - reassignedFromThis
+      properties:
+        assigned:
+          description: Number of assignments booked directly to this user in the current period.
+          type: integer
+          format: int32
+        cancelled:
+          description: Number of assignments that were later cancelled.
+          type: integer
+          format: int32
+        noShow:
+          description: Number of assignments where the invitee did not show up.
+          type: integer
+          format: int32
+        reassignedToThis:
+          description: Number of assignments that were reassigned to this user from another.
+          type: integer
+          format: int32
+        reassignedFromThis:
+          description: Number of assignments originally made to this user that were reassigned away.
+          type: integer
+          format: int32
+    DistroSimpleObjectType_Contact:
+      title: DistroSimpleObjectType_Contact
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Contact
+    DistroFieldUpdateExpression_FieldUpdate:
+      title: DistroFieldUpdateExpression_FieldUpdate
+      type: object
+      required:
+      - fieldName
+      - type
+      properties:
+        fieldName:
+          type: string
+        type:
+          type: string
+          const: FieldUpdate
+    DistroTriggerDelay:
+      title: DistroTriggerDelay
+      oneOf:
+      - $ref: '#/components/schemas/DistroTriggerDelay_AfterRecordEval'
+      - $ref: '#/components/schemas/DistroTriggerDelay_BeforeRecordEval'
+      discriminator:
+        propertyName: type
+        mapping:
+          AfterRecordEval: '#/components/schemas/DistroTriggerDelay_AfterRecordEval'
+          BeforeRecordEval: '#/components/schemas/DistroTriggerDelay_BeforeRecordEval'
+    DistroTriggerEventType_Scheduled:
+      title: DistroTriggerEventType_Scheduled
+      type: object
+      required:
+      - schedulerId
+      - type
+      properties:
+        schedulerId:
+          $ref: '#/components/schemas/ResourceSchedulerId'
+        type:
+          type: string
+          const: Scheduled
+    DistroRelativeDateUnit_Year:
+      title: DistroRelativeDateUnit_Year
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Year
+    DistroRouterStatus_Inactive:
+      title: DistroRouterStatus_Inactive
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Inactive
+    DistroFieldUpdateExpression_FieldUpdateAnd:
+      title: DistroFieldUpdateExpression_FieldUpdateAnd
+      type: object
+      required:
+      - expressions
+      - type
+      properties:
+        expressions:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DistroFieldUpdateExpression'
+        type:
+          type: string
+          const: FieldUpdateAnd
+    Option_OwnershipReference:
+      $ref: '#/components/schemas/OwnershipReference'
+    DistroFieldUpdateExpression_FieldUpdateOr:
+      title: DistroFieldUpdateExpression_FieldUpdateOr
+      type: object
+      required:
+      - expressions
+      - type
+      properties:
+        expressions:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DistroFieldUpdateExpression'
+        type:
+          type: string
+          const: FieldUpdateOr
+    DistributedAssignmentLimit:
+      title: DistributedAssignmentLimit
+      type: object
+      required:
+      - resetPeriodicity
+      properties:
+        userCaps:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/UserLimit'
+        resetPeriodicity:
+          $ref: '#/components/schemas/DistributedAssignmentLimitReset'
+    DistroSimpleObjectType_Task:
+      title: DistroSimpleObjectType_Task
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Task
+    DistroSimpleObjectType_Lead:
+      title: DistroSimpleObjectType_Lead
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Lead
+    Record:
+      title: Record
+      type: object
+      required:
+      - handling
+      - type
+      properties:
+        handling:
+          $ref: '#/components/schemas/RecordHandling'
+        type:
+          type: string
+          const: Record
+    DistroTrigger:
+      title: DistroTrigger
+      type: object
+      required:
+      - objectType
+      - eventTypes
+      properties:
+        objectType:
+          $ref: '#/components/schemas/DistroSimpleObjectType'
+        eventTypes:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DistroTriggerEventType'
+        evaluation:
+          type: string
+          pattern: '[^\s\\/]+'
+        delay:
+          $ref: '#/components/schemas/DistroTriggerDelay'
+    MeetingLimitSet:
+      title: MeetingLimitSet
+      type: object
+      required:
+      - resetPeriodicity
+      - type
+      properties:
+        userCaps:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/UserLimit'
+        resetPeriodicity:
+          $ref: '#/components/schemas/MeetingLimitReset'
+        type:
+          type: string
+          const: MeetingLimitSet
+    RelatedDataObject:
+      title: RelatedDataObject
+      description: 'Related object path in slash-separated string format: <relation1>/<relation2>/.../topObject.
+        The topObject is the last segment; relations precede it. Example: "Account/Lead" means Lead with
+        Account as a relation. Each segment is a SimpleDataObject (NormalDataObject, MatchedObject, CustomMatchedObjectRef,
+        or RelatedChildObjectRef).'
+      type: string
+    DistroRouterStatus_Error:
+      title: DistroRouterStatus_Error
+      type: object
+      required:
+      - message
+      - type
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+          const: Error
+    DistroSimpleObjectType_Account:
+      title: DistroSimpleObjectType_Account
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Account
+    DistributionId:
+      title: DistributionId
+      examples:
+      - 7f8a1b2c-3d4e-4f5a-8b9c-0d1e2f3a4b5c
+      type: string
+      pattern: '[^\s\\/]+'
+    SingleParameterCondition:
+      title: SingleParameterCondition
+      type: object
+      required:
+      - conditionId
+      - dataReference
+      - operator
+      - type
+      properties:
+        conditionId:
+          $ref: '#/components/schemas/ConditionId'
+        dataReference:
+          $ref: '#/components/schemas/DataReference'
+        operator:
+          $ref: '#/components/schemas/SingleOperator'
+        type:
+          type: string
+          const: SingleParameterCondition
+    DistroTriggerDelay_BeforeRecordEval:
+      title: DistroTriggerDelay_BeforeRecordEval
+      type: object
+      required:
+      - duration
+      - type
+      properties:
+        duration:
+          type: string
+        type:
+          type: string
+          const: BeforeRecordEval
+    DistroCatchAll:
+      title: DistroCatchAll
+      type: object
+      required:
+      - distributionId
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroAction'
+    ResourceSchedulerId:
+      title: ResourceSchedulerId
+      examples:
+      - d4e5f6a7-b8c9-4d0e-a1f2-3b4c5d6e7f8a
+      type: string
+      format: uuid
+    DistroRoutingOutcome_Unrepresentable:
+      title: DistroRoutingOutcome_Unrepresentable
+      type: object
+      required:
+      - kind
+      - type
+      properties:
+        kind:
+          type: string
+        type:
+          type: string
+          const: Unrepresentable
+    DistroRoutingSummary:
+      title: DistroRoutingSummary
+      type: object
+      required:
+      - known
+      - representable
+      properties:
+        known:
+          type: boolean
+        representable:
+          type: boolean
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroRoutingRowSummary'
+        catchAll:
+          $ref: '#/components/schemas/DistroRoutingOutcome'
+        routingSteps:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroRoutingStep'
+    DistroEnrichmentFieldMapping:
+      title: DistroEnrichmentFieldMapping
+      type: object
+      required:
+      - variableId
+      - field
+      - waterfallId
+      - overwriteExisting
+      properties:
+        variableId:
+          type: string
+        field:
+          type: string
+        waterfallId:
+          type: string
+        overwriteExisting:
+          type: boolean
+        relation:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DistroSimpleObjectType'
+    DistroOwnershipMatch_Email:
+      title: DistroOwnershipMatch_Email
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Email
+    ConfigurationDTO:
+      title: ConfigurationDTO
+      type: object
+      required:
+      - distributionId
+      - workspaceId
+      - assignmentTypeConfig
+      - teamRef
+      - metadata
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        assignmentTypeConfig:
+          $ref: '#/components/schemas/DistributionAssignmentTypeConfig'
+        teamRef:
+          $ref: '#/components/schemas/TeamRef'
+        weights:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserWeight'
+        name:
+          type: string
+        manualCalibration:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserCalibration'
+        capping:
+          $ref: '#/components/schemas/DistributedAssignmentLimit'
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+    DataSource:
+      title: DataSource
+      type: string
+      enum:
+      - SF
+      - DF
+      - CP
+      - HS
+      - MK
+    DistroRelativeDateUnit_Day:
+      title: DistroRelativeDateUnit_Day
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Day
+    HourlyRolling:
+      title: HourlyRolling
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: HourlyRolling
+    DistroRouterCreate:
+      title: DistroRouterCreate
+      type: object
+      required:
+      - workspaceId
+      - name
+      - routing
+      properties:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+        routing:
+          $ref: '#/components/schemas/DistroRouting'
+    DistroSimpleObjectType_OpportunityTeamMember:
+      title: DistroSimpleObjectType_OpportunityTeamMember
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: OpportunityTeamMember
+    DistroDynamicFieldValue:
+      title: DistroDynamicFieldValue
+      oneOf:
+      - $ref: '#/components/schemas/DistroDynamicFieldValue_RelativeDate'
+      - $ref: '#/components/schemas/DistroDynamicFieldValue_TemplateText'
+      - $ref: '#/components/schemas/DistroDynamicFieldValue_VariableField'
+      discriminator:
+        propertyName: type
+        mapping:
+          RelativeDate: '#/components/schemas/DistroDynamicFieldValue_RelativeDate'
+          TemplateText: '#/components/schemas/DistroDynamicFieldValue_TemplateText'
+          VariableField: '#/components/schemas/DistroDynamicFieldValue_VariableField'
+    OwnershipCondition:
+      title: OwnershipCondition
+      type: object
+      required:
+      - conditionId
+      - type
+      properties:
+        conditionId:
+          $ref: '#/components/schemas/ConditionId'
+        ownership:
+          $ref: '#/components/schemas/Option_OwnershipReference'
+        teamId:
+          $ref: '#/components/schemas/Option_TeamId'
+        searchOwnershipBy:
+          $ref: '#/components/schemas/SearchOwnershipByDTO'
+        type:
+          type: string
+          const: OwnershipCondition
+    Option_String:
+      title: Option_String
+      type: string
+    DistributionUserState_NoLicense:
+      title: DistributionUserState_NoLicense
+      description: User is still on the team but has lost their license, so they cannot receive assignments.
+        Re-licensing restores them.
+      type: object
+      required:
+      - userId
+      - total
+      - licenseRemovedAt
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        licenseRemovedAt:
+          type: string
+          format: date-time
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: NoLicense
+    NonEmptyList_OwnershipConditionsRequest:
+      title: NonEmptyList_OwnershipConditionsRequest
+      type: array
+      minItems: 1
+      items:
+        $ref: '#/components/schemas/OwnershipConditionsRequest'
+    Monthly:
+      title: Monthly
+      type: object
+      required:
+      - every
+      - startsOn
+      - resetDay
+      - timezone
+      - type
+      properties:
+        every:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        startsOn:
+          type: string
+          format: date
+        resetDay:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 28
+        timezone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Monthly
+    DistroRouterStatus_Activating:
+      title: DistroRouterStatus_Activating
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Activating
+    MeetingLimit:
+      title: MeetingLimit
+      oneOf:
+      - $ref: '#/components/schemas/MeetingLimitSet'
+      - $ref: '#/components/schemas/MeetingLimitUnset'
+      discriminator:
+        propertyName: type
+        mapping:
+          MeetingLimitSet: '#/components/schemas/MeetingLimitSet'
+          MeetingLimitUnset: '#/components/schemas/MeetingLimitUnset'
+    RuleId:
+      title: RuleId
+      examples:
+      - 3b4c5d6e-7f8a-4b9c-9d0e-1f2a3b4c5d6e
+      type: string
+      pattern: '[^\s\\/]+'
+    Distribution:
+      title: Distribution
+      type: object
+      required:
+      - id
+      - published
+      - state
+      - prioritization
+      properties:
+        id:
+          $ref: '#/components/schemas/DistributionId'
+        published:
+          $ref: '#/components/schemas/ConfigurationDTO'
+        state:
+          $ref: '#/components/schemas/DistributionState'
+        prioritization:
+          $ref: '#/components/schemas/Prioritization'
+    NonOwnershipConditionsRequest:
+      title: NonOwnershipConditionsRequest
+      oneOf:
+      - $ref: '#/components/schemas/ConditionGroup1'
+      - $ref: '#/components/schemas/EvaluableCondition'
+      - $ref: '#/components/schemas/ObjectExistsCondition'
+      - $ref: '#/components/schemas/SingleParameterCondition'
+      - $ref: '#/components/schemas/StaticValueCondition'
+      - $ref: '#/components/schemas/ValueCondition'
+      discriminator:
+        propertyName: type
+        mapping:
+          ConditionGroup: '#/components/schemas/ConditionGroup1'
+          EvaluableCondition: '#/components/schemas/EvaluableCondition'
+          ObjectExistsCondition: '#/components/schemas/ObjectExistsCondition'
+          SingleParameterCondition: '#/components/schemas/SingleParameterCondition'
+          StaticValueCondition: '#/components/schemas/StaticValueCondition'
+          ValueCondition: '#/components/schemas/ValueCondition'
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string
+    DistroRouterStatus:
+      title: DistroRouterStatus
+      oneOf:
+      - $ref: '#/components/schemas/DistroRouterStatus_Activating'
+      - $ref: '#/components/schemas/DistroRouterStatus_Active'
+      - $ref: '#/components/schemas/DistroRouterStatus_Deactivating'
+      - $ref: '#/components/schemas/DistroRouterStatus_Error'
+      - $ref: '#/components/schemas/DistroRouterStatus_Inactive'
+      discriminator:
+        propertyName: type
+        mapping:
+          Activating: '#/components/schemas/DistroRouterStatus_Activating'
+          Active: '#/components/schemas/DistroRouterStatus_Active'
+          Deactivating: '#/components/schemas/DistroRouterStatus_Deactivating'
+          Error: '#/components/schemas/DistroRouterStatus_Error'
+          Inactive: '#/components/schemas/DistroRouterStatus_Inactive'
+    SimpleMetadata:
+      title: SimpleMetadata
+      type: object
+      required:
+      - createdAt
+      - createdBy
+      - updatedAt
+      - updatedBy
+      - revision
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: '#/components/schemas/CallerRef'
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: '#/components/schemas/CallerRef'
+        revision:
+          type: integer
+          format: int32
+    DistroAction:
+      title: DistroAction
+      oneOf:
+      - $ref: '#/components/schemas/DistroAction_ReassignRecord'
+      - $ref: '#/components/schemas/DistroAction_SendEmailReminderToAssignee'
+      - $ref: '#/components/schemas/DistroAction_SendSlackToAssignee'
+      - $ref: '#/components/schemas/DistroAction_UpdateField'
+      - $ref: '#/components/schemas/DistroAction_UpdateFieldDynamic'
+      - $ref: '#/components/schemas/DistroAction_UpdateOwnership'
+      discriminator:
+        propertyName: type
+        mapping:
+          ReassignRecord: '#/components/schemas/DistroAction_ReassignRecord'
+          SendEmailReminderToAssignee: '#/components/schemas/DistroAction_SendEmailReminderToAssignee'
+          SendSlackToAssignee: '#/components/schemas/DistroAction_SendSlackToAssignee'
+          UpdateField: '#/components/schemas/DistroAction_UpdateField'
+          UpdateFieldDynamic: '#/components/schemas/DistroAction_UpdateFieldDynamic'
+          UpdateOwnership: '#/components/schemas/DistroAction_UpdateOwnership'
+    DistroDynamicFieldValue_RelativeDate:
+      title: DistroDynamicFieldValue_RelativeDate
+      type: object
+      required:
+      - unit
+      - offset
+      - type
+      properties:
+        unit:
+          $ref: '#/components/schemas/DistroRelativeDateUnit'
+        offset:
+          type: integer
+          format: int64
+        timeZone:
+          type: string
+        type:
+          type: string
+          const: RelativeDate
+    DistroSimpleObjectType_Case:
+      title: DistroSimpleObjectType_Case
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Case
+    DistroRouter:
+      title: DistroRouter
+      type: object
+      required:
+      - id
+      - name
+      - status
+      - trigger
+      properties:
+        id:
+          $ref: '#/components/schemas/RouterId'
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/DistroRouterStatus'
+        trigger:
+          $ref: '#/components/schemas/DistroTrigger'
+    OwnershipRule:
+      title: OwnershipRule
+      type: object
+      required:
+      - id
+      - workspaceId
+      - name
+      - conditions
+      - ruleBuilderVersion
+      - metadata
+      - type
+      properties:
+        id:
+          $ref: '#/components/schemas/RuleId'
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        teamId:
+          $ref: '#/components/schemas/Option_TeamId'
+        name:
+          type: string
+        conditions:
+          $ref: '#/components/schemas/OwnershipConditionsRequest'
+        ruleBuilderVersion:
+          $ref: '#/components/schemas/RuleBuilderVersion'
+        product:
+          $ref: '#/components/schemas/Option_ChiliProduct'
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+        type:
+          type: string
+          const: OwnershipRule
+    Meeting:
+      title: Meeting
+      type: object
+      required:
+      - handling
+      - limits
+      - type
+      properties:
+        handling:
+          $ref: '#/components/schemas/MeetingHandling'
+        limits:
+          $ref: '#/components/schemas/MeetingLimit'
+        type:
+          type: string
+          const: Meeting
+    DataReference:
+      title: DataReference
+      type: object
+      required:
+      - source
+      - object
+      - field
+      properties:
+        source:
+          $ref: '#/components/schemas/DataSource'
+        object:
+          $ref: '#/components/schemas/DataObject'
+        field:
+          $ref: '#/components/schemas/DataField'
+    DistroRoutingRowSummary:
+      title: DistroRoutingRowSummary
+      type: object
+      required:
+      - outcome
+      properties:
+        ruleId:
+          type: string
+          pattern: '[^\s\\/]+'
+        outcome:
+          $ref: '#/components/schemas/DistroRoutingOutcome'
+    Daily1:
+      title: Daily
+      type: object
+      required:
+      - timeZone
+      - type
+      properties:
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Daily
+    RelativeMonth:
+      title: RelativeMonth
+      type: object
+      required:
+      - offset
+      - length
+      - type
+      properties:
+        offset:
+          type: integer
+          format: int32
+        length:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        timeZone:
+          $ref: '#/components/schemas/Option_String'
+        type:
+          type: string
+          const: RelativeMonth
+    DistroDynamicFieldValue_TemplateText:
+      title: DistroDynamicFieldValue_TemplateText
+      type: object
+      required:
+      - text
+      - type
+      properties:
+        text:
+          type: string
+        type:
+          type: string
+          const: TemplateText
+    NonEmptyList_NonOwnershipConditionsRequest:
+      title: NonEmptyList_NonOwnershipConditionsRequest
+      type: array
+      minItems: 1
+      items:
+        $ref: '#/components/schemas/NonOwnershipConditionsRequest'
+    Weekly1:
+      title: Weekly
+      type: object
+      required:
+      - timeZone
+      - dayOfWeek
+      - type
+      properties:
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        dayOfWeek:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 7
+        type:
+          type: string
+          const: Weekly
+    DistroSimpleObjectType_DuplicateContact:
+      title: DistroSimpleObjectType_DuplicateContact
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: DuplicateContact
+    DistroSimpleObjectType_CustomObject:
+      title: DistroSimpleObjectType_CustomObject
+      type: object
+      required:
+      - value
+      - type
+      properties:
+        value:
+          type: string
+          pattern: '[^\s\\/]+'
+        type:
+          type: string
+          const: CustomObject
+    DistributionState:
+      title: DistributionState
+      type: object
+      properties:
+        userStates:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistributionUserState'
+        lastReset:
+          type: string
+          format: date-time
+    DistroTriggerEventType_UpdateField:
+      title: DistroTriggerEventType_UpdateField
+      type: object
+      required:
+      - expression
+      - type
+      properties:
+        expression:
+          $ref: '#/components/schemas/DistroFieldUpdateExpression'
+        type:
+          type: string
+          const: UpdateField
+    DistributionUserState_Active:
+      title: DistributionUserState_Active
+      description: User is active in the distribution and eligible for assignments. Carries the user's
+        current level.
+      type: object
+      required:
+      - userId
+      - total
+      - level
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        level:
+          $ref: '#/components/schemas/Levels'
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: Active
+    DistroRoutingOutcome_Route:
+      title: DistroRoutingOutcome_Route
+      type: object
+      required:
+      - type
+      properties:
+        distributionId:
+          type: string
+          pattern: '[^\s\\/]+'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroAction'
+        type:
+          type: string
+          const: Route
+    Levels:
+      title: Levels
+      type: object
+      required:
+      - current
+      - nextAssignmentDelta
+      - total
+      properties:
+        current:
+          description: Earned score plus prolonged-reservation projection, before manual calibration.
+          type: number
+        nextAssignmentDelta:
+          description: Score increment that will be added if this user receives the next assignment. Forward-looking;
+            not included in `current` or `total`.
+          type: number
+        calibrationDelta:
+          description: Manual-calibration adjustment applied on top of `current`. Absent when no calibration
+            is in effect. When present, `total = current + calibrationDelta`.
+          type: number
+        total:
+          description: Current score with manual calibration applied.
+          type: number
+    SearchOwnershipByDTO:
+      title: SearchOwnershipByDTO
+      default: CrmIdOrEmail
+      type: string
+      enum:
+      - CrmIdOrEmail
+      - SalesforceIdOrEmail
+      - TeamMemberFullNames
+    DistroAction_UpdateOwnership:
+      title: DistroAction_UpdateOwnership
+      type: object
+      required:
+      - respectWorkingHours
+      - sendSlackNotification
+      - sendEmailNotification
+      - matchBy
+      - type
+      properties:
+        respectWorkingHours:
+          type: boolean
+        sendSlackNotification:
+          type: boolean
+        sendEmailNotification:
+          type: boolean
+        matchBy:
+          $ref: '#/components/schemas/DistroOwnershipMatch'
+        type:
+          type: string
+          const: UpdateOwnership
+    DistroRoutingStep_Unrepresentable:
+      title: DistroRoutingStep_Unrepresentable
+      type: object
+      required:
+      - kind
+      - type
+      properties:
+        kind:
+          type: string
+        type:
+          type: string
+          const: Unrepresentable
+    Option_TeamId:
+      $ref: '#/components/schemas/TeamId'
+    StaticValueCondition:
+      title: StaticValueCondition
+      type: object
+      required:
+      - conditionId
+      - dataReference
+      - operator
+      - value
+      - type
+      properties:
+        conditionId:
+          $ref: '#/components/schemas/ConditionId'
+        dataReference:
+          $ref: '#/components/schemas/DataReference'
+        operator:
+          $ref: '#/components/schemas/Operator'
+        value:
+          $ref: '#/components/schemas/StaticValue'
+        type:
+          type: string
+          const: StaticValueCondition
+    Weekly:
+      title: Weekly
+      type: object
+      required:
+      - every
+      - startsOn
+      - resetDayOfWeek
+      - timezone
+      - type
+      properties:
+        every:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        startsOn:
+          type: string
+          format: date
+        resetDayOfWeek:
+          examples:
+          - MONDAY
+          type: string
+          enum:
+          - MONDAY
+          - TUESDAY
+          - WEDNESDAY
+          - THURSDAY
+          - FRIDAY
+          - SATURDAY
+          - SUNDAY
+        timezone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Weekly
+    ConditionId:
+      title: ConditionId
+      type: string
+      pattern: '[^\s\\/]+'
+    DataObjectReference:
+      title: DataObjectReference
+      type: object
+      required:
+      - source
+      - object
+      properties:
+        source:
+          $ref: '#/components/schemas/DataSource'
+        object:
+          $ref: '#/components/schemas/DataObject'
+    RelativeQuarter:
+      title: RelativeQuarter
+      type: object
+      required:
+      - offset
+      - length
+      - type
+      properties:
+        offset:
+          type: integer
+          format: int32
+        length:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        timeZone:
+          $ref: '#/components/schemas/Option_String'
+        type:
+          type: string
+          const: RelativeQuarter
+    EvaluableCondition:
+      title: EvaluableCondition
+      type: object
+      required:
+      - conditionId
+      - dataReference
+      - operator
+      - evaluable
+      - type
+      properties:
+        conditionId:
+          $ref: '#/components/schemas/ConditionId'
+        dataReference:
+          $ref: '#/components/schemas/DataReference'
+        operator:
+          $ref: '#/components/schemas/Operator'
+        evaluable:
+          $ref: '#/components/schemas/Evaluable'
+        type:
+          type: string
+          const: EvaluableCondition
+    Conversation:
+      title: Conversation
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Conversation
+    DistroRoutingStep_Enrichment:
+      title: DistroRoutingStep_Enrichment
+      type: object
+      required:
+      - type
+      properties:
+        id:
+          type: string
+        fieldMappings:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroEnrichmentFieldMapping'
+        type:
+          type: string
+          const: Enrichment
+    DistroRouterView:
+      title: DistroRouterView
+      type: object
+      required:
+      - id
+      - workspaceId
+      - status
+      - routing
+      properties:
+        id:
+          $ref: '#/components/schemas/RouterId'
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: '#/components/schemas/DistroRouterStatus'
+        routing:
+          $ref: '#/components/schemas/DistroRoutingSummary'
+    Monthly1:
+      title: Monthly
+      type: object
+      required:
+      - timeZone
+      - type
+      properties:
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Monthly
+    MeetingLimitReset:
+      title: MeetingLimitReset
+      oneOf:
+      - $ref: '#/components/schemas/Daily'
+      - $ref: '#/components/schemas/Monthly'
+      - $ref: '#/components/schemas/Weekly'
+      discriminator:
+        propertyName: type
+        mapping:
+          Daily: '#/components/schemas/Daily'
+          Monthly: '#/components/schemas/Monthly'
+          Weekly: '#/components/schemas/Weekly'
+    WorkingHours:
+      title: WorkingHours
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: WorkingHours
+    DistroAction_SendSlackToAssignee:
+      title: DistroAction_SendSlackToAssignee
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: SendSlackToAssignee
+    DistributionUserState_Capped:
+      title: DistributionUserState_Capped
+      description: User has reached their assignment cap for the current period and is temporarily excluded
+        until the cap resets.
+      type: object
+      required:
+      - userId
+      - total
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: Capped
+    NormalDataObject:
+      title: NormalDataObject
+      description: Standard CRM object name, e.g. "Account", "Contact", "Lead", "Opportunity", "Case".
+        Use for direct conditions on any Salesforce/CRM object. Do NOT use MatchedAccount/MatchedContact/etc.
+        here — those are special matching-config references.
+      type: string
+    DistroOwnershipMatch_Id:
+      title: DistroOwnershipMatch_Id
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Id
+    ConditionGroupId:
+      title: ConditionGroupId
+      type: string
+      pattern: '[^\s\\/]+'
+    DistributionUserState_Removed:
+      title: DistributionUserState_Removed
+      description: User was removed from the team entirely — historical record, no assignments will go
+        to this user.
+      type: object
+      required:
+      - userId
+      - total
+      - removedAt
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        removedAt:
+          type: string
+          format: date-time
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: Removed
+    StaticValue:
+      title: StaticValue
+    UserCalibration:
+      title: UserCalibration
+      type: object
+      required:
+      - userId
+      - calibration
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        calibration:
+          type: integer
+          format: int32
+    OwnershipReference:
+      title: OwnershipReference
+      type: object
+      required:
+      - source
+      - object
+      - field
+      properties:
+        source:
+          $ref: '#/components/schemas/DataSource'
+        object:
+          $ref: '#/components/schemas/DataObject'
+        field:
+          $ref: '#/components/schemas/DataField'
+    DistroRouterUpdate:
+      title: DistroRouterUpdate
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        routing:
+          $ref: '#/components/schemas/DistroRouting'
+    DistroAction_ReassignRecord:
+      title: DistroAction_ReassignRecord
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: ReassignRecord
+    PaginatedResult_RuleView:
+      title: PaginatedResult_RuleView
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RuleView'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    DistroSpamFieldUpdate:
+      title: DistroSpamFieldUpdate
+      type: object
+      required:
+      - objectType
+      - field
+      properties:
+        objectType:
+          $ref: '#/components/schemas/DistroSimpleObjectType'
+        field:
+          type: string
+        value: {}
+    DistroRouteRow:
+      title: DistroRouteRow
+      type: object
+      required:
+      - distributionId
+      properties:
+        ruleId:
+          type: string
+          pattern: '[^\s\\/]+'
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroAction'
+    ReassignmentType:
+      title: ReassignmentType
+      type: string
+      enum:
+      - SameUser
+      - AnyTeamMember
+    DistroSpamSalesforceWrite_Off:
+      title: DistroSpamSalesforceWrite_Off
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: 'Off'
+    DistroSpamSalesforceWrite:
+      title: DistroSpamSalesforceWrite
+      oneOf:
+      - $ref: '#/components/schemas/DistroSpamSalesforceWrite_Enabled'
+      - $ref: '#/components/schemas/DistroSpamSalesforceWrite_Off'
+      discriminator:
+        propertyName: type
+        mapping:
+          Enabled: '#/components/schemas/DistroSpamSalesforceWrite_Enabled'
+          'Off': '#/components/schemas/DistroSpamSalesforceWrite_Off'
+    Workspace:
+      title: Workspace
+      type: object
+      required:
+      - id
+      - name
+      - metadata
+      properties:
+        id:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+        emoji:
+          type: string
+        logo:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+    DistributionUserState:
+      title: DistributionUserState
+      oneOf:
+      - $ref: '#/components/schemas/DistributionUserState_Active'
+      - $ref: '#/components/schemas/DistributionUserState_Capped'
+      - $ref: '#/components/schemas/DistributionUserState_Disabled'
+      - $ref: '#/components/schemas/DistributionUserState_NoLicense'
+      - $ref: '#/components/schemas/DistributionUserState_Removed'
+      discriminator:
+        propertyName: type
+        mapping:
+          Active: '#/components/schemas/DistributionUserState_Active'
+          Capped: '#/components/schemas/DistributionUserState_Capped'
+          Disabled: '#/components/schemas/DistributionUserState_Disabled'
+          NoLicense: '#/components/schemas/DistributionUserState_NoLicense'
+          Removed: '#/components/schemas/DistributionUserState_Removed'
+    UserWeight:
+      title: UserWeight
+      type: object
+      required:
+      - userId
+      - weight
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        weight:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 10000
+    DistroSimpleObjectType_DuplicateLead:
+      title: DistroSimpleObjectType_DuplicateLead
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: DuplicateLead
+    PaginatedResult_Workspace:
+      title: PaginatedResult_Workspace
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workspace'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    ListRequest:
+      title: ListRequest
+      type: object
+      properties:
+        workspaceIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        name:
+          type: string
+        assignmentType:
+          $ref: '#/components/schemas/DistributionAssignmentType'
+    ValueCondition:
+      title: ValueCondition
+      type: object
+      required:
+      - conditionId
+      - lhsReference
+      - operator
+      - rhsReference
+      - type
+      properties:
+        conditionId:
+          $ref: '#/components/schemas/ConditionId'
+        lhsReference:
+          $ref: '#/components/schemas/DataReference'
+        operator:
+          $ref: '#/components/schemas/Operator'
+        rhsReference:
+          $ref: '#/components/schemas/DataReference'
+        type:
+          type: string
+          const: ValueCondition
+    DistroRoutingOutcome:
+      title: DistroRoutingOutcome
+      oneOf:
+      - $ref: '#/components/schemas/DistroRoutingOutcome_Route'
+      - $ref: '#/components/schemas/DistroRoutingOutcome_Unrepresentable'
+      discriminator:
+        propertyName: type
+        mapping:
+          Route: '#/components/schemas/DistroRoutingOutcome_Route'
+          Unrepresentable: '#/components/schemas/DistroRoutingOutcome_Unrepresentable'
+    NonOwnershipRule:
+      title: NonOwnershipRule
+      type: object
+      required:
+      - id
+      - workspaceId
+      - name
+      - conditions
+      - ruleBuilderVersion
+      - metadata
+      - type
+      properties:
+        id:
+          $ref: '#/components/schemas/RuleId'
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+        conditions:
+          $ref: '#/components/schemas/NonOwnershipConditionsRequest'
+        ruleBuilderVersion:
+          $ref: '#/components/schemas/RuleBuilderVersion'
+        product:
+          $ref: '#/components/schemas/Option_ChiliProduct'
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+        type:
+          type: string
+          const: NonOwnershipRule
+    Option_ChiliProduct:
+      $ref: '#/components/schemas/ChiliProduct'
+    DistroAction_SendEmailReminderToAssignee:
+      title: DistroAction_SendEmailReminderToAssignee
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: SendEmailReminderToAssignee
+    DistroRelativeDateUnit:
+      title: DistroRelativeDateUnit
+      oneOf:
+      - $ref: '#/components/schemas/DistroRelativeDateUnit_Day'
+      - $ref: '#/components/schemas/DistroRelativeDateUnit_Month'
+      - $ref: '#/components/schemas/DistroRelativeDateUnit_Quarter'
+      - $ref: '#/components/schemas/DistroRelativeDateUnit_Week'
+      - $ref: '#/components/schemas/DistroRelativeDateUnit_Year'
+      discriminator:
+        propertyName: type
+        mapping:
+          Day: '#/components/schemas/DistroRelativeDateUnit_Day'
+          Month: '#/components/schemas/DistroRelativeDateUnit_Month'
+          Quarter: '#/components/schemas/DistroRelativeDateUnit_Quarter'
+          Week: '#/components/schemas/DistroRelativeDateUnit_Week'
+          Year: '#/components/schemas/DistroRelativeDateUnit_Year'

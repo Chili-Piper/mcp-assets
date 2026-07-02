@@ -5,6 +5,12 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Added
+- **`distro-router-configuration` skill (new, writes) + paired GPT +
+  `/configure-distro-router` command.** Full lifecycle for Distro lead-routing routers
+  via the new `distro-router-*` MCP tools (DISTRO-4551/4581) — create (starts Inactive),
+  update (full-replace with representability guard), activate/deactivate (async with
+  status polling), delete (Inactive-only gate). Defaults to `dry_run: true` with a
+  mandatory checkpoint plus a separate activation confirmation. Closes #44.
 - **`meeting-type-management` skill (new, writes) + paired GPT + `/manage-meeting-types`
   command.** Full lifecycle for team meeting types and their email/SMS reminders via the
   new `meeting-type-*` MCP tools (DISTRO-4546/4547/4560/4583) — list/get/create/update/
