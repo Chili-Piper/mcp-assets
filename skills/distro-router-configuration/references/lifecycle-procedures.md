@@ -47,7 +47,7 @@ any transition can land in [Error{message}] → surface message, escalate
 ## Delete
 
 1. Gate: `distro-router-get` → if `status.type !== "Inactive"`, the plan must include deactivate → poll-until-Inactive as numbered steps before the delete. A delete on a non-Inactive router returns `409 RouterDeleteRejected`.
-2. `distro-router-delete` (no `force`).
+2. `distro-router-delete` (takes only `routerId` — the `force` param exists on deactivate, not delete).
 3. Verify: `distro-list-routers` — the router is gone.
 
 ## Polling etiquette

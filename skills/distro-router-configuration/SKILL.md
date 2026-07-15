@@ -41,7 +41,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Two gates: (1) review the dry-run plan before any mutation; (2) confirm activation separately — an Active router starts routing live CRM records immediately. Delete is only planned from Inactive state."
 writes_to: "Chili Piper Distro router configuration (create/update/activate/deactivate/delete) — dry-runs first"
-api_note: "2026-07-01 (DISTRO-4581, PR #939): routers are created Inactive and must be explicitly activated; update preserves activation but requires the full routing object (400 RouterRoutingRequired without it); deactivation is async (poll until Inactive); delete only from Inactive (409 RouterDeleteRejected). Field truth → references/api-reference.md."
+api_note: "2026-07-15: shapes re-verified against the live spec (v1.287.2), post-DISTRO-4605 (edge #947, 2026-07-02 — fixed the 422/500s on distro create/update). The representability 409 gate is CURRENT for distro: DISTRO-4614 (edge #959) removed it for concierge/handoff via opaque-preserve overlay but explicitly deferred distro to DISTRO-4621 — do not flag this gate as stale until DISTRO-4621 lands. 2026-07-01 (DISTRO-4581, PR #939): routers are created Inactive and must be explicitly activated; update preserves activation but requires the full routing object (400 RouterRoutingRequired without it); deactivation is async (poll until Inactive); delete only from Inactive (409 RouterDeleteRejected); delete takes no force param. Field truth → references/api-reference.md."
 ---
 
 # Distro Router Configuration

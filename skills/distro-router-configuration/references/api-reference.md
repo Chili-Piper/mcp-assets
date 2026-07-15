@@ -48,13 +48,13 @@ The read view is lossy for routers built with complex `NextRule` chains in the U
 | Error | HTTP | Meaning / skill behavior |
 |-------|:---:|--------------------------|
 | `RouterRoutingRequired` | 400 | Update sent without the full `routing` object — always send it (full-replace, no partial patch) |
-| `RouterRoutingNotRepresentable` | 400/409 | Router too complex for the simplified model — abort, edit in UI |
+| `RouterRoutingNotRepresentable` | 400/409 | Router too complex for the simplified model — abort, edit in UI. **Intentionally kept for Distro**: DISTRO-4614 (edge #959) replaced this guard with an opaque-preserve overlay for concierge/handoff, but explicitly deferred distro (DISTRO-4621 — no draft-read endpoint to overlay onto). Do not treat this gate as stale until DISTRO-4621 lands |
 | `DistroRouterConversionError` | 400 | Payload didn't convert — surface the message verbatim, fix the plan |
 | `RouterWorkspaceNotManageable` | 4xx | Workspace can't be managed by this API/key |
 | `RouterDeleteRejected` | 409 | Delete attempted while not `Inactive` — deactivate first, poll, retry |
 | `RouterCreationFailed` | 422 | Create is all-or-nothing: the partial router was rolled back — fix the cause and retry; nothing is left behind |
 
-> The spec lists an optional `force` query param on delete and deactivate. **Never use it** — the safe path is always deactivate → poll until `Inactive` → delete.
+> The spec lists an optional `force` query param on **deactivate only** (it forces past a stale router revision; delete no longer takes one — removed from the spec by 2026-07-15). **Never use it** — the safe path is always deactivate → poll until `Inactive` → delete.
 
 ## Permissions
 
