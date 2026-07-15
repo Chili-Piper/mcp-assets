@@ -27,6 +27,16 @@ When no playbook filter was given, follow with the per-playbook table ranked by 
 | 9c1b…-homepage | 76 | 61% | 11% |
 ```
 
+When routing is the question, add the per-rule table over the `Routed` set (`ruleName`, keyed by `ruleId`; conversations without a rule grouped last):
+
+```
+| Matched rule | Routed conversations | Booked |
+|--------------|---------------------:|-------:|
+| Enterprise inbound | 38 | 21 |
+| EMEA fallback | 14 | 4 |
+| (no rule matched) | 10 | 3 |
+```
+
 ### Conversation list (on request, or ≤20 rows)
 
 ```
@@ -40,7 +50,7 @@ When no playbook filter was given, follow with the per-playbook table ranked by 
 
 ```
 ### jane@acme.com — pricing playbook · Abandoned · session 8812
-Started Jun 28 14:02 · no rep joined · no meeting · page: /pricing
+Started Jun 28 14:02 · rule: Enterprise inbound · no rep joined · no meeting · page: /pricing
 
   [Bot   +0:00] Hi! Looking into pricing? I can help…
   [Guest +0:12] do you have a startup tier?
@@ -63,5 +73,6 @@ Started Jun 28 14:02 · no rep joined · no meeting · page: /pricing
 ## Rules
 
 - Header always states the resolved window and total fetched; if pagination was cut short, say `(showing X of Y)`.
+- Zero conversations is a report, not an apology: "No chat conversations in <workspace> for <window>." — an empty page from the API is a valid result, not a failure.
 - Booked meetings have no meetingId — when referencing one, cite assignee + scheduledAt.
 - Show full transcripts only when drill-down was requested; elsewhere quote at most one line.

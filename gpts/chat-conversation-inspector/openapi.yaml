@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: Chili Piper — Chat Conversation Inspector Actions
-  version: 1.273.1
+  version: 1.287.2
   description: GPT Actions for the chat-conversation-inspector GPT — a subset of the Chili Piper Edge
     API. Authenticate with a Bearer API key (Admin Center → API Keys).
 servers:
@@ -17,11 +17,11 @@ paths:
       tags:
       - workspace
       summary: Read all workspaces
-      description: "[operation: workspace-list]\n\n\n\nREAD-ONLY\n\n\n\nReturns all workspaces in the\
-        \ org. Hierarchy: Tenant → Workspaces → Teams → Users.\n\n- page (opt), pageSize (opt, default\
-        \ 200)\n\n→\n\n    [{workspaceId, name, settings}]\n\nsee: workspace-list-users (members), workspace-add/remove-users\
-        \ (manage membership), meeting-list/export (filter by workspaceId), concierge-logs (filter by\
-        \ workspaceId)"
+      description: "[operation: workspace-list]\n\n\n\nREAD-ONLY\n\n\n\nLists the workspaces that partition\
+        \ the org and yields the workspaceId most other calls need to scope their work. Hierarchy: Tenant\
+        \ → Workspaces → Teams → Users. Paginated (default pageSize 200).\n\n→\n\n    [{workspaceId, name,\
+        \ settings}]\n\nsee: workspace-list-users (members), workspace-add/remove-users (manage membership),\
+        \ meeting-list/export (filter by workspaceId), concierge-logs (filter by workspaceId)"
       operationId: workspaceList
       parameters:
       - name: page
@@ -104,14 +104,17 @@ paths:
       tags:
       - chat
       summary: Reads Chat Conversation Logs
-      description: "[operation: chat-logs]\n\n\n\nREAD-ONLY\n\n\n\nFetches Chat AI conversation logs for\
-        \ a workspace in a time window, paginated; each log includes the full bot/guest message transcript,\
-        \ routing outcome, and booked meetings (parallelism=4). Max window: 30 days.\n\n- workspaceId\
-        \ (req): query param; use workspace-list\n\n- start, end (req): query params; ISO-8601; max 30-day\
-        \ span\n\n- playbookId (opt): repeatable query param (UUID); restrict to specific chat playbook(s)\n\
-        \n- page, pageSize (opt): query params; first page is 0, default pageSize 10, max 50\n\n→\n\n\
-        \    {results: [{guestId, sessionId, playbookId, guestEmail, startedAt, endedAt, ended, targetedUrl,\
-        \ respondedUrl, routingOutcome, conversationAssigneeId, routedAt, repJoined, chatAiStarted, meetingBooked,\
+      description: "[operation: chat-logs]\n\n\n\nREAD-ONLY\n\n\n\nReads a workspace's Chat AI conversation\
+        \ logs over a time window — the read-only audit trail of who chatted, how they were routed, and\
+        \ what got booked. Each entry carries the full bot/guest transcript, the routing outcome, and\
+        \ any meetings booked. Use it to inspect or debug live chat routing after the fact. The start/end\
+        \ window (ISO-8601) spans at most 30 days. Pass playbookId (repeatable) to restrict to specific\
+        \ chat playbooks. Narrow to a specific guest or rule with guestEmail (case-insensitive exact match),\
+        \ guestId (exact match), ruleId (exact match on any routing rule executed in the session; stable\
+        \ across rule renames), and/or ruleName (exact match on any routing rule executed in the session).\
+        \ Pages start at 0; pageSize defaults to 10, max 50.\n\n→\n\n    {results: [{guestId, sessionId,\
+        \ playbookId, guestEmail, startedAt, endedAt, ended, targetedUrl, respondedUrl, routingOutcome,\
+        \ ruleId, ruleName, conversationAssigneeId, routedAt, repJoined, chatAiStarted, meetingBooked,\
         \ meetings: [{assigneeId, origin, scheduledAt}], messages: [{role, content, timestamp}]}], total,\
         \ page, pageSize}\n\n  Note: routingOutcome is one of Routed | NotRouted | Abandoned; role is\
         \ one of Bot | Guest; meetings[N].origin is one of Journey | Inbox | NoMeeting\n\nsee: workspace-list\
@@ -149,6 +152,36 @@ paths:
           items:
             type: string
             format: uuid
+      - name: guestEmail
+        in: query
+        description: Optional guest email to filter logs by (case-insensitive exact match). When omitted,
+          all guests are considered.
+        required: false
+        schema:
+          type: string
+          pattern: .+@.+
+      - name: guestId
+        in: query
+        description: Optional guest id to filter logs by (exact match). When omitted, all guests are considered.
+        required: false
+        schema:
+          type: string
+          format: uuid
+      - name: ruleId
+        in: query
+        description: Optional routing-rule id to filter logs by (exact match on any rule executed in the
+          session). Stable across rule renames. When omitted, all rules are considered.
+        required: false
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      - name: ruleName
+        in: query
+        description: Optional routing-rule name to filter logs by (exact match on any rule executed in
+          the session). When omitted, all rules are considered.
+        required: false
+        schema:
+          type: string
       - name: page
         in: query
         description: Page number. First page has index 0.
@@ -195,8 +228,9 @@ paths:
                 $ref: '#/components/schemas/PaginatedResult_ChatConversationLog'
         '400':
           description: 'Invalid value for: query parameter workspaceId, Invalid value for: query parameter
-            start, Invalid value for: query parameter end, Invalid value for: query parameter page, Invalid
-            value for: query parameter pageSize'
+            start, Invalid value for: query parameter end, Invalid value for: query parameter guestEmail,
+            Invalid value for: query parameter guestId, Invalid value for: query parameter ruleId, Invalid
+            value for: query parameter page, Invalid value for: query parameter pageSize'
           content:
             text/plain:
               schema:
@@ -241,11 +275,9 @@ paths:
 
 
 
-        Batch-fetches profiles for multiple users by ID in a single request.
-
-
-        - body (req): JSON array of userId UUIDs directly (e.g. ["uuid1", "uuid2"]) — not wrapped in an
-        object
+        Batch-fetches full profiles for a known set of userIds in one request — the id-list counterpart
+        to user-read. The body is a bare JSON array of userId UUIDs (e.g. ["uuid1", "uuid2"]), not wrapped
+        in an object.
 
 
         → paginated list of users, each with: {id, name, email, isSuperAdmin, licenses, workspaces, salesforce:
@@ -351,152 +383,12 @@ components:
       name: Authorization
       in: header
   schemas:
-    ChatConversationMessage:
-      title: ChatConversationMessage
-      type: object
-      required:
-      - role
-      - content
-      - timestamp
-      properties:
-        role:
-          $ref: '#/components/schemas/ChatMessageRole'
-        content:
-          type: string
-        timestamp:
-          type: string
-          format: date-time
-    SalesforceUser:
-      title: SalesforceUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-        id:
-          type: string
-          pattern: '[^\s\\/]+'
-    UserLicenses:
-      title: UserLicenses
-      type: object
-      required:
-      - chiliCalOrg
-      - handoff
-      properties:
-        distro:
-          type: boolean
-        chiliCalOrg:
-          type: boolean
-        concierge:
-          type: boolean
-        conciergeLive:
-          type: boolean
-        chat:
-          type: boolean
-        handoff:
-          type: boolean
-        tier:
-          $ref: '#/components/schemas/Tier'
-    Tier:
-      title: Tier
-      type: string
-      enum:
-      - RoutingAndScheduling
-      - Experiences
-      - ChiliDataPlatform
-    ChatConversationMeeting:
-      title: ChatConversationMeeting
-      type: object
-      required:
-      - assigneeId
-      - origin
-      - scheduledAt
-      properties:
-        assigneeId:
-          $ref: '#/components/schemas/UserId'
-        origin:
-          type: string
-        scheduledAt:
-          type: string
-          format: date-time
-    Map_String:
-      title: Map_String
-      type: object
-      additionalProperties:
-        type: string
-    ChatMessageRole:
-      title: ChatMessageRole
-      type: string
-      enum:
-      - Bot
-      - Guest
-    SimpleMetadata:
-      title: SimpleMetadata
-      type: object
-      required:
-      - createdAt
-      - createdBy
-      - updatedAt
-      - updatedBy
-      - revision
-      properties:
-        createdAt:
-          type: string
-          format: date-time
-        createdBy:
-          $ref: '#/components/schemas/CallerRef'
-        updatedAt:
-          type: string
-          format: date-time
-        updatedBy:
-          $ref: '#/components/schemas/CallerRef'
-        revision:
-          type: integer
-          format: int32
-    ChatRoutingOutcome:
-      title: ChatRoutingOutcome
-      type: string
-      enum:
-      - Routed
-      - NotRouted
-      - Abandoned
-    WorkspaceId:
-      title: WorkspaceId
+    Email:
+      title: Email
       examples:
-      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      - john.doe@acme.com
       type: string
-      pattern: '[^\s\\/]+'
-    PaginatedResult_ChatConversationLog:
-      title: PaginatedResult_ChatConversationLog
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/ChatConversationLog'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    CallerRef:
-      title: CallerRef
-      description: stringified caller reference in format $type/$id
-      examples:
-      - user/17a3d4563d5a67a3d456ad635
-      type: string
+      pattern: .+@.+
     PaginatedResult_User:
       title: PaginatedResult_User
       type: object
@@ -520,109 +412,21 @@ components:
           type: integer
           format: int64
           exclusiveMinimum: 0
-    Workspace:
-      title: Workspace
+    ChatConversationMessage:
+      title: ChatConversationMessage
       type: object
       required:
-      - id
-      - name
-      - metadata
+      - role
+      - content
+      - timestamp
       properties:
-        id:
-          $ref: '#/components/schemas/WorkspaceId'
-        name:
+        role:
+          $ref: '#/components/schemas/ChatMessageRole'
+        content:
           type: string
-        emoji:
-          type: string
-        logo:
-          type: string
-        metadata:
-          $ref: '#/components/schemas/SimpleMetadata'
-    UserId:
-      title: UserId
-      examples:
-      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
-      type: string
-      pattern: '[^\s\\/]+'
-    Email:
-      title: Email
-      examples:
-      - john.doe@acme.com
-      type: string
-      pattern: .+@.+
-    ChatConversationLog:
-      title: ChatConversationLog
-      type: object
-      required:
-      - guestId
-      - sessionId
-      - playbookId
-      - startedAt
-      - ended
-      - targetedUrl
-      - routingOutcome
-      - repJoined
-      - chatAiStarted
-      - meetingBooked
-      properties:
-        guestId:
-          type: string
-          format: uuid
-        sessionId:
-          type: integer
-          format: int64
-        playbookId:
-          type: string
-          format: uuid
-        guestEmail:
-          type: string
-          pattern: .+@.+
-        startedAt:
+        timestamp:
           type: string
           format: date-time
-        endedAt:
-          type: string
-          format: date-time
-        ended:
-          type: boolean
-        targetedUrl:
-          type: string
-        respondedUrl:
-          type: string
-        routingOutcome:
-          $ref: '#/components/schemas/ChatRoutingOutcome'
-        conversationAssigneeId:
-          type: string
-          pattern: '[^\s\\/]+'
-        routedAt:
-          type: string
-          format: date-time
-        repJoined:
-          type: boolean
-        chatAiStarted:
-          type: boolean
-        meetingBooked:
-          type: boolean
-        meetings:
-          type: array
-          items:
-            $ref: '#/components/schemas/ChatConversationMeeting'
-        messages:
-          type: array
-          items:
-            $ref: '#/components/schemas/ChatConversationMessage'
-    HubspotUser:
-      title: HubspotUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-        id:
-          type: integer
-          format: int64
     User1:
       title: User
       type: object
@@ -672,6 +476,91 @@ components:
         personalWorkspaceId:
           type: string
           pattern: '[^\s\\/]+'
+    HubspotUser:
+      title: HubspotUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        id:
+          type: integer
+          format: int64
+    SimpleMetadata:
+      title: SimpleMetadata
+      type: object
+      required:
+      - createdAt
+      - createdBy
+      - updatedAt
+      - updatedBy
+      - revision
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: '#/components/schemas/CallerRef'
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: '#/components/schemas/CallerRef'
+        revision:
+          type: integer
+          format: int32
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string
+    SalesforceUser:
+      title: SalesforceUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+        id:
+          type: string
+          pattern: '[^\s\\/]+'
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
+    UserLicenses:
+      title: UserLicenses
+      type: object
+      required:
+      - chiliCalOrg
+      - handoff
+      properties:
+        distro:
+          type: boolean
+        chiliCalOrg:
+          type: boolean
+        concierge:
+          type: boolean
+        conciergeLive:
+          type: boolean
+        chat:
+          type: boolean
+        handoff:
+          type: boolean
+        tier:
+          $ref: '#/components/schemas/Tier'
     PaginatedResult_Workspace:
       title: PaginatedResult_Workspace
       type: object
@@ -695,3 +584,151 @@ components:
           type: integer
           format: int64
           exclusiveMinimum: 0
+    ChatConversationMeeting:
+      title: ChatConversationMeeting
+      type: object
+      required:
+      - assigneeId
+      - origin
+      - scheduledAt
+      properties:
+        assigneeId:
+          $ref: '#/components/schemas/UserId'
+        origin:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
+    ChatConversationLog:
+      title: ChatConversationLog
+      type: object
+      required:
+      - guestId
+      - sessionId
+      - playbookId
+      - startedAt
+      - ended
+      - targetedUrl
+      - routingOutcome
+      - repJoined
+      - chatAiStarted
+      - meetingBooked
+      properties:
+        guestId:
+          type: string
+          format: uuid
+        sessionId:
+          type: integer
+          format: int64
+        playbookId:
+          type: string
+          format: uuid
+        guestEmail:
+          type: string
+          pattern: .+@.+
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        ended:
+          type: boolean
+        targetedUrl:
+          type: string
+        respondedUrl:
+          type: string
+        routingOutcome:
+          $ref: '#/components/schemas/ChatRoutingOutcome'
+        ruleId:
+          type: string
+          pattern: '[^\s\\/]+'
+        ruleName:
+          type: string
+        conversationAssigneeId:
+          type: string
+          pattern: '[^\s\\/]+'
+        routedAt:
+          type: string
+          format: date-time
+        repJoined:
+          type: boolean
+        chatAiStarted:
+          type: boolean
+        meetingBooked:
+          type: boolean
+        meetings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatConversationMeeting'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatConversationMessage'
+    ChatRoutingOutcome:
+      title: ChatRoutingOutcome
+      type: string
+      enum:
+      - Routed
+      - NotRouted
+      - Abandoned
+    Workspace:
+      title: Workspace
+      type: object
+      required:
+      - id
+      - name
+      - metadata
+      properties:
+        id:
+          $ref: '#/components/schemas/WorkspaceId'
+        name:
+          type: string
+        emoji:
+          type: string
+        logo:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+    PaginatedResult_ChatConversationLog:
+      title: PaginatedResult_ChatConversationLog
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatConversationLog'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    ChatMessageRole:
+      title: ChatMessageRole
+      type: string
+      enum:
+      - Bot
+      - Guest
+    Tier:
+      title: Tier
+      type: string
+      enum:
+      - RoutingAndScheduling
+      - Experiences
+      - ChiliDataPlatform

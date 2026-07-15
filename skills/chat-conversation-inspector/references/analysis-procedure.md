@@ -13,13 +13,14 @@
    - **booking rate** — share with `meetingBooked: true`
    - **AI engagement** — share with `chatAiStarted: true` (a low value means chats are ending before the bot even engages)
 5. When no `playbook` filter was given, repeat the counts **per `playbookId`** and rank playbooks by abandonment rate — one bad playbook often hides inside a healthy workspace average.
+   Also break the `Routed` set down **per matched rule** (`ruleId`, displayed as `ruleName`): which rules are doing the routing, and which never fire. Conversations with no `ruleId` are grouped as "(no rule matched)" — a large share there on a routed-heavy playbook means routing is falling through to defaults.
 6. Sanity check: `Routed` count should roughly track `repJoined` + `meetingBooked` activity. `Routed` with `repJoined: false` and `meetingBooked: false` is a real pattern worth flagging (routed but nobody picked up).
 
 ## Transcript drill-down
 
-1. Select conversations: by `guest_email` match (case-insensitive on `guestEmail`), or by the human pointing at a row in the conversation list (use `sessionId` as the stable handle).
+1. Select conversations: by guest email — pass it as the `guestEmail` **API filter** (case-insensitive exact match; don't fetch-all-and-filter) — or by the human pointing at a row in the conversation list (use `sessionId` as the stable handle). A rule-centric drill-down ("show me chats the Enterprise rule routed") uses the `ruleId` filter the same way.
 2. Render `messages[]` in `timestamp` order. Label each line with its `role` (`Bot` / `Guest`) and a short relative time (`+0:00`, `+0:42`).
-3. Above the transcript, print the conversation header: guest email (or "anonymous"), playbook, outcome, `repJoined`, `meetingBooked`, assignee (resolve `conversationAssigneeId` via `user-find-by-ids` if the human wants a name), and `targetedUrl`.
+3. Above the transcript, print the conversation header: guest email (or "anonymous"), playbook, outcome, matched rule (`ruleName`, or "no rule matched"), `repJoined`, `meetingBooked`, assignee (resolve `conversationAssigneeId` via `user-find-by-ids` if the human wants a name), and `targetedUrl`.
 4. If several conversations match one guest, render newest first and say how many there are.
 
 ## Abandonment analysis
@@ -37,5 +38,6 @@ Run over the `Abandoned` subset (after any playbook filter):
 ## Windowing
 
 - Each `chat-logs` call is capped at a 30-day window. For longer `date_range`, split into consecutive ≤30-day chunks, call sequentially, and merge before analysis.
+- A chunk (or the whole window) returning `{results: [], total: 0}` is a legitimate zero — count it as no conversations and keep going; do not retry it or report it as a failure.
 - Convert `date_range` shorthands before calling: `today` → local midnight→now in UTC ISO-8601; `last-7-days` → now−7d→now.
 - State the exact resolved window in the output header.

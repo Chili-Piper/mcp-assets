@@ -38,9 +38,9 @@ This GPT is **read-only** — it never writes anything to Chili Piper.
 | `chatLogs` | Paginated Chat AI conversation logs (`GET /v1/org/chat/logs`) |
 | `userFindByIds` | Resolve user IDs to names/emails (assignee display names) |
 
-**`chatLogs` request:** `workspaceId` (required), `start`/`end` (required, ISO-8601 date-times, **max 30-day window** — chunk longer ranges into sequential calls), `playbookId` (optional, repeatable), `page` (**0-indexed**, default 0), `pageSize` (default 10, **max 50** — use 50).
+**`chatLogs` request:** `workspaceId` (required), `start`/`end` (required, ISO-8601 date-times, **max 30-day window** — chunk longer ranges into sequential calls), `playbookId` (optional, repeatable), `guestEmail` (optional, case-insensitive exact match — use for guest drill-down instead of fetching everything), `guestId` / `ruleId` / `ruleName` (optional exact-match filters; `ruleId` is stable across rule renames), `page` (**0-indexed**, default 0), `pageSize` (default 10, **max 50** — use 50).
 
-**Response:** `{results, total, page, pageSize}` — paginate until you have `total`.
+**Response:** `{results, total, page, pageSize}` — paginate until you have `total`. An **empty page is a valid result**, not an error: a workspace with no chat sessions returns `{results: [], total: 0}` — report "no conversations in this window".
 
 **Each conversation (`ChatConversationLog`):**
 
@@ -50,6 +50,7 @@ This GPT is **read-only** — it never writes anything to Chili Piper.
 | `playbookId` | The playbook (chat analog of a router) that ran |
 | `startedAt`, `endedAt?`, `ended`, `routedAt?` | Timestamps + completion flag |
 | `routingOutcome` | `Routed` \| `NotRouted` \| `Abandoned` |
+| `ruleId?`, `ruleName?` | Matched (earliest-executed) routing rule; **both absent when no rule ran** — group as "(no rule matched)" |
 | `repJoined`, `chatAiStarted`, `meetingBooked` | Booleans |
 | `conversationAssigneeId?` | **Single** assignee user ID — there is no `assignees` array |
 | `meetings[]` | `{assigneeId, origin, scheduledAt}` — **no meetingId exists**; correlate with meetings by assignee + scheduledAt |
@@ -59,7 +60,7 @@ A `403` means the API key lacks the `logs.read` scope — tell the user to check
 
 ## Analysis steps
 
-1. **Outcome breakdown** — count and percentage by `routingOutcome`; also compute rep-join rate, booking rate, and AI-engagement rate (`chatAiStarted`). When no playbook filter was given, repeat per `playbookId` and rank by abandonment — one bad playbook often hides inside a healthy average. Flag `Routed` conversations where `repJoined` and `meetingBooked` are both false (routed but nobody picked up).
+1. **Outcome breakdown** — count and percentage by `routingOutcome`; also compute rep-join rate, booking rate, and AI-engagement rate (`chatAiStarted`). When no playbook filter was given, repeat per `playbookId` and rank by abandonment — one bad playbook often hides inside a healthy average. Break the `Routed` set down per matched rule (`ruleName`, keyed by `ruleId`) to show which rules do the routing and which never fire. Flag `Routed` conversations where `repJoined` and `meetingBooked` are both false (routed but nobody picked up).
 2. **Transcript drill-down** (on request) — render `messages[]` chronologically with `Bot`/`Guest` labels and relative timestamps; header shows guest, playbook, outcome, assignee, targeted page.
 3. **Abandonment analysis** — over the `Abandoned` subset: who spoke last (same final bot prompt recurring = that message is losing guests; guest-spoke-last = nobody answered), drop-off depth (messages before abandoning), hour/day clustering (off-hours clusters = availability problem, not bot quality), and near-misses that reached scheduling talk. End with **one** primary recommendation backed by the numbers.
 

@@ -40,7 +40,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the outcome breakdown and abandonment findings — decide whether the fix is playbook configuration, bot response quality, or rep availability, and who should own it"
 writes_to: "Nothing — read-only"
-api_note: "2026-07-02 (DISTRO-4429, PR #882): chat-logs is live in the deployed MCP. Live schema differs from early drafts: assignee is a single conversationAssigneeId (not an assignees array); pagination is 0-indexed with pageSize max 50. Field-name truth → references/api-reference.md."
+api_note: "2026-07-15: chat-logs live in the deployed MCP (since DISTRO-4429, PR #882). DISTRO-4615 (edge #961, 2026-07-09) added ruleId/ruleName rule attribution to ChatConversationLog; DISTRO-4612 (edge #957, 2026-07-07) added guestEmail/guestId/ruleId/ruleName server-side filters; DISTRO-4608 (edge #948, 2026-07-03) made a workspace with no chat sessions return an empty page instead of an error. Assignee is a single conversationAssigneeId (not an assignees array); pagination is 0-indexed with pageSize max 50. Field-name truth → references/api-reference.md."
 ---
 
 # Chat Conversation Inspector
@@ -76,11 +76,13 @@ Call `workspace-list` and match `workspace` against `name` (case-insensitive) or
 
 ### Step 2 — Fetch the conversation logs
 
-Call `chat-logs` with `workspaceId`, ISO-8601 `start`/`end`, and optional `playbookId`. Paginate until all results are collected (pages are **0-indexed**, `pageSize` max **50**). Windows longer than 30 days must be chunked → `references/api-reference.md` § Call shape and § Hard API limits.
+Call `chat-logs` with `workspaceId`, ISO-8601 `start`/`end`, and optional `playbookId`. When drilling into one guest or one rule, filter **server-side** with `guestEmail` (case-insensitive exact match), `guestId`, `ruleId`, or `ruleName` instead of fetching everything and filtering locally. Paginate until all results are collected (pages are **0-indexed**, `pageSize` max **50**). Windows longer than 30 days must be chunked → `references/api-reference.md` § Call shape and § Hard API limits.
+
+An **empty page is a valid result, not an error** — a workspace with no chat sessions returns `{results: [], total: 0}`; report "no conversations in this window".
 
 ### Step 3 — Break down outcomes
 
-Count conversations by `routingOutcome` (`Routed` / `NotRouted` / `Abandoned`), plus `repJoined` and `meetingBooked` rates; split by `playbookId` when no playbook filter was given → `references/analysis-procedure.md` § Outcome breakdown.
+Count conversations by `routingOutcome` (`Routed` / `NotRouted` / `Abandoned`), plus `repJoined` and `meetingBooked` rates; split by `playbookId` when no playbook filter was given, and by matched routing rule (`ruleId`/`ruleName` — absent means no rule ran) to show *which rule* routed each conversation → `references/analysis-procedure.md` § Outcome breakdown.
 
 ### Step 4 — Drill into transcripts (when asked)
 
@@ -103,6 +105,7 @@ Verify before writing output:
 - [ ] Pagination exhausted (`page` incremented from 0 until `page * pageSize + results.length ≥ total`) or the shortfall is stated in the output.
 - [ ] Percentages computed against the fetched conversation count, and that count stated.
 - [ ] Booked meetings read from `meetings[]` — they have **no meetingId**; never promise a join to meeting-level skills without matching on assignee + `scheduledAt`.
+- [ ] Empty results reported as "no conversations in this window" — never as a fetch failure (a session-less workspace legitimately returns an empty page).
 - [ ] A `403`/permission failure reported as a missing `logs.read` API-key scope, with the fix (Admin Center → API Keys).
 
 ## Checkpoint
