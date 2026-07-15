@@ -48,7 +48,7 @@ Field names verified against the live public Edge API spec, 2026-07-02. The tool
 | `duration`, `buffers.before/after`, `trigger.offset` | Scala FiniteDuration strings — `"30 minutes"`, `"1 hour"` |
 | `meetingLimit` | `{limitBy: Email\|Domain, timeframe: Hourly\|Daily\|Weekly\|Monthly\|Yearly, count}` (all three required when set) |
 | `location` | `{default, others?[]}`; each location is one of: `AskTheGuest`, `CalendarPlatformConference`, `DefinedInMeetingType`, `HostsDefaultConferenceDetails`, `HostsDefaultPhysicalLocation`, `ZoomOneTimeLink`, `TeamsMeetingLink`, `GoToMeetingLink`, `WebexLink`, `RingCentralLink`, `GongLink` (discriminated by `type`) |
-| `sharedWith` | `SharedWith_Workspace` or `SharedWith_Teams` (discriminated by `type`) |
+| `sharedWith` | `{type: "Workspace"}` or `{type: "Teams", teamIds?}` — discriminated by `type`; the wire values are `Workspace`/`Teams` (the 2026-07-02 spec's `SharedWith_Workspace`/`SharedWith_Teams` consts are gone — sending them is rejected) |
 | Reminder `channel` | `Email` \| `Sms` — **immutable after creation** |
 | Reminder `trigger.kind` | `BeforeMeeting` \| `BeforeMeetingNoResponse` \| `MeetingBooked` \| `AfterMeeting` |
 | Reminder `trigger.offset` | Required for `BeforeMeeting`/`BeforeMeetingNoResponse`/`AfterMeeting`; **must be omitted** for `MeetingBooked` |

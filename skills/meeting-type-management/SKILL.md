@@ -38,7 +38,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the dry-run plan — especially whether an edit is guest-visible (inviteTitle/inviteDescription) or internal (description) — before setting dry_run=false. Deleting a meeting type breaks every scheduling link that uses it."
 writes_to: "Chili Piper meeting types and meeting-type reminders (create/update/delete/attach/detach) — dry-runs first"
-api_note: "2026-07-01 (DISTRO-4583, PR #940): description is the INTERNAL admin label; guest-visible calendar invite text is inviteTitle/inviteDescription (merge tags supported). Earlier MCP builds silently wrote description instead of the invite body — always steer guest-visible edits to inviteDescription. Field truth → references/api-reference.md."
+api_note: "2026-07-15: re-verified against the live spec (v1.287.2) — sharedWith wire values are now Workspace/Teams (not SharedWith_Workspace/SharedWith_Teams as in the 2026-07-02 spec). 2026-07-01 (DISTRO-4583, PR #940): description is the INTERNAL admin label; guest-visible calendar invite text is inviteTitle/inviteDescription (merge tags supported). Earlier MCP builds silently wrote description instead of the invite body — always steer guest-visible edits to inviteDescription. Field truth → references/api-reference.md."
 ---
 
 # Meeting Type Management
