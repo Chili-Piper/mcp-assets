@@ -1,8 +1,8 @@
 ---
 name: concierge-debugger
 description: Debugs why a specific lead did not book — traces the concierge routing session, identifies the rule that fired (or why none did), and recommends a targeted fix
-version: 0.2.2
-api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); DISTRO-4612 (PR #957, 2026-07-07): guestEmail/guestId/ruleId/ruleName server-side filters added — Step 2 now passes guestEmail directly, eliminating client-side email matching"
+version: 0.2.3
+api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Step 2 and preflight updated to paginate when searching for a lead in high-volume routers. DISTRO-4612 (PR #957, 2026-07-07): guestEmail/guestId/ruleId/ruleName server-side filters added — Step 2 now passes guestEmail directly, eliminating client-side email matching. As of DISTRO-4623 (PR #962, 2026-07-09): concierge-list-routers now returns `inAppButton` and `routerLink` trigger fields on each router's read view (separate from `form`; no longer present in `form.readOnlyTriggers`). Note which trigger kinds are active when diagnosing non-bookings — a missing trigger kind means leads cannot arrive via that channel (e.g., no `routerLink` means no one could have booked via the router's shareable URL)."
 references:
   - api-reference
   - diagnosis
@@ -78,6 +78,8 @@ args:
 ```
 
 Router ID is at `routers[N].router.id`; workspace at `routers[N].workspaceId`. Workspace items from `workspace-list` use `id`. Response shapes and identifier fields → `references/api-reference.md` § Tools and what they return.
+
+The router object also carries `form`, `inAppButton`, and `routerLink` trigger fields. Note which are active — if a trigger kind is absent the lead could not have arrived via that channel, which may itself explain a non-booking.
 
 ### Step 2 — Search logs for the lead
 
