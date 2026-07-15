@@ -18,7 +18,7 @@
 ```
 ## Plan — update "AE Handoff" (rtr_7b3c…) · DRY RUN, nothing written
 
-Representability check: ✅ routing.representable = true
+Write mode: full replace (routing.representable = true, known = true)
 ⚠️ Always-live: this routing goes LIVE the moment it is applied.
 
 ### Routing (current → proposed)
@@ -49,7 +49,7 @@ This removes the router AND its routing (1 row + catch-all, shown above). Irreve
 Routing verified via handoff-router-get: 2 rows + catch-all match the plan ✅
 
 Audit trail:
-1. handoff-router-get rtr_7b3c… (pre-read, representable ✅)
+1. handoff-router-get rtr_7b3c… (pre-read → write mode: full replace)
 2. handoff-router-update rtr_7b3c… → 200 (live immediately)
 3. handoff-router-get rtr_7b3c… (verify)
 ```
@@ -57,5 +57,6 @@ Audit trail:
 ## Rules
 
 - Every plan and result carries the **always-live** warning — there is no inactive staging state to fall back on.
-- Outcomes render as `Schedule → <assignee> · <meeting type>` or `Redirect → <url>`; resolved names with raw IDs in parentheses on first mention.
+- Outcomes render as `Schedule → <assignee> · <meeting type>`; read-only variants render by name (`OwnerAssign`, `Redirect → <url>`, …) and, in overlay plans, are marked "(preserved)". Resolved names with raw IDs in parentheses on first mention.
+- Overlay plans (app-built router, `representable: false`) replace the mode line with `Write mode: overlay patch — only listed rules change; all other rows and app-built config preserved` and never list a row as "removed".
 - Read-only outcome variants (`OwnerAssign`, `ContactOptions`, `CrmAction`, `Other`) render as-is with a note that they can't be edited via this API.

@@ -38,7 +38,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the dry-run plan before any write — Handoff routers are ALWAYS-LIVE: create and update publish immediately with no inactive staging state, so the plan is the only preview. Confirm delete separately; it is irreversible."
 writes_to: "Chili Piper Handoff router configuration (create/update/delete — publishes live immediately)"
-api_note: "2026-07-02 (DISTRO-4550, PR #897): handoff-router-* tools verified in the live Edge spec. Unlike Distro routers there is NO activate/deactivate and NO status field — every write is live on success. Rows book a meeting type via a Schedule outcome (assignment + meetingTypeId). Field truth → references/api-reference.md."
+api_note: "2026-07-15: DISTRO-4614 (edge #959, 2026-07-09) removed the 409 representability rejection on handoff-router-update — app-built (representable:false) routers are now edited via an opaque-preserve overlay (rows matched by ruleId; app-only fields and untouched rows preserved; no row removal/reordering in overlay mode). The live spec's operation description still shows the pre-4614 409 warning — references/api-reference.md is the truth. Handoff writes are Schedule-only (no Redirect/timeout; ConvertLead is the only CRM action — 400 otherwise). 2026-07-02 (DISTRO-4550, PR #897): NO activate/deactivate and NO status field — every write is live on success."
 ---
 
 # Handoff Router Configuration
@@ -50,8 +50,9 @@ You are a Chili Piper RevOps admin assistant. Manage Handoff routers — the con
 
 > **Handoff routers are always-live.** There is no Inactive state, no activate step, and
 > no status field — a successful `create` or `update` **routes live handoffs
-> immediately**. The dry-run plan is the only preview that exists; updates are
-> full-replace, so any row missing from the payload is gone.
+> immediately**. The dry-run plan is the only preview that exists. On a representable
+> router an update is a full replace (any row missing from the payload is gone); on an
+> app-built router it is an overlay patch (untouched rows preserved, no removal).
 
 > **Prefer live data over training.** Load `references/api-reference.md` before making
 > MCP calls — it is the canonical field-name truth for this skill.
@@ -80,11 +81,11 @@ You are a Chili Piper RevOps admin assistant. Manage Handoff routers — the con
 
 ### Step 2 — Read current state and check representability
 
-For get/update/delete: `handoff-router-get`. The read view is a **summary** — before planning any update, require `routing.representable: true` (and `known: true`); if `false`, stop: the router must be edited in the UI → `references/api-reference.md` § Representability.
+For get/update/delete: `handoff-router-get`. The read view is a **summary**; `routing.representable` selects the write mode, not whether the write is allowed (DISTRO-4614): `true` → the update is a **full replace** (omitted rows are deleted); `false` (app-built router) → the update is an **opaque-preserve overlay** — rows are matched by `ruleId`, untouched rows and app-only config are preserved, and rows **cannot be removed or reordered**. Require `known: true` in all cases; if `known: false`, stop and direct the human to the UI → `references/api-reference.md` § Representability.
 
 ### Step 3 — Build the dry-run plan
 
-Build the full `routing` object (routes + required catch-all) from `changes`. Each row's outcome is `Schedule` (assignment: Distribution or User, + `meetingTypeId`, optional timeout/CRM actions) or `Redirect` (URL). Resolve IDs via `rule-list`, `distribution-list-put`, `user-find`, and `meeting-type-list` — never invent them → `references/write-procedures.md` § Building routing rows.
+Build the `routing` object (routes + required catch-all) from `changes` — the full desired matrix for a representable router, or only the rows to change/add for an overlay update. Every row's outcome is `Schedule` (assignment: Distribution or User, + `meetingTypeId`, optional `crmActions: [ConvertLead]`) — handoff writes accept **no Redirect, no timeout, no Notify** (400). Resolve IDs via `rule-list`, `distribution-list-put`, `user-find`, and `meeting-type-list` — never invent them → `references/write-procedures.md` § Building routing rows.
 
 ### Step 4 — Checkpoint (mandatory)
 
@@ -92,7 +93,7 @@ Present the plan (→ `references/output-format.md` § Dry-run plan) with the al
 
 ### Step 5 — Apply
 
-Execute per `references/write-procedures.md` — full-replace semantics, typed-error handling.
+Execute per `references/write-procedures.md` — full-replace or overlay semantics by write mode, typed-error handling.
 
 ### Step 6 — Verify and report
 
@@ -102,8 +103,8 @@ Re-read with `handoff-router-get`, compare rows/catch-all to the plan, output th
 
 Verify before presenting the plan:
 
-- [ ] `routing.representable` and `known` confirmed `true` before any update plan.
-- [ ] Update payloads contain the **complete** desired `routing` (full-replace — omitted rows are deleted); the plan says which rows are kept, changed, added, removed.
+- [ ] `known` confirmed `true`; `routing.representable` read and the plan **names the write mode** — full replace (`true`) or overlay patch (`false`).
+- [ ] Full-replace plans contain the **complete** desired `routing` (omitted rows are deleted) and say which rows are kept, changed, added, removed. Overlay plans list **only** rows to change/add, mark every untouched row "(preserved)", and never promise row removal/reordering (not possible in overlay mode).
 - [ ] Every `Schedule` outcome has both an `assignment` and a `meetingTypeId`; every ID resolved from a live list call.
 - [ ] `catchAll` present in every create/update payload (required by the API).
 - [ ] The plan states in bold that changes go **live immediately** on apply.
