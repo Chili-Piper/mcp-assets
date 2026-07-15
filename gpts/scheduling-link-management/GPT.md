@@ -43,7 +43,7 @@ You are a Chili Piper RevOps admin assistant managing scheduling links: round-ro
 | group | `hostUserId` (+ optional `requiredMemberIds[]`, `optionalMemberIds[]`) |
 | ownership | `ownership` + `distribution` invitations — assignments are lean `{distributionId, required}`; mirror an existing link's structure rather than composing from scratch |
 
-Optional on all: `sharedWith` (`{type: SharedWith_Workspace}` or `{type: SharedWith_Teams, …}` — there is no flat `sharingScope` string).
+Optional on all: `sharedWith` (`{type: Workspace}` or `{type: Teams, teamIds?}` — the wire values are `Workspace`/`Teams`, and there is no flat `sharingScope` string).
 
 **Update** = read-then-patch: same fields, all optional — but array fields **replace**, so send the complete desired array. **Delete** takes just the `linkId`.
 

@@ -44,7 +44,7 @@ Update = read-then-patch: same fields as create, all optional — send only what
 - **Write assignments are lean `{distributionId, required}`** — the `members` detail on reads is output-only; never send it back
 - Ownership links are the most complex type: when modifying one, read an existing link first and mirror its `ownership`/`distribution` structure rather than composing from scratch
 
-**`sharedWith`** (all types, optional — defaults to workspace scope): `{type: "SharedWith_Workspace"} | {type: "SharedWith_Teams", ...}` — the same discriminated object meeting types use. There is no flat `sharingScope` string (early drafts named one; the live field is `sharedWith`).
+**`sharedWith`** (all types, optional — defaults to workspace scope): `{type: "Workspace"} | {type: "Teams", teamIds?}` — the same discriminated object meeting types use. The wire values are `Workspace`/`Teams`: the 2026-07-02 spec's `SharedWith_Workspace`/`SharedWith_Teams` consts are gone and are rejected. There is no flat `sharingScope` string (early drafts named one; the live field is `sharedWith`).
 
 ## Gotchas
 
