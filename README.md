@@ -107,6 +107,7 @@ Every skill also has a slash-command wrapper, so they all surface when you type 
 | `/audit-routing` | routing-audit |
 | `/check-availability` | availability-inspector |
 | `/debug-concierge` | concierge-debugger |
+| `/debug-distro` | distro-debugger |
 | `/analyze-distribution` | distribution-analysis |
 | `/analyze-no-shows` | no-show-analyzer |
 | `/org-meeting-report` | org-meeting |

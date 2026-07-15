@@ -21,7 +21,7 @@ This file tracks the quality of every skill in this repo so we (and clients) alw
 
 ## Status matrix
 
-_Last updated: 2026-05-29. Static-review fixes applied across the skills, then an end-to-end read-only live run against a connected test tenant (9/9 read-only skills PASS). Write skills stay at static-review only — never executed for QA._
+_Last updated: 2026-07-02. Backfilled the missing `distro-debugger` row (shipped in #35 after the 2026-05-29 QA run — enters at `draft` until a static review + live run are logged). Prior update 2026-05-29: static-review fixes applied across the skills, then an end-to-end read-only live run against a connected test tenant (9/9 read-only skills PASS). Write skills stay at static-review only — never executed for QA._
 
 | Skill | Version | Read-only? | Static review | Live run | Maturity | Notes |
 |-------|:------:|:---:|:---:|:---:|:---:|---|
@@ -34,10 +34,11 @@ _Last updated: 2026-05-29. Static-review fixes applied across the skills, then a
 | availability-inspector | 0.1.0 | ✅ | ✅ fixed | ✅ pass | `verified` | corrected request returned 12 live slots; `{startTimes, failures}` confirmed |
 | user-details | 0.1.3 | ✅ | ✅ fixed | ✅ pass | `verified` | user-read (no calendar/CRM), `team-list-put` `id`, scheduling-link shapes confirmed |
 | distribution-analysis | 0.1.0 | ✅ | ✅ built | ✅ pass | `verified` | distribution-list-put array (weights/userStates/handling) + meeting attribution confirmed |
+| distro-debugger | 0.3.1 | ✅ | ⏳ pending | ⏳ pending | `draft` | Shipped in #35 without a QA log entry — static review + live run needed to promote |
 | user-copy | 0.1.3 | ⚠️ writes | ✅ fixed | n/a | `tested` | `.id` joins corrected; dry-run/approval gates present ✅ (write skill — not live-run) |
 | user-offboarding | 0.1.4 | ⚠️ writes | ✅ fixed | n/a | `tested` | `team-list-put` `id`; `distribution-list-put` `workspaceIds[]` + weights/userStates; approval/destructive gates present ✅ (write skill — not live-run) |
 
-The 9 read-only skills are `verified` (static review + a passing end-to-end read-only run against a real tenant). The 2 write skills (`user-copy`, `user-offboarding`) are `tested` (static review complete; intentionally never executed for QA).
+9 of the 10 read-only skills are `verified` (static review + a passing end-to-end read-only run against a real tenant); `distro-debugger` is `draft` pending its first logged QA pass. The 2 write skills (`user-copy`, `user-offboarding`) are `tested` (static review complete; intentionally never executed for QA).
 
 > `tenant-meetings` was **not** added — `org-meeting` already covers tenant/org meeting volume via the public MCP, and the earlier internal version was internal-only.
 

@@ -2,6 +2,18 @@
 
 All notable changes to the official Chili Piper Skills are recorded here. The repo follows [Keep a Changelog](https://keepachangelog.com/); each skill also carries its own `version` in its `SKILL.md` (and matching `GPT.md`).
 
+## [Unreleased]
+
+### Added
+- **`/debug-distro` slash-command wrapper** for the `distro-debugger` skill, matching the
+  wrapper convention every other skill already had.
+
+### Fixed
+- **Registered `distro-debugger` in the catalog indexes it was missing from** —
+  `skills/README.md` (skill index, at `draft` maturity), `gpts/README.md` (GPT table),
+  and `docs/QA.md` (status matrix row; pending static review + live run). The skill
+  shipped in #35 after the last QA pass and these entries were never backfilled.
+
 ## [1.2.0]
 
 ### Added

@@ -1,8 +1,8 @@
 ---
 name: concierge-debugger
 description: Debugs why a specific lead did not book — traces the concierge routing session, identifies the rule that fired (or why none did), and recommends a targeted fix
-version: 0.2.2
-api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Step 2 and preflight updated to paginate when searching for a lead in high-volume routers. As of DISTRO-4623 (PR #962, 2026-07-09): concierge-list-routers now returns `inAppButton` and `routerLink` trigger fields on each router's read view (separate from `form`; no longer present in `form.readOnlyTriggers`). Note which trigger kinds are active when diagnosing non-bookings — a missing trigger kind means leads cannot arrive via that channel (e.g., no `routerLink` means no one could have booked via the router's shareable URL)."
+version: 0.2.3
+api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Step 2 and preflight updated to paginate when searching for a lead in high-volume routers. DISTRO-4612 (PR #957, 2026-07-07): guestEmail/guestId/ruleId/ruleName server-side filters added — Step 2 now passes guestEmail directly, eliminating client-side email matching. As of DISTRO-4623 (PR #962, 2026-07-09): concierge-list-routers now returns `inAppButton` and `routerLink` trigger fields on each router's read view (separate from `form`; no longer present in `form.readOnlyTriggers`). Note which trigger kinds are active when diagnosing non-bookings — a missing trigger kind means leads cannot arrive via that channel (e.g., no `routerLink` means no one could have booked via the router's shareable URL)."
 references:
   - api-reference
   - diagnosis
@@ -92,13 +92,12 @@ args:
   routerId: <routers[N].router.id>
   start: <ISO-8601 start of date_range>
   end: <ISO-8601 end of date_range>
+  guestEmail: <guest_email>
   page: 0
   pageSize: 500
 ```
 
-Paginate: increment `page` by 1 until the response array is empty or shorter than `pageSize` (max 500). Most debug windows won't exceed a single page; high-volume routers may.
-
-Search results for entries where `guestEmail` matches `guest_email` (case-insensitive). The 30-day window and `routerId` requirement → `references/api-reference.md` § Hard API limits.
+The server filters by `guestEmail` — every returned entry is a match; no client-side email comparison needed. Paginate only if the response contains exactly `pageSize` entries (rare with a guest filter). The 30-day window and `routerId` requirement → `references/api-reference.md` § Hard API limits.
 
 If found: store the log entry and stop searching other routers.
 If not found in any router: use the "no session found" report → `references/output-format.md` § If no session found.
@@ -117,7 +116,7 @@ Verify before writing output:
 
 - [ ] `guest_email` present.
 - [ ] Field names taken from `references/api-reference.md`, not guessed.
-- [ ] `concierge-logs` window ≤ 30 days, every call carried a `routerId`, and paginated until empty or short page.
+- [ ] `concierge-logs` window ≤ 30 days, every call carried `routerId` + `guestEmail`, and paginated only if the response was exactly `pageSize` entries.
 - [ ] Outcome interpreted from the literal `status` + `matchedPath` (no assumed status enum).
 - [ ] Any reported assignee `userId` resolved to a name via `user-find-by-ids`.
 
