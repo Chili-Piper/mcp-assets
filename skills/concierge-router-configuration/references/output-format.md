@@ -18,7 +18,7 @@
 ```
 ## Plan — update "Inbound Demo" (rtr_2c8a…, slug: inbound-demo) · DRY RUN, nothing written
 
-Representability check: ✅ routing.representable = true
+Write mode: full replace (routing.representable = true, known = true)
 ⚠️ Always-live: this publishes to the live form the moment it is applied.
 
 ### Routing (current → proposed)
@@ -28,7 +28,7 @@ Representability check: ✅ routing.representable = true
 | 2 | Mid-market | Schedule → NA Pod A · Demo | Schedule → NA Pod B · Demo ← change |
 | — | (catch-all) | Schedule → AE Queue · Demo | (unchanged) |
 
-### Form / branding changes
+### Form / trigger / branding changes
 (none)
 
 ### Write calls that would run
@@ -53,7 +53,7 @@ Current routing (2 rows + catch-all) shown above disappears with it.
 Routing verified via concierge-router-get: 4 rows + catch-all match the plan ✅
 
 Audit trail:
-1. concierge-router-get rtr_2c8a… (pre-read, representable ✅)
+1. concierge-router-get rtr_2c8a… (pre-read → write mode: full replace)
 2. concierge-router-update rtr_2c8a… → 200 (live immediately)
 3. concierge-router-get rtr_2c8a… (verify)
 ```
@@ -62,5 +62,8 @@ Audit trail:
 
 - Every plan and result carries the **always-live** warning; delete plans lead with the slug/URL that dies.
 - Outcomes render as `Schedule → <assignee> · <meeting type>` or `Redirect → <url>`; resolved names with raw IDs in parentheses on first mention.
-- Read-only outcome variants (`OwnerAssign`, `ContactOptions`, `CrmAction`, `Other`) render as-is with a note that they can't be edited via this API.
+- Read-only outcome variants (`OwnerAssign`, `ContactOptions`, `CrmAction`, `Other`) render as-is; in overlay plans they are marked "(preserved)" unless their `ruleId` is deliberately overwritten.
+- Overlay plans (app-built router, `representable: false`) replace the mode line with `Write mode: overlay patch — only listed rules change; all other rows and app-built config preserved` and never list a row as "removed".
+- Rename plans state the derived slug change: `URL: /inbound-demo → /<new-slug> (re-derived from name)`.
+- Create results report the booking URL from the returned `slug` (populated since DISTRO-4626).
 - After an inspect-then-fix flow, cite the concierge-debugger/routing-audit finding the change addresses.

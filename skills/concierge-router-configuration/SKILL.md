@@ -38,7 +38,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the dry-run plan before any write — Concierge routers are ALWAYS-LIVE: create and update publish immediately to the router's public form URL, so the plan is the only preview. Confirm delete separately; it is irreversible and kills the form link."
 writes_to: "Chili Piper Concierge router configuration (create/update/delete — publishes live immediately)"
-api_note: "2026-07-02 (DISTRO-4549, PR #895): concierge-router-get/create/update/delete verified in the live Edge spec. No activate/deactivate and no status field — every write is live on success. Rows book via a Schedule outcome (assignment + meetingTypeId); create/update also accept form, branding, localizations. Field truth → references/api-reference.md."
+api_note: "2026-07-15: three edge changes merged 2026-07-09 — DISTRO-4614 (#959) removed the routing 409 on update (app-built routers now edited via opaque-preserve overlay; the spec's operation description still shows the stale 409 text; the FORM 409 for third-party webforms remains); DISTRO-4626 (#963) populates the derived slug on create/get/update responses (was always null) — capture the booking URL from the create response; DISTRO-4623 (#962) surfaces top-level inAppButton/routerLink read views and makes all three trigger kinds (form/inAppButton/routerLink) writable, each replacing only its own kind. No activate/deactivate and no status field — every write is live on success. Renaming re-derives the slug (public URL changes). Field truth → references/api-reference.md."
 ---
 
 # Concierge Router Configuration
@@ -50,8 +50,9 @@ You are a Chili Piper RevOps admin assistant. Manage Concierge routers — the w
 
 > **Concierge routers are always-live.** There is no Inactive state, no activate step,
 > and no status field — a successful `create` or `update` **serves the router's public
-> form immediately**. The dry-run plan is the only preview; updates are full-replace for
-> `routing`, so any row missing from the payload is gone.
+> form immediately**. The dry-run plan is the only preview. On a representable router a
+> `routing` update is a full replace (any row missing from the payload is gone); on an
+> app-built router it is an overlay patch (untouched rows preserved, no removal).
 
 > **Prefer live data over training.** Load `references/api-reference.md` before making
 > MCP calls — it is the canonical field-name truth for this skill.
@@ -80,11 +81,11 @@ You are a Chili Piper RevOps admin assistant. Manage Concierge routers — the w
 
 ### Step 2 — Read current state and check representability
 
-For get/update/delete: `concierge-router-get`. The read view's `routing` is a **summary** — before planning any update, require `routing.representable: true` (and `known: true`); if `false`, stop: the router must be edited in the UI → `references/api-reference.md` § Representability.
+For get/update/delete: `concierge-router-get`. The read view's `routing` is a **summary**; `routing.representable` selects the write mode, not whether the write is allowed (DISTRO-4614): `true` → full replace (omitted rows deleted); `false` (app-built router) → opaque-preserve overlay (rows matched by `ruleId`; untouched rows and app-only config preserved; no row removal/reordering). Require `known: true`; if `false`, stop → UI. A `form` write still requires `form.representable: true` (third-party webforms are a hard 409) → `references/api-reference.md` § Representability.
 
 ### Step 3 — Build the dry-run plan
 
-Build the full `routing` object (routes + required catch-all) from `changes`; outcomes are `Schedule` (assignment: Distribution or User, + `meetingTypeId`, optional timeout/CRM actions) or `Redirect` (URL). Form/branding changes ride along as separate plan sections. Resolve IDs via `rule-list`, `distribution-list-put`, `user-find`, `meeting-type-list` — never invent them → `references/write-procedures.md` § Building routing rows.
+Build the `routing` object (routes + required catch-all) from `changes` — the full desired matrix for a representable router, or only the rows to change/add for an overlay update; outcomes are `Schedule` (assignment: Distribution or User, + `meetingTypeId`, optional timeout/CRM actions) or `Redirect` (URL). Form/trigger (`inAppButton`/`routerLink`)/branding changes ride along as separate plan sections — each trigger kind replaces only itself and must include `PersonEmail`. A rename re-derives the slug: the plan must state the public URL changes. Resolve IDs via `rule-list`, `distribution-list-put`, `user-find`, `meeting-type-list` — never invent them → `references/write-procedures.md` § Building routing rows.
 
 ### Step 4 — Checkpoint (mandatory)
 
@@ -92,7 +93,7 @@ Present the plan (→ `references/output-format.md` § Dry-run plan) with the al
 
 ### Step 5 — Apply
 
-Execute per `references/write-procedures.md` — full-replace routing semantics, typed-error handling.
+Execute per `references/write-procedures.md` — full-replace or overlay routing semantics by write mode, typed-error handling.
 
 ### Step 6 — Verify and report
 
@@ -102,8 +103,8 @@ Re-read with `concierge-router-get`, compare rows/catch-all (and form/branding i
 
 Verify before presenting the plan:
 
-- [ ] `routing.representable` and `known` confirmed `true` before any update plan.
-- [ ] Update payloads contain the **complete** desired `routing` (full-replace — omitted rows are deleted); the plan says which rows are kept, changed, added, removed.
+- [ ] `known` confirmed `true`; `routing.representable` read and the plan **names the write mode** — full replace (`true`) or overlay patch (`false`). `form.representable` checked before any `form` write.
+- [ ] Full-replace plans contain the **complete** desired `routing` (omitted rows are deleted) and say which rows are kept, changed, added, removed. Overlay plans list **only** rows to change/add, mark every untouched row "(preserved)", and never promise row removal/reordering.
 - [ ] Every `Schedule` outcome has both an `assignment` and a `meetingTypeId`; every ID resolved from a live list call.
 - [ ] `catchAll` present in every create/update payload (required by the API).
 - [ ] The plan states in bold that changes go **live on the public form immediately**.
