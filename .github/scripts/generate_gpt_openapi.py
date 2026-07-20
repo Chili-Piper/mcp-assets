@@ -63,6 +63,12 @@ GPT_OPERATIONS = {
     "distro-router-configuration": ["workspace-list", "distro-list-routers", "distro-router-get", "distro-router-create",
                                     "distro-router-update", "distro-router-delete", "distro-router-activate",
                                     "distro-router-deactivate", "rule-list", "distribution-list-put"],
+    "handoff-router-configuration": ["workspace-list", "handoff-router-list", "handoff-router-get", "handoff-router-create",
+                                     "handoff-router-update", "handoff-router-delete", "rule-list", "distribution-list-put",
+                                     "meeting-type-list", "user-find"],
+    "concierge-router-configuration": ["workspace-list", "concierge-list-routers", "concierge-router-get",
+                                       "concierge-router-create", "concierge-router-update", "concierge-router-delete",
+                                       "rule-list", "distribution-list-put", "meeting-type-list", "user-find"],
 }
 
 TITLES = {
@@ -81,6 +87,8 @@ TITLES = {
     "chat-conversation-inspector": "Chili Piper — Chat Conversation Inspector Actions",
     "meeting-type-management": "Chili Piper — Meeting Type Management Actions",
     "distro-router-configuration": "Chili Piper — Distro Router Configuration Actions",
+    "handoff-router-configuration": "Chili Piper — Handoff Router Configuration Actions",
+    "concierge-router-configuration": "Chili Piper — Concierge Router Configuration Actions",
 }
 
 
