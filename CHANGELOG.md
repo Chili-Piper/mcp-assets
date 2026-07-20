@@ -5,6 +5,19 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Added
+- **`meeting-type-management` skill (new, writes) + paired GPT + `/manage-meeting-types`
+  command.** Full lifecycle for team meeting types and their email/SMS reminders via the
+  new `meeting-type-*` MCP tools (DISTRO-4546/4547/4560/4583) — list/get/create/update/
+  delete, reminder CRUD, and attach/detach. Defaults to `dry_run: true` with a mandatory
+  confirmation checkpoint; prominently separates guest-visible invite fields
+  (`inviteTitle`/`inviteDescription`) from the internal `description` label
+  (the DISTRO-4583 fix). Closes #34.
+- **`chat-conversation-inspector` skill (new, read-only) + paired GPT + `/inspect-chats`
+  command.** Inspects Chat AI conversation logs via the new `chat-logs` MCP tool
+  (DISTRO-4429) — routing-outcome breakdowns (Routed/NotRouted/Abandoned), per-playbook
+  abandonment ranking, full Bot/Guest transcripts, and abandonment analysis. Field names
+  taken from the live Edge spec (notably: single `conversationAssigneeId`, booked
+  meetings carry no `meetingId`, 0-indexed pages, `pageSize` ≤ 50). Closes #41.
 - **`/debug-distro` slash-command wrapper** for the `distro-debugger` skill, matching the
   wrapper convention every other skill already had.
 

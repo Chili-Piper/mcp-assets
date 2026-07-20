@@ -55,6 +55,11 @@ GPT_OPERATIONS = {
                          "meeting-cancel", "distribution-list-put"],
     "distribution-analysis": ["workspace-list", "distribution-list-put", "user-find-by-ids", "meeting-list-put"],
     "distro-debugger": ["workspace-list", "distro-logs", "distro-log-get", "distribution-list-put"],
+    "chat-conversation-inspector": ["workspace-list", "chat-logs", "user-find-by-ids"],
+    "meeting-type-management": ["workspace-list", "meeting-type-list", "meeting-type-get", "meeting-type-create",
+                                "meeting-type-update", "meeting-type-delete", "meeting-type-attach-reminder",
+                                "meeting-type-detach-reminder", "meeting-type-reminder-list", "meeting-type-reminder-create",
+                                "meeting-type-reminder-update", "meeting-type-reminder-delete"],
 }
 
 TITLES = {
@@ -70,6 +75,8 @@ TITLES = {
     "user-offboarding": "Chili Piper — User Offboarding Actions",
     "distribution-analysis": "Chili Piper — Distribution Analysis Actions",
     "distro-debugger": "Chili Piper — Distribution Debugger Actions",
+    "chat-conversation-inspector": "Chili Piper — Chat Conversation Inspector Actions",
+    "meeting-type-management": "Chili Piper — Meeting Type Management Actions",
 }
 
 

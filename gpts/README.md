@@ -64,6 +64,7 @@ Neither script touches the Claude skills in `../skills/` — they only produce/v
 | [routing-audit](routing-audit/) | Audits routers for coverage gaps and stale rules |
 | [concierge-debugger](concierge-debugger/) | Traces why a lead didn't book after form submission |
 | [distro-debugger](distro-debugger/) | Debugs why a CRM record was (or wasn't) routed through a distribution |
+| [chat-conversation-inspector](chat-conversation-inspector/) | Inspects Chat AI conversation outcomes, transcripts, and abandonment patterns |
 | [availability-inspector](availability-inspector/) | Diagnoses why a rep shows no available slots |
 | [org-meeting](org-meeting/) | Org-wide (and single-tenant) meeting volume and health snapshot |
 | [distribution-analysis](distribution-analysis/) | Analyzes a round-robin distribution for rep imbalance |
@@ -71,3 +72,4 @@ Neither script touches the Claude skills in `../skills/` — they only produce/v
 | [user-meetings](user-meetings/) | Rep-level meeting volume and health metrics |
 | [user-copy](user-copy/) | Copies workspace/team memberships to a new rep |
 | [user-offboarding](user-offboarding/) | Safely removes a departing rep with audit trail |
+| [meeting-type-management](meeting-type-management/) | Manages team meeting types and their reminders (writes) |

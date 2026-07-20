@@ -14,7 +14,7 @@ This file tracks the quality of every skill in this repo so we (and clients) alw
 
 1. **Static review** — for every MCP tool the skill calls, confirm (a) the tool name exists, (b) the input params match the live schema, (c) the response field names the skill reads match a **real read-only call** (the tools' own text descriptions are unreliable — see the verification log), (d) documented limits/windows are accurate.
 2. **Read-only live run** — execute the skill against a real tenant; confirm the output format and that no step errors. Log it below.
-3. **Write skills** (`user-copy`, `user-offboarding`) — never execute write/destructive steps for QA. Verify the write tools exist and are called correctly, and that the dry-run/approval gates are present, by static review only.
+3. **Write skills** (`user-copy`, `user-offboarding`, `meeting-type-management`) — never execute write/destructive steps for QA. Verify the write tools exist and are called correctly, and that the dry-run/approval gates are present, by static review only.
 4. Update the status matrix and bump the skill's `version` if behavior changed.
 
 ---
@@ -35,10 +35,12 @@ _Last updated: 2026-07-02. Backfilled the missing `distro-debugger` row (shipped
 | user-details | 0.1.3 | ✅ | ✅ fixed | ✅ pass | `verified` | user-read (no calendar/CRM), `team-list-put` `id`, scheduling-link shapes confirmed |
 | distribution-analysis | 0.1.0 | ✅ | ✅ built | ✅ pass | `verified` | distribution-list-put array (weights/userStates/handling) + meeting attribution confirmed |
 | distro-debugger | 0.3.1 | ✅ | ⏳ pending | ⏳ pending | `draft` | Shipped in #35 without a QA log entry — static review + live run needed to promote |
+| chat-conversation-inspector | 0.1.0 | ✅ | ⏳ pending | ⏳ pending | `draft` | New (issue #41) — field names taken from the live Edge spec 2026-07-02; needs a real read-only call + live run |
 | user-copy | 0.1.3 | ⚠️ writes | ✅ fixed | n/a | `tested` | `.id` joins corrected; dry-run/approval gates present ✅ (write skill — not live-run) |
 | user-offboarding | 0.1.4 | ⚠️ writes | ✅ fixed | n/a | `tested` | `team-list-put` `id`; `distribution-list-put` `workspaceIds[]` + weights/userStates; approval/destructive gates present ✅ (write skill — not live-run) |
+| meeting-type-management | 0.1.0 | ⚠️ writes | ⏳ pending | n/a | `draft` | New (issue #34) — schema from live Edge spec 2026-07-02; dry-run/approval gates present; needs static review via real read-only calls |
 
-9 of the 10 read-only skills are `verified` (static review + a passing end-to-end read-only run against a real tenant); `distro-debugger` is `draft` pending its first logged QA pass. The 2 write skills (`user-copy`, `user-offboarding`) are `tested` (static review complete; intentionally never executed for QA).
+9 of the 11 read-only skills are `verified` (static review + a passing end-to-end read-only run against a real tenant); `distro-debugger` and `chat-conversation-inspector` are `draft` pending their first logged QA pass. The 2 write skills (`user-copy`, `user-offboarding`) are `tested` (static review complete; intentionally never executed for QA).
 
 > `tenant-meetings` was **not** added — `org-meeting` already covers tenant/org meeting volume via the public MCP, and the earlier internal version was internal-only.
 

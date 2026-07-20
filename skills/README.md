@@ -93,6 +93,7 @@ Every skill carries a QA maturity level (tracked in [`../docs/QA.md`](../docs/QA
 | [availability-inspector](availability-inspector/SKILL.md) | Diagnoses why a rep or team has no available slots | `verified` |
 | [concierge-debugger](concierge-debugger/SKILL.md) | Traces why a specific lead didn't book | `verified` |
 | [distro-debugger](distro-debugger/SKILL.md) | Debugs why a CRM record was routed (or not) through a distribution — rule stage by rule stage | `draft` |
+| [chat-conversation-inspector](chat-conversation-inspector/SKILL.md) | Inspects Chat AI conversation logs — routing outcomes, transcripts, abandonment analysis | `draft` |
 | [org-meeting](org-meeting/SKILL.md) | Org-wide (and single-tenant) meeting volume and health snapshot | `verified` |
 | [distribution-analysis](distribution-analysis/SKILL.md) | Analyzes a round-robin distribution — meeting counts by rep, imbalance vs. weights, skew, cancellations | `verified` |
 
@@ -105,7 +106,13 @@ Every skill carries a QA maturity level (tracked in [`../docs/QA.md`](../docs/QA
 | [user-copy](user-copy/SKILL.md) | Copies a user's workspace/team memberships (and, optionally, licenses) to another user (writes) | `tested` |
 | [user-offboarding](user-offboarding/SKILL.md) | Safely removes a departing rep, with an audit trail (writes/destructive) | `tested` |
 
-> ⚠️ `user-copy` and `user-offboarding` modify Chili Piper data. Both default to `dry_run: true` and require explicit human confirmation before any write.
+### Configuration management (writes)
+
+| Skill | What it does | Maturity |
+|-------|-------------|:--------:|
+| [meeting-type-management](meeting-type-management/SKILL.md) | Manages team meeting types and their email/SMS reminders — durations, invite text, limits (writes/destructive) | `draft` |
+
+> ⚠️ `user-copy`, `user-offboarding`, and the configuration-management skills modify Chili Piper data. All default to `dry_run: true` and require explicit human confirmation before any write.
 
 ---
 

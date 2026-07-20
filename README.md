@@ -36,11 +36,13 @@ Every skill is built on **[progressive disclosure](docs/methodology.md)** (Anthr
 | [availability-inspector](skills/availability-inspector/) | Diagnose why a rep or team shows no available slots | ✅ |
 | [concierge-debugger](skills/concierge-debugger/) | Trace why a specific lead didn't book | ✅ |
 | [distro-debugger](skills/distro-debugger/) | Debug why a CRM record was (or wasn't) routed through a distribution — rule stage by rule stage | ✅ |
+| [chat-conversation-inspector](skills/chat-conversation-inspector/) | Inspect Chat AI conversation logs — routing outcomes, transcripts, abandonment analysis | ✅ |
 | [org-meeting](skills/org-meeting/) | Org-wide meeting volume and health snapshot | ✅ |
 | [user-details](skills/user-details/) | Full profile for any Chili Piper user | ✅ |
 | [user-meetings](skills/user-meetings/) | Rep-level meeting volume and health metrics | ✅ |
 | [user-copy](skills/user-copy/) | Copy a user's workspace/team memberships to another user | ⚠️ writes |
 | [user-offboarding](skills/user-offboarding/) | Safely remove a departing rep, with an audit trail | ⚠️ writes |
+| [meeting-type-management](skills/meeting-type-management/) | Manage team meeting types and their reminders — durations, invite text, booking limits | ⚠️ writes |
 
 See [`skills/README.md`](skills/README.md) for the full index with QA/maturity status, and [`gpts/README.md`](gpts/README.md) for the ChatGPT versions.
 
@@ -108,6 +110,7 @@ Every skill also has a slash-command wrapper, so they all surface when you type 
 | `/check-availability` | availability-inspector |
 | `/debug-concierge` | concierge-debugger |
 | `/debug-distro` | distro-debugger |
+| `/inspect-chats` | chat-conversation-inspector |
 | `/analyze-distribution` | distribution-analysis |
 | `/analyze-no-shows` | no-show-analyzer |
 | `/org-meeting-report` | org-meeting |
@@ -115,8 +118,9 @@ Every skill also has a slash-command wrapper, so they all surface when you type 
 | `/user-meetings` | user-meetings |
 | `/copy-user` | user-copy |
 | `/offboard-user` | user-offboarding |
+| `/manage-meeting-types` | meeting-type-management |
 
-`/copy-user` and `/offboard-user` write to Chili Piper — both default to a dry run and confirm before applying.
+`/copy-user`, `/offboard-user`, and `/manage-meeting-types` write to Chili Piper — they default to a dry run and confirm before applying.
 
 ---
 
