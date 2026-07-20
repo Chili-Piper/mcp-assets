@@ -76,6 +76,23 @@ Replace `YOUR_API_KEY` with the key from Command Center.
 
 **Cursor / Windsurf / other MCP clients:** use the same JSON format in your client's MCP config file.
 
+**Gemini CLI:** add to `~/.gemini/settings.json` (or `.gemini/settings.json` in your project):
+
+```json
+{
+  "mcpServers": {
+    "chili-piper": {
+      "httpUrl": "https://fire.chilipiper.com/api/fire-edge/v1/org/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_API_KEY"
+      }
+    }
+  }
+}
+```
+
+Then run `/mcp` inside Gemini CLI to confirm the `chili-piper` server is connected. Newer Gemini CLI versions also accept `"url"` + `"type": "http"` in place of `httpUrl`. Use the API-key path with Gemini CLI; see [`gemini/README.md`](../../gemini/README.md) for the full Gemini guide (CLI, Gen AI SDK / ADK, Gemini Enterprise — and what the consumer Gemini app does *not* support).
+
 ### Option B — OAuth (Admin role required)
 
 Claude Code and Codex support browser-based OAuth login — the agent handles token acquisition and refresh automatically.

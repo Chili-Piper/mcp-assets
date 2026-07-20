@@ -5,6 +5,12 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Added
+- **Google Gemini support guide** (`gemini/README.md`) — how to connect the Chili Piper
+  MCP from Gemini CLI (`~/.gemini/settings.json`), the Google Gen AI SDK / ADK
+  (`McpToolset` over streamable HTTP), and Gemini Enterprise (custom MCP data store),
+  including the explicit caveat that the consumer Gemini app and Gems do not support
+  custom MCP servers. Added a Gemini CLI config snippet to
+  `mcp-servers/chili-piper/README.md` and a `gemini/` row to the root README index.
 - **`meeting-type-management` skill (new, writes) + paired GPT + `/manage-meeting-types`
   command.** Full lifecycle for team meeting types and their email/SMS reminders via the
   new `meeting-type-*` MCP tools (DISTRO-4546/4547/4560/4583) — list/get/create/update/
