@@ -2,6 +2,16 @@
 
 All notable changes to the official Chili Piper Skills are recorded here. The repo follows [Keep a Changelog](https://keepachangelog.com/); each skill also carries its own `version` in its `SKILL.md` (and matching `GPT.md`).
 
+## [Unreleased]
+
+### Added
+- **Google Gemini support guide** (`gemini/README.md`) — how to connect the Chili Piper
+  MCP from Gemini CLI (`~/.gemini/settings.json`), the Google Gen AI SDK / ADK
+  (`McpToolset` over streamable HTTP), and Gemini Enterprise (custom MCP data store),
+  including the explicit caveat that the consumer Gemini app and Gems do not support
+  custom MCP servers. Added a Gemini CLI config snippet to
+  `mcp-servers/chili-piper/README.md` and a `gemini/` row to the root README index.
+
 ## [1.3.0]
 
 ### Added
