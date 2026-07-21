@@ -43,6 +43,7 @@ _Last updated: 2026-07-02. Backfilled the missing `distro-debugger` row (shipped
 | handoff-router-configuration | 0.1.0 | ⚠️ writes | ⏳ pending | n/a | `draft` | New (issue #42) — always-live model (no status/activate); representability gate; dry-run/approval gates present |
 | concierge-router-configuration | 0.1.0 | ⚠️ writes | ⏳ pending | n/a | `draft` | New (issue #38) — always-live model; representability gate; write complement to concierge-debugger/routing-audit |
 | scheduling-link-management | 0.1.0 | ⚠️ writes | ⏳ pending | n/a | `draft` | New (issue #37) — 18 ops / 4 link types; sharedWith object (no sharingScope); creates reject personal workspaces; dry-run/approval gates present |
+| concierge-router-builder | 0.1.0 | ⚠️ writes | ⏳ pending | n/a | `draft` | New — guided end-to-end builder; create shapes for team-create/meeting-type-create/rule-create/distribution-create/concierge-router-create verified against live MCP schemas 2026-07-21; multi-object non-transactional build; dry-run/confirmation gate present. Documents the data-field/form-mapping API gap (UI-only) |
 
 9 of the 11 read-only skills are `verified` (static review + a passing end-to-end read-only run against a real tenant); `distro-debugger` and `chat-conversation-inspector` are `draft` pending their first logged QA pass. The 2 write skills (`user-copy`, `user-offboarding`) are `tested` (static review complete; intentionally never executed for QA).
 
