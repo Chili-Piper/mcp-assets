@@ -39,6 +39,14 @@ skill.** Start a new skill by copying [`docs/SKILL.template.md`](docs/SKILL.temp
   dry run and checkpoint before mutating.
 - **SKILL ↔ GPT parity.** A behavior change bumps both the SKILL.md and the paired
   GPT.md `version`; a pure structural refactor keeps the version.
+- **SKILL → edge-fire-service prompt parity.** The Chili Piper MCP server ships a set of
+  built-in MCP prompts (`prompts/list` + `prompts/get`) that mirror these skills so any
+  MCP client — not just Claude Code — gets the same diagnostic quality. They live in
+  [`app/src/main/scala/com/chilipiper/edge/mcp/McpPrompts.scala`](https://github.com/Chili-Piper/edge-fire-service/blob/main/app/src/main/scala/com/chilipiper/edge/mcp/McpPrompts.scala)
+  in [`edge-fire-service`](https://github.com/Chili-Piper/edge-fire-service) (introduced
+  in [PR #1001](https://github.com/Chili-Piper/edge-fire-service/pull/1001)). **This repo
+  is the source of truth.** When you add, remove, or change the behavior of a skill that
+  has a matching prompt, open a companion PR to keep `McpPrompts.scala` in sync.
 
 ## Before you commit
 
