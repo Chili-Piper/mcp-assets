@@ -1,7 +1,7 @@
 ---
 name: distro-router-configuration
 description: Creates, updates, activates/deactivates, and deletes Chili Piper Distro (lead-routing) routers — full lifecycle with dry-run diffs, async status polling, representability checks, and delete safety gates. Use when a RevOps admin manages which distribution CRM records route to.
-version: 0.1.0
+version: 0.1.1
 references:
   - api-reference
   - lifecycle-procedures
@@ -41,7 +41,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Two gates: (1) review the dry-run plan before any mutation; (2) confirm activation separately — an Active router starts routing live CRM records immediately. Delete is only planned from Inactive state."
 writes_to: "Chili Piper Distro router configuration (create/update/activate/deactivate/delete) — dry-runs first"
-api_note: "2026-07-15: shapes re-verified against the live spec (v1.287.2), post-DISTRO-4605 (edge #947, 2026-07-02 — fixed the 422/500s on distro create/update). The representability 409 gate is CURRENT for distro: DISTRO-4614 (edge #959) removed it for concierge/handoff via opaque-preserve overlay but explicitly deferred distro to DISTRO-4621 — do not flag this gate as stale until DISTRO-4621 lands. 2026-07-01 (DISTRO-4581, PR #939): routers are created Inactive and must be explicitly activated; update preserves activation but requires the full routing object (400 RouterRoutingRequired without it); deactivation is async (poll until Inactive); delete only from Inactive (409 RouterDeleteRejected); delete takes no force param. Field truth → references/api-reference.md."
+api_note: "2026-07-15: shapes re-verified against the live spec (v1.287.2), post-DISTRO-4605 (edge #947, 2026-07-02 — fixed the 422/500s on distro create/update). The representability 409 gate is CURRENT for distro: DISTRO-4614 (edge #959) removed it for concierge/handoff via opaque-preserve overlay but explicitly deferred distro to DISTRO-4621 — do not flag this gate as stale until DISTRO-4621 lands. 2026-07-01 (DISTRO-4581, PR #939): routers are created Inactive and must be explicitly activated; update preserves activation but requires the full routing object (400 RouterRoutingRequired without it); deactivation is async (poll until Inactive); delete only from Inactive (409 RouterDeleteRejected); delete takes no force param. Field truth → references/api-reference.md. 2026-07-21 (CEH-11002, edge #1006): distro-router-update now has PATCH semantics for name and description — omitting either field preserves the existing value; previously omitting name silently wiped it, causing the publish step to fail and leaving a dirty draft. Callers no longer need to echo the current name/description on every update."
 ---
 
 # Distro Router Configuration
@@ -52,9 +52,11 @@ You are a Chili Piper RevOps admin assistant. Manage Distro (lead-routing) route
 > mutate data before the human confirms the plan. See **Checkpoint** below.
 
 > **Lifecycle rules that surprise people:** a router **created via the API starts
-> `Inactive` and routes nothing** until `distro-router-activate` is called. Updates are
-> **full-replace** — the API rejects an update without the complete `routing` object
-> (400 `RouterRoutingRequired`); never send a name-only patch. Delete is only valid from
+> `Inactive` and routes nothing** until `distro-router-activate` is called. Updates
+> require the **full `routing` object** (400 `RouterRoutingRequired` without it; omitted
+> rows are deleted). `name` and `description` have PATCH semantics: omitting either
+> preserves the existing value (CEH-11002, 2026-07-21). Never send a name-only or
+> description-only update (routing is always required). Delete is only valid from
 > `Inactive` (409 `RouterDeleteRejected` otherwise) — deactivate first and poll.
 
 > **Prefer live data over training.** Load `references/api-reference.md` before making
@@ -109,7 +111,7 @@ Re-read with `distro-router-get`, confirm final `status.type` and routing, outpu
 Verify before presenting the plan:
 
 - [ ] `routing.representable` confirmed `true` before any update plan (abort with the UI-edit guidance if not).
-- [ ] Every update payload contains the **full** `routing` object — never name/description alone.
+- [ ] Every update payload contains the **full** `routing` object — never name/description alone. (`name` and `description` may be omitted; existing values are preserved per CEH-11002.)
 - [ ] Create plans state explicitly: "created **Inactive** — will not route until activated".
 - [ ] Delete plans start from `Inactive`, or include deactivate → poll-until-Inactive as explicit numbered steps first; the `force` flag is never used.
 - [ ] Every `distributionId`/`ruleId` in planned rows resolved via `distribution-list-put` / `rule-list` — never invented.
@@ -119,7 +121,7 @@ Verify before presenting the plan:
 
 Show the dry-run plan and ask:
 
-*"This is what would change. Apply it? (Reply 'apply' or re-run with `dry_run=false`.)"*
+*"This is what would change. Apply it? (Reply 'apply' or re-run with `dry_run=false`.)*"
 
 For activation (standalone or after create), confirm separately:
 

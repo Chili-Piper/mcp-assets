@@ -1,7 +1,7 @@
 ---
 name: Distro Router Configuration
 description: Creates, updates, activates/deactivates, and deletes Chili Piper Distro (lead-routing) routers — full lifecycle with dry-run diffs, async status polling, representability checks, and delete safety gates. Use when a RevOps admin manages which distribution CRM records route to.
-version: 0.1.0
+version: 0.1.1
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "List all Distro routers in the Inbound workspace and their statuses"
@@ -39,7 +39,7 @@ Active —deactivate→ Deactivating (async, poll!) → Inactive —delete→ go
 
 - A **created router is `Inactive` and routes nothing** until explicitly activated. ("Why is my new router not routing?" → this.)
 - **Update preserves activation** — active stays active (new config live immediately); inactive stays inactive.
-- **Update is full-replace**: always send the complete `routing` object — a name-only update returns `400 RouterRoutingRequired`, and any omitted row is deleted.
+- **Update**: always send the complete `routing` object — a name-only or description-only update returns `400 RouterRoutingRequired`, and any omitted routing row is deleted. `name` and `description` are optional with PATCH semantics — omitting either preserves the existing value (CEH-11002, 2026-07-21).
 - **Deactivation is async**: returns `Deactivating` — poll `distroRouterGet` every ~5s (≤2 min) until `Inactive`.
 - **Delete only from `Inactive`** — otherwise `409 RouterDeleteRejected`. Plan: deactivate → poll → delete.
 - **Create is all-or-nothing**: `422 RouterCreationFailed` means everything rolled back — fix and retry, nothing left behind.
@@ -52,7 +52,7 @@ Active —deactivate→ Deactivating (async, poll!) → Inactive —delete→ go
 | `distroListRouters` | `{routers: [{id, name, status, trigger}]}` |
 | `distroRouterGet` | Full view: `{id, workspaceId, name, description?, status, routing}` |
 | `distroRouterCreate` | `{workspaceId, name, routing}` → **Inactive** |
-| `distroRouterUpdate` | `{name?, description?, routing}` — routing always required |
+| `distroRouterUpdate` | `{name?, description?, routing}` — routing always required; `name`/`description` are PATCH semantics (omitting preserves existing value, CEH-11002) |
 | `distroRouterActivate` / `distroRouterDeactivate` | Idempotent; async — poll |
 | `distroRouterDelete` | Only from Inactive; irreversible |
 | `ruleList` | Rules: filter `{ruleBuilderVersion: ["ExplicitV1"], workspaceId}` — no `routerId` |
