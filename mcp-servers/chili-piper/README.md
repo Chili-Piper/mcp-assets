@@ -159,6 +159,8 @@ Create and manage keys in **Command Center → Integrations → Credentials → 
 6. Click **Generate Token**, select the permissions (scopes) your token needs, then click **Generate**
 7. Copy the token and store it securely — **it is only shown once.** Then add it to your environment: `export CHILI_PIPER_API_KEY=your_key_here`
 
+> **Need another permission later?** Token permissions are editable in place (shipped 2026-07-21): open the token in **API Access Tokens** and edit its permissions — the token value doesn't change, so nothing you've configured breaks. You no longer need to generate a new token when new endpoints ship or a scope was missed (e.g. after a 403 for a missing scope).
+
 Full guide: [help.chilipiper.com — Edge API References](https://help.chilipiper.com/hc/en-us/articles/35576029581971)
 
 ---

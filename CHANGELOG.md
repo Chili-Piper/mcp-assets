@@ -23,6 +23,12 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
   a grammar sync note pointing at `concierge-router-builder`'s api-reference, and
   cross-linked "When to use" both ways (edit/CRUD here; guided build-from-scratch →
   `concierge-router-builder`).
+- **Setup guide: API token permissions are now editable in place** (Edge release
+  2026-07-21) — noted in `mcp-servers/chili-piper/README.md` § Getting your API key
+  that a token's permissions can be edited without regenerating it (the token value
+  doesn't change), so a missing-scope 403 no longer means minting a new key.
+
+## [1.3.0]
 
 ### Added
 - **`scheduling-link-management` skill (new, writes) + paired GPT +
