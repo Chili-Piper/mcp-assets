@@ -37,9 +37,20 @@ routing: {
 
 Read-view `outcome` variants: `Schedule {distributionId?, userId?, meetingTypeId?}` · `Redirect {url?}` · `OwnerAssign` · `ContactOptions` · `CrmAction` · `Other {kind}`. Variants beyond `Schedule`/`Redirect` summarize UI configurations this API cannot write. Since DISTRO-4614 they no longer block updates: a routing update on such a router is applied as an **overlay** (rows matched by `ruleId`), and a row with an unrepresentable outcome is **preserved verbatim as long as your payload doesn't list its `ruleId`** (§ Representability).
 
+## Data fields (the API gap)
+
+There is **no MCP/Edge tool to list, read, create, or map data fields**, and **no way to map a web form** via the API — both are UI-only (Settings → Data Fields; Concierge Form Mapping). Every `dataField` in a `form`/`inAppButton`/`routerLink` write is a *reference* to a field that must already exist:
+
+- **Standard defaults** (`PersonEmail`, `PersonFirstName`, `PersonLastName`, `CompanyName`, `CompanyEmployees`, `PersonCountry`, `PersonPhone`, `PersonTitle`, `PersonState`) are always valid.
+- **Custom fields** must be created in the UI first; reference them by their **UUID**.
+- Discover what a tenant already uses by reading existing routers' `form`/trigger fields (`concierge-list-routers` → `concierge-router-get`).
+- An unknown `dataField` **fails the write with 400** — never invent one; on a 400, re-check valid references and retry with a corrected one.
+
 ## Write shapes
 
-`concierge-router-create`: `{workspaceId*, name*, routing*, form?, inAppButton?, routerLink?, branding?, localizations?}` · `concierge-router-update`: `{name?, routing?, form?, inAppButton?, routerLink?, branding?, localizations?}`.
+> Sync note: the router write grammar below is duplicated in `concierge-router-builder`'s `references/api-reference.md` (that skill creates routers as the last step of its guided build) — when the grammar changes, update both files.
+
+`concierge-router-create`: `{workspaceId*, name*, routing*, form?, inAppButton?, routerLink?, branding?, localizations?}` — `workspaceId` must be a **team** workspace · `concierge-router-update`: `{name?, routing?, form?, inAppButton?, routerLink?, branding?, localizations?}`.
 
 **Per-dimension update semantics:** only the dimensions you supply change; omitted ones (and config Edge doesn't model — third-party webforms, enrichment waterfalls, CRM-upsert settings) are preserved. Each supplied dimension is a **full replace of that dimension**, except `branding`, which merges per sub-field (a partial `{headingText}` does not wipe `coverImage`/`language`).
 
@@ -78,7 +89,8 @@ Always `concierge-router-get` before an update. Since **DISTRO-4614** (edge #959
 |-------|:---:|--------------------------|
 | `ConciergeRouterNotFound` | 404 | Bad routerId — re-resolve via `concierge-list-routers` |
 | `RouterRoutingNotRepresentable` | 409 | **No longer returned for routing updates** since DISTRO-4614 (overlay path). Still real for **`form`** writes on a third-party webform — abort those, edit in UI. The live spec's operation description still shows the pre-4614 routing warning (text lags the deployed behavior) |
-| `RouterWorkspaceNotManageable` | 4xx | Workspace can't be managed by this API/key |
+| invalid `dataField` | 400 | A `form`/trigger field references a data field that doesn't exist — use a standard default or a real UUID; create custom fields in the UI first (§ Data fields) |
+| `RouterWorkspaceNotManageable` | 4xx | Workspace can't be managed by this API/key, or isn't a **team** workspace |
 | `RouterPublishRejected` | 4xx | The publish step refused the config — surface the message; don't blind-retry |
 | publish-failure `422` | 422 | Changes were **saved on an unpublished draft** — nothing went live; the draft must be fixed or deleted in the Concierge app. Report this state exactly |
 
