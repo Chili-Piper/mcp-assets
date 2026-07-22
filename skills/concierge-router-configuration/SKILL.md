@@ -1,7 +1,7 @@
 ---
 name: concierge-router-configuration
 description: Creates, reads, updates, and deletes Chili Piper Concierge routers — the web-form routing configs that decide which rep a form submission books with. Always-live writes with dry-run diffs and representability checks; the write complement to concierge-debugger/routing-audit.
-version: 0.1.0
+version: 0.1.1
 references:
   - api-reference
   - write-procedures
@@ -38,7 +38,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the dry-run plan before any write — Concierge routers are ALWAYS-LIVE: create and update publish immediately to the router's public form URL, so the plan is the only preview. Confirm delete separately; it is irreversible and kills the form link."
 writes_to: "Chili Piper Concierge router configuration (create/update/delete — publishes live immediately)"
-api_note: "2026-07-15: three edge changes merged 2026-07-09 — DISTRO-4614 (#959) removed the routing 409 on update (app-built routers now edited via opaque-preserve overlay; the spec's operation description still shows the stale 409 text; the FORM 409 for third-party webforms remains); DISTRO-4626 (#963) populates the derived slug on create/get/update responses (was always null) — capture the booking URL from the create response; DISTRO-4623 (#962) surfaces top-level inAppButton/routerLink read views and makes all three trigger kinds (form/inAppButton/routerLink) writable, each replacing only its own kind. No activate/deactivate and no status field — every write is live on success. Renaming re-derives the slug (public URL changes). Field truth → references/api-reference.md."
+api_note: "2026-07-22: data fields are an API gap — no MCP/Edge tool lists, reads, creates, or maps data fields (UI-only: Settings → Data Fields; web-form mapping likewise); form/trigger writes may only REFERENCE existing data fields (standard defaults like PersonEmail always valid; custom fields by their UUID from the app) — an unknown dataField fails the write with 400 (→ references/api-reference.md § Data fields). 2026-07-15: three edge changes merged 2026-07-09 — DISTRO-4614 (#959) removed the routing 409 on update (app-built routers now edited via opaque-preserve overlay; the spec's operation description still shows the stale 409 text; the FORM 409 for third-party webforms remains); DISTRO-4626 (#963) populates the derived slug on create/get/update responses (was always null) — capture the booking URL from the create response; DISTRO-4623 (#962) surfaces top-level inAppButton/routerLink read views and makes all three trigger kinds (form/inAppButton/routerLink) writable, each replacing only its own kind. No activate/deactivate and no status field — every write is live on success. Renaming re-derives the slug (public URL changes). Field truth → references/api-reference.md."
 ---
 
 # Concierge Router Configuration
@@ -60,7 +60,7 @@ You are a Chili Piper RevOps admin assistant. Manage Concierge routers — the w
 ## When to use
 
 - Update a Concierge router's routing rows or catch-all — usually right after `concierge-debugger` or `routing-audit` found the problem ("inspect with those, fix with this").
-- Create a router for a new team's inbound form, or delete a stale router.
+- Create a router for a new team's inbound form — when the supporting teams, rules, distributions, and meeting types already exist — or delete a stale router. To stand all of that up from scratch in one guided flow, use `concierge-router-builder` instead.
 - Adjust a router's form fields or branding alongside its routing.
 
 ## Inputs
@@ -85,7 +85,7 @@ For get/update/delete: `concierge-router-get`. The read view's `routing` is a **
 
 ### Step 3 — Build the dry-run plan
 
-Build the `routing` object (routes + required catch-all) from `changes` — the full desired matrix for a representable router, or only the rows to change/add for an overlay update; outcomes are `Schedule` (assignment: Distribution or User, + `meetingTypeId`, optional timeout/CRM actions) or `Redirect` (URL). Form/trigger (`inAppButton`/`routerLink`)/branding changes ride along as separate plan sections — each trigger kind replaces only itself and must include `PersonEmail`. A rename re-derives the slug: the plan must state the public URL changes. Resolve IDs via `rule-list`, `distribution-list-put`, `user-find`, `meeting-type-list` — never invent them → `references/write-procedures.md` § Building routing rows.
+Build the `routing` object (routes + required catch-all) from `changes` — the full desired matrix for a representable router, or only the rows to change/add for an overlay update; outcomes are `Schedule` (assignment: Distribution or User, + `meetingTypeId`, optional timeout/CRM actions) or `Redirect` (URL). Form/trigger (`inAppButton`/`routerLink`)/branding changes ride along as separate plan sections — each trigger kind replaces only itself and must include `PersonEmail`. A rename re-derives the slug: the plan must state the public URL changes. Resolve IDs via `rule-list`, `distribution-list-put`, `user-find`, `meeting-type-list` — never invent them → `references/write-procedures.md` § Building routing rows. Form/trigger fields may only reference **existing** data fields — there is no API to list or create them → `references/api-reference.md` § Data fields (the API gap).
 
 ### Step 4 — Checkpoint (mandatory)
 
@@ -106,6 +106,7 @@ Verify before presenting the plan:
 - [ ] `known` confirmed `true`; `routing.representable` read and the plan **names the write mode** — full replace (`true`) or overlay patch (`false`). `form.representable` checked before any `form` write.
 - [ ] Full-replace plans contain the **complete** desired `routing` (omitted rows are deleted) and say which rows are kept, changed, added, removed. Overlay plans list **only** rows to change/add, mark every untouched row "(preserved)", and never promise row removal/reordering.
 - [ ] Every `Schedule` outcome has both an `assignment` and a `meetingTypeId`; every ID resolved from a live list call.
+- [ ] Every `dataField` in a form/trigger change is a standard default or confirmed to exist (read the router's — or a sibling router's — current fields). No API lists or creates data fields; an unknown reference fails the write with 400.
 - [ ] `catchAll` present in every create/update payload (required by the API).
 - [ ] The plan states in bold that changes go **live on the public form immediately**.
 - [ ] Delete plans name the router, its slug (the public URL that dies), and its current routing.

@@ -22,7 +22,7 @@
 3. Every `Schedule` outcome needs **both** an `assignment` and a `meetingTypeId` — ask rather than default.
 4. Optional per-row extras only when asked: `timeout: {minutes, onTimeout: Landing|Url}`, `crmActions: [ConvertLead | Notify{slackChannel}]`.
 5. `catchAll` is **required** — if unspecified, ask what unmatched submissions should do.
-6. Form changes: each field is `{dataField, label, required, description?, hidden?}` — `dataField` must reference a real workspace data field; keep existing fields unless the human asked to change them; the field list must include `PersonEmail`. Trigger changes: `inAppButton` (`[{dataField}]`) and `routerLink` (`[{dataField, label, required?, hidden?}]`) are each writable and replace **only their own kind** — writing one never destroys the others; both must include `PersonEmail`. Branding: `{coverImage?, headingText?, language?}` — merged per sub-field (omitted sub-fields preserved).
+6. Form changes: each field is `{dataField, label, required, description?, hidden?}` — `dataField` must reference a real, **already-existing** data field (no API lists or creates them: standard defaults like `PersonEmail` are always valid, custom fields need their UUID from the app, and an unknown reference fails the write with 400 → api-reference § Data fields); keep existing fields unless the human asked to change them; the field list must include `PersonEmail`. Trigger changes: `inAppButton` (`[{dataField}]`) and `routerLink` (`[{dataField, label, required?, hidden?}]`) are each writable and replace **only their own kind** — writing one never destroys the others; both must include `PersonEmail`. Branding: `{coverImage?, headingText?, language?}` — merged per sub-field (omitted sub-fields preserved).
 
 ## Create
 

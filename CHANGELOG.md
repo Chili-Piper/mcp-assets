@@ -12,7 +12,17 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
   custom MCP servers. Added a Gemini CLI config snippet to
   `mcp-servers/chili-piper/README.md` and a `gemini/` row to the root README index.
 
-## [1.3.0]
+### Changed
+- **`concierge-router-configuration` 0.1.1** (SKILL + paired GPT) — documented the
+  **data-field API gap** surfaced while building `concierge-router-builder` (#65): no
+  MCP/Edge tool lists, reads, creates, or maps data fields, and web-form mapping is
+  UI-only, so `form`/trigger writes may only *reference* existing data fields (standard
+  defaults like `PersonEmail` always valid; custom fields by their UUID from the app) —
+  an unknown `dataField` fails the write with **400** (new typed-error row + preflight
+  check). Also noted that `concierge-router-create` requires a **team** workspace, added
+  a grammar sync note pointing at `concierge-router-builder`'s api-reference, and
+  cross-linked "When to use" both ways (edit/CRUD here; guided build-from-scratch →
+  `concierge-router-builder`).
 
 ### Added
 - **`scheduling-link-management` skill (new, writes) + paired GPT +
