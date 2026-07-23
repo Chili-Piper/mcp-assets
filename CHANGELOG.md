@@ -5,6 +5,18 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Added
+- **`concierge-router-builder` skill (new, writes) + paired GPT +
+  `/build-concierge-router` command.** A guided, end-to-end builder that stands up a
+  complete Concierge web-form router from scratch — teams, meeting types, rules
+  (ownership / customer / segment), distributions, and the live router — via a discovery
+  interview, a confirmation checkpoint, then a dependency-ordered build over
+  `team-create`, `meeting-type-create`, `rule-create`, `distribution-create`, and
+  `concierge-router-create`. The build is not transactional and the router publishes live,
+  so it defaults to `dry_run: true` and stops for confirmation before creating anything.
+  Complements the CRUD `concierge-router-configuration` skill (build-from-scratch vs edit).
+  Documents the current API gap: **data fields and web-form
+  mapping are UI-only** (no MCP/Edge tool to list, create, or map them) — the router can
+  only reference data fields that already exist.
 - **Google Gemini support guide** (`gemini/README.md`) — how to connect the Chili Piper
   MCP from Gemini CLI (`~/.gemini/settings.json`), the Google Gen AI SDK / ADK
   (`McpToolset` over streamable HTTP), and Gemini Enterprise (custom MCP data store),
