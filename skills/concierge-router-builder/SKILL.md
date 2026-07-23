@@ -1,6 +1,6 @@
 ---
 name: concierge-router-builder
-description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview, a confirmation checkpoint, then an orchestrated build. Data fields and form mapping stay UI-only (no API).
+description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview and confirmation checkpoint. Data fields and form mapping stay UI-only (no API).
 version: 0.1.0
 references:
   - discovery

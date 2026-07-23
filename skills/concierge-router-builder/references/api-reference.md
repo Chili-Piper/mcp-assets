@@ -124,13 +124,16 @@ tune caps later with `distribution-adjust-v3`. Other `type`s: `Record`, `Convers
 the URL `slug` is derived from `name` and returned. `workspaceId` must be a **team**
 workspace.
 
+> **Sync note:** this router write grammar is duplicated in `concierge-router-configuration`'s
+> `references/api-reference.md` (verified 07-15). Update both together when the API changes.
+
 ```
 routing: {routes: [{ruleId*, outcome*}], catchAll*}        # catchAll REQUIRED; routes ordered top-down
 outcome = {type: "Schedule", assignment*, meetingTypeId*, timeout?, crmActions?}
         | {type: "Redirect", url*}
 assignment = {type: "Distribution", distributionId} | {type: "User", userId}
 timeout    = {minutes*, onTimeout*: {type: "Landing"} | {type: "Url", url}}   # omit → default 10 min → Landing
-crmActions = [{type: "ConvertLead"} | {type: "Notify", slackChannel?}]        # ConvertLead is the ONLY API CRM action
+crmActions = [{type: "ConvertLead"} | {type: "Notify", slackChannel?}]        # ConvertLead = only CRM-mutating action; Notify posts to Slack
 form[]        = {dataField*, label*, required*, description?, hidden?}         # MUST include PersonEmail; hidden = a prefilled value
 inAppButton[] = {dataField*}                                                  # MUST include PersonEmail
 routerLink[]  = {dataField*, label*, required*, hidden?}                       # MUST include PersonEmail; gives a shareable Router Link URL

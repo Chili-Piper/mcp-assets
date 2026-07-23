@@ -87,9 +87,10 @@ SF Lead, SF Contact, SF Account. Field/object/source per group → `segment-pres
 § Data-source map. Offer to set up all applicable groups automatically.
 
 ### 1.7 CRM actions (per rule)
-Which post-booking actions? **Only Convert Lead is API-supported.** Update ownership,
-create event, and add to campaign are **UI-only** — capture them so the summary flags them
-for manual setup after the build.
+Which post-booking actions? **Convert Lead is the only API-supported CRM-mutating action**
+— but Notify (post to a Slack channel) is also writable via the API; it's a notification,
+not a CRM write. Update ownership, create event, and add to campaign are **UI-only** —
+capture them so the summary flags them for manual setup after the build.
 
 ### 1.8 Catch-all & not-scheduled
 - No rule matches (**catch-all**): redirect to a URL, schedule with a fallback team, or

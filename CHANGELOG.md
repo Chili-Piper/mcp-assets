@@ -14,7 +14,7 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
   `concierge-router-create`. The build is not transactional and the router publishes live,
   so it defaults to `dry_run: true` and stops for confirmation before creating anything.
   Complements the CRUD `concierge-router-configuration` skill (build-from-scratch vs edit).
-  Documents the current API gap raised in #chili-edge-mcp-dev: **data fields and web-form
+  Documents the current API gap: **data fields and web-form
   mapping are UI-only** (no MCP/Edge tool to list, create, or map them) — the router can
   only reference data fields that already exist.
 - **Google Gemini support guide** (`gemini/README.md`) — how to connect the Chili Piper

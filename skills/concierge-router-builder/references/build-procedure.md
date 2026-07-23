@@ -60,8 +60,9 @@ Capture each `distributionId`.
 - `routing.catchAll` — **required**; Schedule (fallback team) or Redirect per the plan.
 - `form` — planned fields, each `{dataField, label, required}`, **including `PersonEmail`**.
   Add `routerLink` / `inAppButton` if requested (each must include `PersonEmail`).
-- Only `crmActions: [{type: "ConvertLead"}]` is settable here; UI-only CRM actions are
-  captured for the hand-off, not sent.
+- `crmActions` settable here is `[{type: "ConvertLead"}]` and/or `[{type: "Notify", slackChannel?}]`
+  (ConvertLead is the only CRM-mutating one; Notify posts to Slack). Other CRM actions are
+  UI-only — captured for the hand-off, not sent.
 - On invalid `dataField` (400): re-check valid references via `concierge-list-routers` and
   retry with a corrected reference — do not invent names.
 
