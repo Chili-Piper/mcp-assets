@@ -1,7 +1,7 @@
 ---
 name: No-Show Analyzer
 description: Analyzes Chili Piper meeting no-show patterns by trigger type, routing path, rep, or workspace to surface actionable optimization opportunities.
-version: 0.3.4
+version: 0.3.5
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Analyze no-show patterns for the last 30 days grouped by trigger type"
@@ -69,6 +69,7 @@ Split date range into chunks of at most 6 days. For each chunk call the `meeting
 - `start`: chunk start (ISO-8601)
 - `end`: chunk end (ISO-8601)
 - `pagination.page`: 0, `pagination.pageSize`: 200
+- Optional server-side filters (DO-5176): `hostIds` (array of host user IDs), `assigneeIds` (array of assignee user IDs), `guestEmail` (exact match), `meetingTypeIds` — pass these when scoping to a specific rep or meeting type before grouping client-side.
 
 Paginate each chunk while `hasMore === "Yes"`. Merge all results from `data.list[]`, deduplicate on `meetingId`.
 

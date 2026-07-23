@@ -1,8 +1,8 @@
 ---
 name: no-show-analyzer
 description: Analyzes Chili Piper meeting no-show patterns by trigger type, routing path, rep, or workspace using meeting-list-put and concierge-logs to surface actionable optimization opportunities
-version: 0.3.4
-api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Step 3b and preflight updated to paginate high-volume routers"
+version: 0.3.5
+api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Step 3b and preflight updated to paginate high-volume routers; 2026-07-23: DO-5176 (edge PR #996) added assigneeIds, hostIds, guestEmail, meetingTypeIds as optional server-side filters to meeting-list-put — useful for pre-filtering by specific hosts or meeting types before grouping client-side."
 references:
   - api-reference
   - analysis-methodology

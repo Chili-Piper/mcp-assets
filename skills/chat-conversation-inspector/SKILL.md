@@ -1,7 +1,7 @@
 ---
 name: chat-conversation-inspector
 description: Inspects Chili Piper Chat AI conversation logs for a workspace — routing-outcome breakdowns (Routed/NotRouted/Abandoned), full bot/guest transcripts, and abandonment analysis. Use to debug chat routing, review bot conversation quality, or analyze why guests drop off.
-version: 0.1.0
+version: 0.1.1
 references:
   - api-reference
   - analysis-procedure
@@ -40,7 +40,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the outcome breakdown and abandonment findings — decide whether the fix is playbook configuration, bot response quality, or rep availability, and who should own it"
 writes_to: "Nothing — read-only"
-api_note: "2026-07-15: chat-logs live in the deployed MCP (since DISTRO-4429, PR #882). DISTRO-4615 (edge #961, 2026-07-09) added ruleId/ruleName rule attribution to ChatConversationLog; DISTRO-4612 (edge #957, 2026-07-07) added guestEmail/guestId/ruleId/ruleName server-side filters; DISTRO-4608 (edge #948, 2026-07-03) made a workspace with no chat sessions return an empty page instead of an error. Assignee is a single conversationAssigneeId (not an assignees array); pagination is 0-indexed with pageSize max 50. Field-name truth → references/api-reference.md."
+api_note: "2026-07-15: chat-logs live in the deployed MCP (since DISTRO-4429, PR #882). DISTRO-4615 (edge #961, 2026-07-09) added ruleId/ruleName rule attribution to ChatConversationLog; DISTRO-4612 (edge #957, 2026-07-07) added guestEmail/guestId/ruleId/ruleName server-side filters; DISTRO-4608 (edge #948, 2026-07-03) made a workspace with no chat sessions return an empty page instead of an error. Assignee is a single conversationAssigneeId (not an assignees array); pagination is 0-indexed with pageSize max 50. Field-name truth → references/api-reference.md. 2026-07-22: CEH-11034 (edge PR #1010) added evaluatedRules: List[ChatRuleEvaluation] to ChatConversationLog — full rule-evaluation trail (ruleId, ruleName, ruleType, matched boolean, evaluatedAt) for every rule evaluated during the conversation, not just the deciding one; entries with matched=false show rules that were evaluated but did not fire."
 ---
 
 # Chat Conversation Inspector
@@ -82,7 +82,7 @@ An **empty page is a valid result, not an error** — a workspace with no chat s
 
 ### Step 3 — Break down outcomes
 
-Count conversations by `routingOutcome` (`Routed` / `NotRouted` / `Abandoned`), plus `repJoined` and `meetingBooked` rates; split by `playbookId` when no playbook filter was given, and by matched routing rule (`ruleId`/`ruleName` — absent means no rule ran) to show *which rule* routed each conversation → `references/analysis-procedure.md` § Outcome breakdown.
+Count conversations by `routingOutcome` (`Routed` / `NotRouted` / `Abandoned`), plus `repJoined` and `meetingBooked` rates; split by `playbookId` when no playbook filter was given, and by matched routing rule (`ruleId`/`ruleName` — absent means no rule ran) to show *which rule* routed each conversation. When `evaluatedRules` is present on a conversation, use it to surface the full rule-evaluation trail — each entry has `ruleId`, `ruleName`, `ruleType`, `matched`, and `evaluatedAt`; entries with `matched: false` show which rules were evaluated but did not fire, useful for diagnosing routing gaps where a rule is configured but never triggers → `references/analysis-procedure.md` § Outcome breakdown.
 
 ### Step 4 — Drill into transcripts (when asked)
 
