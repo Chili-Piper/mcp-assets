@@ -1,7 +1,7 @@
 ---
 name: user-offboarding
 description: Safely removes a departing Chili Piper rep — surfaces open meetings that need reassignment, removes them from workspaces and teams, and produces an audit trail — making rep offboarding repeatable and zero-leak
-version: 0.1.6
+version: 0.1.7
 references:
   - api-reference
   - offboarding-procedure
@@ -30,7 +30,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review open meetings and the removal plan before setting dry_run=false — confirm reassignment target and that no meetings will be orphaned"
 writes_to: "Chili Piper workspace/team membership records; meeting cancellation records if open meetings cannot be reassigned"
-api_note: "The MCP does not have a direct 'reassign meeting' endpoint. Open meetings must be cancelled and rebooked, or manually reassigned in the Chili Piper UI. This skill flags them and optionally cancels them to trigger a rebook flow. Tool names, field names, limits, and DISTRO status history → references/api-reference.md."
+api_note: "The MCP does not have a direct 'reassign meeting' endpoint. Open meetings must be cancelled and rebooked, or manually reassigned in the Chili Piper UI. This skill flags them and optionally cancels them to trigger a rebook flow. Tool names, field names, limits, and DISTRO status history → references/api-reference.md. 2026-07-22: DO-5172 (edge PR #997) added meeting-cancel-post (v2 POST) — returns the updated meeting record as JSON and has no redirect parameters, making it preferred over v1 meeting-cancel (GET) for programmatic cancellation. Step 6 updated to use meeting-cancel-post."
 ---
 
 # User Offboarding
@@ -97,11 +97,7 @@ manual-only list — verbatim. Exact layout → `references/output-format.md` §
 
 ### Step 6 — Execute (only if dry_run=false)
 
-Run the checkpoint first. Then cancel open meetings (`meeting-cancel`), remove from
-workspaces (`workspace-remove-users`) and teams (`team-remove-users`); optionally retire an
-empty team with `team-delete` only on explicit human confirmation. Write argument shapes →
-`references/api-reference.md` § Write tools — argument shapes. Procedure →
-`references/offboarding-procedure.md` § Execute (only if dry_run=false).
+Run the checkpoint first. Then cancel open meetings using `meeting-cancel-post` (v2 POST — returns updated meeting JSON for a cleaner audit trail; preferred over v1 `meeting-cancel`), remove from workspaces (`workspace-remove-users`) and teams (`team-remove-users`); optionally retire an empty team with `team-delete` only on explicit human confirmation. Write argument shapes → `references/api-reference.md` § Write tools — argument shapes. Procedure → `references/offboarding-procedure.md` § Execute (only if dry_run=false).
 
 ### Step 7 — Confirm and produce audit trail
 

@@ -1,7 +1,7 @@
 ---
 name: org-meeting
 description: Org-wide meeting volume and health snapshot — total booked, completed, no-show, and cancelled by workspace — for weekly or monthly executive reviews of booking capacity and pipeline coverage
-version: 0.1.3
+version: 0.1.4
 references:
   - api-reference
   - output-format
@@ -26,6 +26,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the breakdown and decide: share with VP Sales/CRO, drill into a flagged workspace with /analyze-no-shows, or check individual reps with /user-meetings"
 writes_to: "Nothing — read-only"
+api_note: "2026-07-23: DO-5176 (edge PR #996) added assigneeIds, hostIds, guestEmail, meetingTypeIds as optional server-side filters to meeting-list-put — enables pre-filtering by rep or meeting type before grouping client-side."
 ---
 
 # Org Meeting Snapshot
