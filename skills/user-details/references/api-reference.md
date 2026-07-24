@@ -11,11 +11,11 @@ live MCP responses. Load the section a Process step points to; don't guess field
 | `user-read` | Full user record (same fields as a user-find result item, unwrapped) — see § user-read field names |
 | `workspace-list` | All workspaces → array of `{id, name, nrOfUsers}` — the identifier is `id` (NOT `workspaceId`) |
 | `team-list-put` | Teams filtered by `member: [userId]` (server-side) — see § team-list-put |
-| `scheduling-link-list-personal` | Personal scheduling links owned by this user |
-| `scheduling-link-list-round-robin` | Round-robin links this user is part of |
-| `scheduling-link-list-admin-one-on-one` | Admin one-on-one scheduling links in the user's workspaces |
-| `scheduling-link-list-group` | Group scheduling links in the user's workspaces |
-| `scheduling-link-list-ownership` | Ownership-based scheduling links in the user's workspaces |
+| `scheduling-link-list-personal` | Personal scheduling links owned by this user → `{links: [...]}` |
+| `scheduling-link-list-round-robin` | Round-robin links this user is part of → `{links: [...]}` |
+| `scheduling-link-list-admin-one-on-one` | Admin one-on-one scheduling links in the user's workspaces → `{links: [...]}` |
+| `scheduling-link-list-group` | Group scheduling links in the user's workspaces → `{links: [...]}` |
+| `scheduling-link-list-ownership` | Ownership-based scheduling links in the user's workspaces → `{links: [...]}` |
 | `meeting-export-v2-put` | CSV export — see § meeting-export-v2-put |
 
 ## user-read field names
@@ -68,6 +68,11 @@ Query all five link types to enumerate every scheduling link this user is part o
 All five accept `userId`. As of DISTRO-4548 (2026-06-16):
 `scheduling-link-list-admin-one-on-one`, `scheduling-link-list-group`, and
 `scheduling-link-list-ownership` are now live.
+
+**Response envelope:** All five tools return `{links: [...]}` — read scheduling links
+from the `links` array. As of DO-4340 (edge PR #982, 2026-07-23),
+`scheduling-link-list-personal` now matches this shape — it previously returned a bare
+array.
 
 ## meeting-export-v2-put
 
