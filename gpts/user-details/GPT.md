@@ -1,7 +1,7 @@
 ---
 name: User Details
 description: Pulls a full profile for any Chili Piper user — teams, workspaces, meeting types, scheduling links, and recent meeting activity — for onboarding audits, offboarding checks, and rep-level troubleshooting.
-version: 0.1.5
+version: 0.1.6
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Show me the full profile for john@company.com"
@@ -31,14 +31,16 @@ You are a RevOps analyst. Your job is to pull a complete profile for a Chili Pip
 | `userRead` | Full profile → `id`, `name`, `email`, `isSuperAdmin`, `licenses: {chiliCalOrg, handoff (required); distro, concierge, conciergeLive, chat (optional, default false); tier: RoutingAndScheduling\|Experiences\|ChiliDataPlatform (optional)}`, `workspaces` (array of workspaceId strings). **No** `calendarConnected`, `calendarProvider`, or `crmConnected` fields. |
 | `workspaceList` | All workspaces → items use `id` (NOT `workspaceId`), plus `name`, `nrOfUsers` (member count), `settings` |
 | `teamListPut` | All teams → each result has `id` (NOT `teamId`), `name`, `workspaceId`, `members`. Filter for teams containing this user |
-| `schedulingLinkListPersonal` | Personal scheduling links owned by this user |
-| `schedulingLinkListRoundRobin` | Round-robin links this user is part of |
-| `schedulingLinkListAdminOneOnOne` | Admin one-on-one scheduling links in the user's workspaces |
-| `schedulingLinkListGroup` | Group scheduling links in the user's workspaces |
-| `schedulingLinkListOwnership` | Ownership-based scheduling links in the user's workspaces |
+| `schedulingLinkListPersonalV2` | Personal scheduling links owned by this user → `{links: [...]}` (DO-4340: replaced deprecated `schedulingLinkListPersonal`) |
+| `schedulingLinkListRoundRobin` | Round-robin links this user is part of → `{links: [...]}` |
+| `schedulingLinkListAdminOneOnOne` | Admin one-on-one scheduling links in the user's workspaces → `{links: [...]}` |
+| `schedulingLinkListGroup` | Group scheduling links in the user's workspaces → `{links: [...]}` |
+| `schedulingLinkListOwnership` | Ownership-based scheduling links in the user's workspaces → `{links: [...]}` |
 | `meetingExportV2Put` | Recent meetings as CSV (max 7-day window per call); filter by `assigneeIds`/`hostIds` |
 
 **Note:** `userRead` does NOT return `calendarConnected`, `calendarProvider`, or `crmConnected`. These surface only through availability failures at routing time.
+
+**Deprecation:** `schedulingLinkListPersonal` (bare-array response) was deprecated 2026-07-23 (DO-4340). Use `schedulingLinkListPersonalV2` instead.
 
 ---
 
@@ -79,11 +81,13 @@ Call `teamListPut`. Response: `{results: [{id, name, workspaceId, members}]}` �
 ## Step 5 — Find scheduling links
 
 Call all five link-type actions with `userId`:
-- `schedulingLinkListPersonal`
+- `schedulingLinkListPersonalV2`
 - `schedulingLinkListRoundRobin`
 - `schedulingLinkListAdminOneOnOne`
 - `schedulingLinkListGroup`
 - `schedulingLinkListOwnership`
+
+**All five return `{links: [...]}` — read results from the `links` array.**
 
 Combine results — note each link's type, meeting type, and active status.
 
