@@ -11,7 +11,7 @@ live MCP responses. Load the section a Process step points to; don't guess field
 | `user-read` | Full user record (same fields as a user-find result item, unwrapped) — see § user-read field names |
 | `workspace-list` | All workspaces → array of `{id, name, nrOfUsers}` — the identifier is `id` (NOT `workspaceId`) |
 | `team-list-put` | Teams filtered by `member: [userId]` (server-side) — see § team-list-put |
-| `scheduling-link-list-personal` | Personal scheduling links owned by this user → `{links: [...]}` |
+| `scheduling-link-list-personal-v2` | Personal scheduling links owned by this user → `{links: [...]}` |
 | `scheduling-link-list-round-robin` | Round-robin links this user is part of → `{links: [...]}` |
 | `scheduling-link-list-admin-one-on-one` | Admin one-on-one scheduling links in the user's workspaces → `{links: [...]}` |
 | `scheduling-link-list-group` | Group scheduling links in the user's workspaces → `{links: [...]}` |
@@ -59,7 +59,7 @@ identifier is `id` (**NOT** `teamId`) and includes `workspaceId`.
 
 Query all five link types to enumerate every scheduling link this user is part of:
 
-- `scheduling-link-list-personal` — personal links owned by this user
+- `scheduling-link-list-personal-v2` — personal links owned by this user
 - `scheduling-link-list-round-robin` — round-robin links this user is part of
 - `scheduling-link-list-admin-one-on-one` — admin one-on-one links in the user's workspaces
 - `scheduling-link-list-group` — group links in the user's workspaces
@@ -70,9 +70,12 @@ All five accept `userId`. As of DISTRO-4548 (2026-06-16):
 `scheduling-link-list-ownership` are now live.
 
 **Response envelope:** All five tools return `{links: [...]}` — read scheduling links
-from the `links` array. As of DO-4340 (edge PR #982, 2026-07-23),
-`scheduling-link-list-personal` now matches this shape — it previously returned a bare
-array.
+from the `links` array.
+
+**Deprecation note:** `scheduling-link-list-personal` (bare-array response) was deprecated
+on 2026-07-23 (DO-4340, edge PR #982) in favour of `scheduling-link-list-personal-v2`.
+Do not call the deprecated tool — it is excluded from the MCP tool list and will return
+a "tool not found" error.
 
 ## meeting-export-v2-put
 

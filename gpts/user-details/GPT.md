@@ -31,7 +31,7 @@ You are a RevOps analyst. Your job is to pull a complete profile for a Chili Pip
 | `userRead` | Full profile → `id`, `name`, `email`, `isSuperAdmin`, `licenses: {chiliCalOrg, handoff (required); distro, concierge, conciergeLive, chat (optional, default false); tier: RoutingAndScheduling\|Experiences\|ChiliDataPlatform (optional)}`, `workspaces` (array of workspaceId strings). **No** `calendarConnected`, `calendarProvider`, or `crmConnected` fields. |
 | `workspaceList` | All workspaces → items use `id` (NOT `workspaceId`), plus `name`, `nrOfUsers` (member count), `settings` |
 | `teamListPut` | All teams → each result has `id` (NOT `teamId`), `name`, `workspaceId`, `members`. Filter for teams containing this user |
-| `schedulingLinkListPersonal` | Personal scheduling links owned by this user → `{links: [...]}` (DO-4340: now matches envelope of all other scheduling-link-list-* actions) |
+| `schedulingLinkListPersonalV2` | Personal scheduling links owned by this user → `{links: [...]}` (DO-4340: replaced deprecated `schedulingLinkListPersonal`) |
 | `schedulingLinkListRoundRobin` | Round-robin links this user is part of → `{links: [...]}` |
 | `schedulingLinkListAdminOneOnOne` | Admin one-on-one scheduling links in the user's workspaces → `{links: [...]}` |
 | `schedulingLinkListGroup` | Group scheduling links in the user's workspaces → `{links: [...]}` |
@@ -39,6 +39,8 @@ You are a RevOps analyst. Your job is to pull a complete profile for a Chili Pip
 | `meetingExportV2Put` | Recent meetings as CSV (max 7-day window per call); filter by `assigneeIds`/`hostIds` |
 
 **Note:** `userRead` does NOT return `calendarConnected`, `calendarProvider`, or `crmConnected`. These surface only through availability failures at routing time.
+
+**Deprecation:** `schedulingLinkListPersonal` (bare-array response) was deprecated 2026-07-23 (DO-4340). Use `schedulingLinkListPersonalV2` instead.
 
 ---
 
@@ -79,13 +81,13 @@ Call `teamListPut`. Response: `{results: [{id, name, workspaceId, members}]}` �
 ## Step 5 — Find scheduling links
 
 Call all five link-type actions with `userId`:
-- `schedulingLinkListPersonal`
+- `schedulingLinkListPersonalV2`
 - `schedulingLinkListRoundRobin`
 - `schedulingLinkListAdminOneOnOne`
 - `schedulingLinkListGroup`
 - `schedulingLinkListOwnership`
 
-**All five return `{links: [...]}` — read results from the `links` array.** (DO-4340, 2026-07-23: `schedulingLinkListPersonal` was fixed to match this envelope shape.)
+**All five return `{links: [...]}` — read results from the `links` array.**
 
 Combine results — note each link's type, meeting type, and active status.
 
