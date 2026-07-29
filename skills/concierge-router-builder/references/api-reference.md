@@ -133,7 +133,7 @@ outcome = {type: "Schedule", assignment*, meetingTypeId*, timeout?, crmActions?}
         | {type: "Redirect", url*}
 assignment = {type: "Distribution", distributionId} | {type: "User", userId}
 timeout    = {minutes*, onTimeout*: {type: "Landing"} | {type: "Url", url}}   # omit → default 10 min → Landing
-crmActions = [{type: "ConvertLead"} | {type: "Notify", slackChannel?}]        # ConvertLead = only CRM-mutating action; Notify posts to Slack
+crmActions = [{type: "ConvertLead"} | {type: "Notify", slackChannel?} | {type: "AddToCampaign", campaignId, memberStatus}]  # CEH-11141, 2026-07-29: AddToCampaign sends to a Salesforce campaign
 form[]        = {dataField*, label*, required*, description?, hidden?}         # MUST include PersonEmail; hidden = a prefilled value
 inAppButton[] = {dataField*}                                                  # MUST include PersonEmail
 routerLink[]  = {dataField*, label*, required*, hidden?}                       # MUST include PersonEmail; gives a shareable Router Link URL
