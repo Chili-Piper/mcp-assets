@@ -64,7 +64,7 @@ outcome (write) = {type: "Schedule", assignment*, meetingTypeId*, timeout?, crmA
                | {type: "Redirect", url*}
 assignment = {type: "Distribution", distributionId} | {type: "User", userId}
 timeout    = {minutes*, onTimeout*: {type: "Landing"} | {type: "Url", url}}
-crmActions = [{type: "ConvertLead"} | {type: "Notify", slackChannel?}]
+crmActions = [{type: "ConvertLead"} | {type: "Notify", slackChannel?} | {type: "AddToCampaign", campaignId, memberStatus}]
 form[]        = {dataField*, label*, required*, description?, hidden?}   # hidden = a PREFILLED value, not a flag
 inAppButton[] = {dataField*}
 routerLink[]  = {dataField*, label*, required?, hidden?}
@@ -86,7 +86,7 @@ Always `concierge-router-get` before an update. Since **DISTRO-4614** (edge #959
 ## Typed errors
 
 | Error | HTTP | Meaning / skill behavior |
-|-------|:---:|--------------------------|
+|-------|:---:|---------------------------|
 | `ConciergeRouterNotFound` | 404 | Bad routerId — re-resolve via `concierge-list-routers` |
 | `RouterRoutingNotRepresentable` | 409 | **No longer returned for routing updates** since DISTRO-4614 (overlay path). Still real for **`form`** writes on a third-party webform — abort those, edit in UI. The live spec's operation description still shows the pre-4614 routing warning (text lags the deployed behavior) |
 | invalid `dataField` | 400 | A `form`/trigger field references a data field that doesn't exist — use a standard default or a real UUID; create custom fields in the UI first (§ Data fields) |
