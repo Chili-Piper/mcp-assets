@@ -62,7 +62,9 @@ Capture each `distributionId`.
   Add `routerLink` / `inAppButton` if requested (each must include `PersonEmail`).
 - `crmActions` settable here is `[{type: "ConvertLead"}]` and/or `[{type: "Notify", slackChannel?}]`
   (ConvertLead is the only CRM-mutating one; Notify posts to Slack). Other CRM actions are
-  UI-only — captured for the hand-off, not sent.
+  UI-only — captured for the hand-off, not sent. **If ConvertLead is written, warn the admin
+  in the hand-off output:** it publishes and fires, but the Flow Builder does not render it —
+  they won't see it in the UI (verified 2026-07-30 → api-reference.md).
 - On invalid `dataField` (400): re-check valid references via `concierge-list-routers` and
   retry with a corrected reference — do not invent names.
 

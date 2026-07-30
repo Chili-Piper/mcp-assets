@@ -1,7 +1,7 @@
 ---
 name: handoff-router-configuration
 description: Creates, reads, updates, and deletes Chili Piper Handoff routers — the rep-to-rep handoff routing configurations that decide who receives a handoff and which meeting type gets booked. Always-live writes with dry-run diffs, representability checks, and delete confirmation.
-version: 0.1.1
+version: 0.1.2
 references:
   - api-reference
   - write-procedures
@@ -38,7 +38,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the dry-run plan before any write — Handoff routers are ALWAYS-LIVE: create and update publish immediately with no inactive staging state, so the plan is the only preview. Confirm delete separately; it is irreversible."
 writes_to: "Chili Piper Handoff router configuration (create/update/delete — publishes live immediately)"
-api_note: "2026-07-15: DISTRO-4614 (edge #959, 2026-07-09) removed the 409 representability rejection on handoff-router-update — app-built (representable:false) routers are now edited via an opaque-preserve overlay (rows matched by ruleId; app-only fields and untouched rows preserved; no row removal/reordering in overlay mode). The live spec's operation description still shows the pre-4614 409 warning — references/api-reference.md is the truth. Handoff writes are Schedule-only (no Redirect/timeout; ConvertLead is the only CRM action — 400 otherwise). 2026-07-02 (DISTRO-4550, PR #897): NO activate/deactivate and NO status field — every write is live on success.; 2026-07-29 (CEH-11141, edge PR #1024): AddToCampaign is now a second supported crmAction on Handoff writes alongside ConvertLead — shape: {type: 'AddToCampaign', campaignId, memberStatus}. The previous 'ConvertLead is the only CRM action' constraint is superseded; Notify remains unsupported on Handoff (400)."
+api_note: "2026-07-15: DISTRO-4614 (edge #959, 2026-07-09) removed the 409 representability rejection on handoff-router-update — app-built (representable:false) routers are now edited via an opaque-preserve overlay (rows matched by ruleId; app-only fields and untouched rows preserved; no row removal/reordering in overlay mode). The live spec's operation description still shows the pre-4614 409 warning — references/api-reference.md is the truth. Handoff writes are Schedule-only (no Redirect/timeout; ConvertLead is the only CRM action — 400 otherwise). 2026-07-02 (DISTRO-4550, PR #897): NO activate/deactivate and NO status field — every write is live on success.; 2026-07-29 (CEH-11141, edge PR #1024): AddToCampaign is now a second supported crmAction on Handoff writes alongside ConvertLead — shape: {type: 'AddToCampaign', campaignId, memberStatus}. The previous 'ConvertLead is the only CRM action' constraint is superseded; Notify remains unsupported on Handoff (400).; 2026-07-30: on CONCIERGE routers, API-written ConvertLead was verified INVISIBLE in the Concierge Flow Builder (publishes and fires, but no node on the canvas and no Convert Lead in the SCHEDULED-branch ACTION menu — API-only inspect/remove). Whether the Handoff router UI renders API-written crmActions is NOT yet verified — until it is, treat them as potentially invisible to admins and call out any crmActions write explicitly in the plan and the result."
 ---
 
 # Handoff Router Configuration

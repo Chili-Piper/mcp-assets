@@ -140,6 +140,14 @@ routerLink[]  = {dataField*, label*, required*, hidden?}                       #
 branding      = {coverImage?, headingText?, language?}
 ```
 
+> **ConvertLead is invisible in the Flow Builder (verified 2026-07-30, live tenant).** The API
+> accepts and publishes `{type: "ConvertLead"}` — the node is real in the draft and published
+> trees (ScheduledCondition → yes → CrmConvertLead) and fires post-booking — but the Concierge
+> Flow Builder renders no node on the canvas and the SCHEDULED-branch ACTION menu has no
+> Convert Lead option. Admins cannot see, edit, or remove it in the UI; inspect/remove only via
+> `concierge-router-get`/`-update`. **Always tell the admin explicitly when a write includes
+> ConvertLead.** AddToCampaign UI rendering is not yet verified.
+
 Omitting all trigger kinds auto-generates a minimal email-only Chili webform. If the final
 publish step fails, the router is left as an **unpublished draft (422)** — retrying mints
 another; fix/delete the leftover in the Concierge app.

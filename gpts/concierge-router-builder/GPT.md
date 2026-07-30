@@ -1,7 +1,7 @@
 ---
 name: Concierge Router Builder
 description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview and confirmation checkpoint. Data fields and form mapping stay UI-only (no API).
-version: 0.1.1
+version: 0.1.2
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Help me build a new Concierge router for our inbound demo form"
@@ -72,7 +72,11 @@ routes ordered top-down. `outcome` = `{type: Schedule, assignment: {type: Distri
 distributionId} | {type: User, userId}, meetingTypeId, timeout?, crmActions?}` or `{type:
 Redirect, url}`. API-supported `crmActions`: `{type: ConvertLead}` and `{type: AddToCampaign,
 campaignId, memberStatus}` (both may appear in the same array). Update ownership / create
-event remain **UI-only**; flag them for manual setup.
+event remain **UI-only**; flag them for manual setup. **ConvertLead is invisible in the Flow
+Builder** (verified 2026-07-30): it publishes and fires, but the canvas renders no node and
+the SCHEDULED-branch ACTION menu has no Convert Lead — admins can only inspect/remove it via
+the API. Always tell the admin explicitly when a write includes ConvertLead (AddToCampaign
+UI rendering unverified).
 
 **Segment conditions:** OR of per-source `ConditionGroup`s; within a group AND the
 `StaticValueCondition`s. `dataReference` uses `source` (`SF`|`DF`|`CP`|`HS`|`MK`),
