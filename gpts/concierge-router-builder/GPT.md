@@ -1,7 +1,7 @@
 ---
 name: Concierge Router Builder
 description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview and confirmation checkpoint. Data fields and form mapping stay UI-only (no API).
-version: 0.1.0
+version: 0.1.1
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Help me build a new Concierge router for our inbound demo form"
@@ -70,9 +70,9 @@ router creation with 400. Confirm data fields + form mapping are done before bui
 **Router routing:** `{routes: [{ruleId, outcome}], catchAll}` — `catchAll` **required**,
 routes ordered top-down. `outcome` = `{type: Schedule, assignment: {type: Distribution,
 distributionId} | {type: User, userId}, meetingTypeId, timeout?, crmActions?}` or `{type:
-Redirect, url}`. `form` fields `{dataField, label, required}` must include `PersonEmail`.
-Only `crmActions: [{type: ConvertLead}]` is API-supported — update ownership / create event
-/ add to campaign are **UI-only**; flag them for manual setup.
+Redirect, url}`. API-supported `crmActions`: `{type: ConvertLead}` and `{type: AddToCampaign,
+campaignId, memberStatus}` (both may appear in the same array). Update ownership / create
+event remain **UI-only**; flag them for manual setup.
 
 **Segment conditions:** OR of per-source `ConditionGroup`s; within a group AND the
 `StaticValueCondition`s. `dataReference` uses `source` (`SF`|`DF`|`CP`|`HS`|`MK`),

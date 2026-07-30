@@ -1,7 +1,7 @@
 ---
 name: concierge-router-builder
 description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview and confirmation checkpoint. Data fields and form mapping stay UI-only (no API).
-version: 0.1.0
+version: 0.1.1
 references:
   - discovery
   - segment-presets
@@ -32,7 +32,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "The Phase 2 confirmation. Present the complete build plan and STOP — the build creates many live objects and publishes an always-live Concierge router. Nothing is created until the admin confirms."
 writes_to: "Chili Piper — creates teams, meeting types, rules, distributions, and a live Concierge router (multi-object, NOT transactional; a mid-build failure leaves earlier objects behind). Data fields and web-form mapping are UI-only and out of scope."
-api_note: "2026-07-21: data-field read/create and form mapping have NO MCP/Edge API — they are UI-only prerequisites (Settings → Data Fields; Concierge Form Mapping). The router's form/rule `dataField` references must already exist: standard defaults (PersonEmail, PersonFirstName, …) are always valid; custom fields need their UUID from the UI. An unknown `dataField` fails concierge-router-create with 400. Field truth → references/api-reference.md."
+api_note: "2026-07-21: data-field read/create and form mapping have NO MCP/Edge API — they are UI-only prerequisites (Settings → Data Fields; Concierge Form Mapping). The router's form/rule `dataField` references must already exist: standard defaults (PersonEmail, PersonFirstName, …) are always valid; custom fields need their UUID from the UI. An unknown `dataField` fails concierge-router-create with 400. Field truth → references/api-reference.md.; 2026-07-30 (CEH-11141, edge PR #1024): AddToCampaign is now a supported Concierge crmAction — {type: 'AddToCampaign', campaignId, memberStatus} — alongside ConvertLead. Update ownership and create-event remain UI-only. Preflight checklist updated."
 ---
 
 # Concierge Router Builder
@@ -110,7 +110,7 @@ parallelization, and mid-build failure handling → `references/build-procedure.
 ### Phase 4 — Verify & hand off
 
 `concierge-router-get` to confirm the router, then present what was built (with IDs and the
-booking slug), the **UI-only follow-ups** (data-field/form tweaks, most CRM actions), and
+booking slug), the **UI-only follow-ups** (data-field/form tweaks, UI-only CRM actions), and
 the go-live checklist → `references/output-format.md` § Result and § Go-live checklist.
 
 ## Preflight audit
@@ -122,7 +122,7 @@ Verify before presenting the plan (and before any build):
 - [ ] Target `workspace` resolved to an ID; the admin's user resolved via `user-find`.
 - [ ] Routing order is ownership → customer (if any) → segments → catch-all; the **catch-all is present** (required by the router API).
 - [ ] Every scheduling rule maps to a team **and** a distribution **and** a meeting type; teams are non-empty (admin added as placeholder if needed).
-- [ ] CRM actions split into API-supported (Convert Lead) vs UI-only (update ownership, create event, add to campaign) — the latter flagged for manual setup.
+- [ ] CRM actions split into API-supported (ConvertLead, AddToCampaign {type, campaignId, memberStatus}) vs UI-only (update ownership, create event) — the latter flagged for manual setup.
 - [ ] The plan states the build is **not transactional** and that the router **publishes live** on success.
 
 ## Checkpoint
