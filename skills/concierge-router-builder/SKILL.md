@@ -1,7 +1,7 @@
 ---
 name: concierge-router-builder
 description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview and confirmation checkpoint. Data fields and form mapping stay UI-only (no API).
-version: 0.1.1
+version: 0.1.2
 references:
   - discovery
   - segment-presets
@@ -32,7 +32,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "The Phase 2 confirmation. Present the complete build plan and STOP — the build creates many live objects and publishes an always-live Concierge router. Nothing is created until the admin confirms."
 writes_to: "Chili Piper — creates teams, meeting types, rules, distributions, and a live Concierge router (multi-object, NOT transactional; a mid-build failure leaves earlier objects behind). Data fields and web-form mapping are UI-only and out of scope."
-api_note: "2026-07-21: data-field read/create and form mapping have NO MCP/Edge API — they are UI-only prerequisites (Settings → Data Fields; Concierge Form Mapping). The router's form/rule `dataField` references must already exist: standard defaults (PersonEmail, PersonFirstName, …) are always valid; custom fields need their UUID from the UI. An unknown `dataField` fails concierge-router-create with 400. Field truth → references/api-reference.md.; 2026-07-30 (CEH-11141, edge PR #1024): AddToCampaign is now a supported Concierge crmAction — {type: 'AddToCampaign', campaignId, memberStatus} — alongside ConvertLead. Update ownership and create-event remain UI-only. Preflight checklist updated."
+api_note: "2026-07-21: data-field read/create and form mapping have NO MCP/Edge API — they are UI-only prerequisites (Settings → Data Fields; Concierge Form Mapping). The router's form/rule `dataField` references must already exist: standard defaults (PersonEmail, PersonFirstName, …) are always valid; custom fields need their UUID from the UI. An unknown `dataField` fails concierge-router-create with 400. Field truth → references/api-reference.md.; 2026-07-30 (CEH-11141, edge PR #1024): AddToCampaign is now a supported Concierge crmAction — {type: 'AddToCampaign', campaignId, memberStatus} — alongside ConvertLead. Update ownership and create-event remain UI-only. Preflight checklist updated.; 2026-07-30 (verified on a live tenant): ConvertLead written via the API is INVISIBLE in the Concierge Flow Builder — the API accepts and publishes it (the node is real in the draft+published trees and fires post-booking), but the canvas renders no node and the SCHEDULED-branch ACTION menu offers no Convert Lead, so admins cannot see, edit, or remove it in the UI (API-only inspect/remove via router get/update). Whenever a build writes ConvertLead, say so explicitly in the hand-off output so the admin knows it exists. AddToCampaign UI rendering not yet verified."
 ---
 
 # Concierge Router Builder
@@ -122,7 +122,7 @@ Verify before presenting the plan (and before any build):
 - [ ] Target `workspace` resolved to an ID; the admin's user resolved via `user-find`.
 - [ ] Routing order is ownership → customer (if any) → segments → catch-all; the **catch-all is present** (required by the router API).
 - [ ] Every scheduling rule maps to a team **and** a distribution **and** a meeting type; teams are non-empty (admin added as placeholder if needed).
-- [ ] CRM actions split into API-supported (ConvertLead, AddToCampaign {type, campaignId, memberStatus}) vs UI-only (update ownership, create event) — the latter flagged for manual setup.
+- [ ] CRM actions split into API-supported (ConvertLead, AddToCampaign {type, campaignId, memberStatus}) vs UI-only (update ownership, create event) — the latter flagged for manual setup. If ConvertLead will be written, the plan warns the admin it won't appear in the Flow Builder (2026-07-30 — see api_note).
 - [ ] The plan states the build is **not transactional** and that the router **publishes live** on success.
 
 ## Checkpoint

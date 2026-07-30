@@ -20,7 +20,7 @@
    - distribution names → `distribution-list-put` (top-level array; `published.name` / `id`)
    - rep names/emails → `user-find` → `userId` · meeting types → `meeting-type-list` → `meetingTypeId`
 3. Every `Schedule` outcome needs **both** an `assignment` and a `meetingTypeId` — ask rather than default.
-4. Optional per-row extras only when asked: `timeout: {minutes, onTimeout: Landing|Url}`, `crmActions: [ConvertLead | Notify{slackChannel}]`.
+4. Optional per-row extras only when asked: `timeout: {minutes, onTimeout: Landing|Url}`, `crmActions: [ConvertLead | Notify{slackChannel}]`. If a row includes `ConvertLead`, warn the admin in the plan and result: it publishes and fires but does not render in the Flow Builder — they won't see it in the UI (verified 2026-07-30 → api-reference § Write shapes).
 5. `catchAll` is **required** — if unspecified, ask what unmatched submissions should do.
 6. Form changes: each field is `{dataField, label, required, description?, hidden?}` — `dataField` must reference a real, **already-existing** data field (no API lists or creates them: standard defaults like `PersonEmail` are always valid, custom fields need their UUID from the app, and an unknown reference fails the write with 400 → api-reference § Data fields); keep existing fields unless the human asked to change them; the field list must include `PersonEmail`. Trigger changes: `inAppButton` (`[{dataField}]`) and `routerLink` (`[{dataField, label, required?, hidden?}]`) are each writable and replace **only their own kind** — writing one never destroys the others; both must include `PersonEmail`. Branding: `{coverImage?, headingText?, language?}` — merged per sub-field (omitted sub-fields preserved).
 
