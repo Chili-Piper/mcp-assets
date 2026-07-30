@@ -19,7 +19,7 @@ Status badges: 🟢 Active · ⚪ Inactive · 🟡 Activating/Deactivating · �
 ```
 ## Plan — update "Inbound MQL" (rtr_4f2a…) · DRY RUN, nothing written
 
-Representability check: ✅ routing.representable = true
+Summary coverage: ✅ routing.representable = true (no app-only config on these rows)
 Current status: 🟢 Active — the new routing goes LIVE immediately on apply.
 
 ### Routing (current → proposed)
@@ -30,7 +30,7 @@ Current status: 🟢 Active — the new routing goes LIVE immediately on apply.
 | — | (catch-all) | Global Queue | Global Queue (unchanged) |
 
 ### Write calls that would run
-1. distro-router-update rtr_4f2a… (full routing object — 3 rows + catch-all)
+1. distro-router-update rtr_4f2a… (overlay — 3 rows + catch-all resent; routingSteps carried over)
 
 Apply it? (Reply 'apply' or re-run with dry_run=false.)
 ```
@@ -61,7 +61,7 @@ Final status: 🟢 Active (verified via distro-router-get)
 Routing verified: 3 rows + catch-all match the plan ✅
 
 Audit trail:
-1. distro-router-get rtr_4f2a… (pre-read, representable ✅)
+1. distro-router-get rtr_4f2a… (pre-read: overlay base)
 2. distro-router-update rtr_4f2a… → 200
 3. distro-router-get rtr_4f2a… (verify)
 ```
@@ -69,5 +69,6 @@ Audit trail:
 ## Rules
 
 - Create results always state: **"Router is Inactive — it will not route records until activated."**
+- When `routing.representable = false`, the Summary coverage line lists the `Unrepresentable` rows and their `kind`s, and states that the overlay preserves that app-only config — never present it as a blocker.
 - IDs render with resolved names; raw IDs stay in parentheses for auditability.
 - On a typed error, show the error name + verbatim message and the specific recovery from api-reference § Typed errors.

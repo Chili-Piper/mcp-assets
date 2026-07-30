@@ -15,12 +15,12 @@ routing: {
     delay?: {type: BeforeRecordEval | AfterRecordEval, ...}
   },
   routes: [                        # evaluated in order
-    {ruleId?: string,              # rule = the conditions; from rule-list
+    {ruleId: string,               # REQUIRED — rule = the conditions; from rule-list
      distributionId: string,       # REQUIRED — where matching records go
-     actions?: [...]}              # optional side effects, see below
+     actions: [...]}               # ≥1 action required to publish, see below
   ],
-  catchAll: {distributionId, actions?},   # REQUIRED — records matching no rule
-  routingSteps?: [ {type: Enrichment, fieldMappings?} | {type: SpamCheck} ]
+  catchAll: {distributionId, actions},    # REQUIRED — records matching no rule; also needs ≥1 action
+  routingSteps?: [ {type: Enrichment, id?, fieldMappings} | {type: SpamCheck, id?, salesforceWrite} ]
 }
 ```
 
@@ -30,13 +30,21 @@ routing: {
 - **Distributions** → `distribution-list-put` (returns a **top-level array**). Name lives in `published.name`, ID in `id`.
 - When `changes` names a rule or distribution that doesn't resolve, list the closest candidates and ask — never guess an ID.
 
-## Row actions (optional, per row and on the catch-all)
+## Row actions (per row and on the catch-all)
 
-`ReassignRecord`, `SendEmailReminderToAssignee`, `SendSlackToAssignee`, `UpdateField`, `UpdateFieldDynamic`, `UpdateOwnership` — each a discriminated object (`{type: ...}` plus type-specific fields). Only plan actions the human asked for; copying existing rows' actions verbatim from a `get` is safe.
+`ReassignRecord`, `SendEmailReminderToAssignee`, `SendSlackToAssignee`, `UpdateField`, `UpdateFieldDynamic`, `UpdateOwnership` — each a discriminated object (`{type: ...}` plus type-specific fields). The distribution picks WHO; actions decide WHAT — **at least one action per route and on the catch-all is required to publish** (an actionless route fails). On update, a `ruleId`-matched row **keeps its existing actions**, so supply actions only where you change them or on new rows; copying existing rows' actions verbatim from a `get` is safe.
 
-## The read shape is NOT the write shape
+## Updates are an overlay, not a full replace
 
-`distro-router-get` returns a summary: `rows: [{ruleId?, outcome}]` where `outcome` is `{type: "Route", distributionId, actions?}` or `{type: "Unrepresentable"}`. To update, convert summary rows back to write rows (`{ruleId, distributionId, actions}` from each `Route` outcome). Any `Unrepresentable` outcome (or `representable: false` at the top) → abort the update; the router must be edited in the UI.
+`distro-router-get` returns a summary: `rows: [{ruleId?, outcome}]` where `outcome` is `{type: "Route", distributionId?, actions}` or `{type: "Unrepresentable", kind}`. `distro-router-update` **overlays** your `routing` onto the router's current routing:
+
+- Each sent route is matched to an existing row by `ruleId` (catch-all to catch-all) and only its **distribution + actions** are swapped in. App-only config on that row — SLAs, matchers, campaign addition, lead-to-contact conversion, send-to-routers, duplicate-matching, app-only actions — is **preserved**.
+- A sent row whose `ruleId` matches nothing is **appended** as a new route.
+- The **trigger and `routingSteps` are replaced** from what you send — an empty or absent `routingSteps` **clears** them, so read them back from the `get` and resend them (carrying each step's `id` keeps it, and variables referencing it, stable).
+- `Unrepresentable` outcomes (or `representable: false` at the top) **no longer block updates** — the flag only means the lossy summary doesn't round-trip exactly. The overlay edits such routers safely, changing only what you address by `ruleId`.
+- The overlay applies to the router's editable **draft** (unpublished edits made in the Distro app are part of the base) and the result is republished.
+
+To update: start from the current summary, build write rows (`{ruleId, distributionId, actions}` from each `Route` outcome), apply the changes, and send the **complete row set** — don't rely on omitted rows surviving the overlay.
 
 ## Rendering rows for humans
 

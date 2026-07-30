@@ -4,7 +4,9 @@
 > dry-run plan is confirmed by the human (see SKILL.md § Checkpoint), and only on the
 > resolved IDs in that plan:
 > - **`distro-router-delete`** — permanently removes the router and its routing config.
-> - **`distro-router-update`** — full-replace: any row not in the payload is **gone**.
+> - **`distro-router-update`** — overlay, but the **trigger and `routingSteps` are
+>   replaced** from what you send (an empty/absent `routingSteps` **clears** them), and
+>   omitted rows should not be relied on to survive — send the complete row set.
 > - **`distro-router-activate`** — the router starts routing **live CRM records
 >   immediately**; requires its own explicit confirmation.
 
@@ -30,13 +32,14 @@ any transition can land in [Error{message}] → surface message, escalate
 3. If `Activating`: poll `distro-router-get` every ~5 s, up to 2 minutes. Stop at `Active` (done), or `Error` (surface `status.message`, escalate). Report polling progress.
 4. Idempotent — re-calling on an `Active` router is safe.
 
-## Update (full-replace)
+## Update (overlay)
 
-1. `distro-router-get` → require `routing.representable === true` (else abort → api-reference § Representability).
-2. Reconstruct the **complete** desired `routing` (every row, the catch-all, the trigger) — start from the current summary, apply the changes. Any row omitted from the payload is deleted.
+1. `distro-router-get` → read the current rows, catch-all, trigger, and `routingSteps` — this summary is the base the overlay addresses. `representable: false` / `Unrepresentable` rows do **not** block the update (→ api-reference § Representability (advisory)); note in the plan which app-only config the overlay preserves on those rows.
+2. Reconstruct the **complete** desired `routing` (every row, the catch-all, the trigger, the current `routingSteps` with their `id`s) — start from the current summary, apply the changes. Rows are matched by `ruleId` (only distribution + actions swap in; a matched row keeps its existing actions unless you send new ones); an unmatched `ruleId` is appended as a new route; the trigger and `routingSteps` are **replaced** (empty/absent `routingSteps` clears them). New rows and the catch-all need ≥1 action.
 3. `distro-router-update` with `{name?, description?, routing}` — `routing` always included (400 `RouterRoutingRequired` without it).
-4. **Activation state is preserved**: an `Active` router stays active and the new config goes live immediately (say so in the plan); an `Inactive` one stays inactive.
+4. **Activation state is preserved**: an `Active` router stays active and the new config goes live immediately (say so in the plan); an `Inactive` one stays inactive. The overlay applies to the router's editable **draft**, so unpublished app edits are part of what gets published — mention this if the `get` looks different from what the human expects.
 5. Verify: re-`get`, compare rows/catch-all to the plan.
+6. On a typed 422: the update is **NOT rolled back**. Publish failure → changes sit on an unpublished draft, prior config still live. Re-activation failure → new config published but router `Inactive`. Surface the message and direct the human to fix/activate in the Distro app.
 
 ## Deactivate (async)
 
