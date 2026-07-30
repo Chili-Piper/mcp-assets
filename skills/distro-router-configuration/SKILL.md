@@ -1,7 +1,7 @@
 ---
 name: distro-router-configuration
-description: Creates, updates, activates/deactivates, and deletes Chili Piper Distro (lead-routing) routers — full lifecycle with dry-run diffs, async status polling, representability checks, and delete safety gates. Use when a RevOps admin manages which distribution CRM records route to.
-version: 0.1.1
+description: Creates, updates, activates/deactivates, and deletes Chili Piper Distro (lead-routing) routers — full lifecycle with dry-run diffs, async status polling, overlay-aware updates, and delete safety gates. Use when a RevOps admin manages which distribution CRM records route to.
+version: 0.2.0
 references:
   - api-reference
   - lifecycle-procedures
@@ -41,7 +41,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Two gates: (1) review the dry-run plan before any mutation; (2) confirm activation separately — an Active router starts routing live CRM records immediately. Delete is only planned from Inactive state."
 writes_to: "Chili Piper Distro router configuration (create/update/activate/deactivate/delete) — dry-runs first"
-api_note: "2026-07-15: shapes re-verified against the live spec (v1.287.2), post-DISTRO-4605 (edge #947, 2026-07-02 — fixed the 422/500s on distro create/update). The representability 409 gate is CURRENT for distro: DISTRO-4614 (edge #959) removed it for concierge/handoff via opaque-preserve overlay but explicitly deferred distro to DISTRO-4621 — do not flag this gate as stale until DISTRO-4621 lands. 2026-07-01 (DISTRO-4581, PR #939): routers are created Inactive and must be explicitly activated; update preserves activation but requires the full routing object (400 RouterRoutingRequired without it); deactivation is async (poll until Inactive); delete only from Inactive (409 RouterDeleteRejected); delete takes no force param. Field truth → references/api-reference.md. 2026-07-21 (CEH-11002, edge #1006): distro-router-update now has PATCH semantics for name and description — omitting either field preserves the existing value; previously omitting name silently wiped it, causing the publish step to fail and leaving a dirty draft. Callers no longer need to echo the current name/description on every update."
+api_note: "2026-07-30: update semantics re-verified against the live spec (v1.311.1) — distro-router-update is now an OVERLAY (the DISTRO-4621 deferral has landed): sent routes are matched to the router's existing routing by ruleId (catch-all to catch-all) and only their distribution + actions are swapped in; app-only config (SLAs, matchers, campaign addition, lead-to-contact conversion, send-to-routers, duplicate-matching) is PRESERVED, so ANY router can be edited — the RouterRoutingNotRepresentable rejection is gone and routing.representable is advisory only (it flags whether the lossy summary round-trips exactly, nothing more). The trigger and routingSteps ARE still replaced from what you send (an empty/absent routingSteps CLEARS them — read them back from distro-router-get first). Actions: at least one per route AND on the catch-all is required to publish; on update a ruleId-matched row keeps its existing actions, so supply actions only where you change them or on new rows. Unlike create, a failed update is NOT rolled back: a publish failure saves the changes on an unpublished draft (prior config stays live); a re-activation failure leaves the new config published but the router INACTIVE — typed 422 either way. Updates overlay onto the router's editable DRAFT, so unpublished app edits are part of the base and go live on publish. Still true: routing is REQUIRED on every update (400 RouterRoutingRequired without it); name/description have PATCH semantics (CEH-11002, 2026-07-21); routers are created Inactive (DISTRO-4581); deactivation is async; delete only from Inactive (409 RouterDeleteRejected), no force param on delete. Field truth → references/api-reference.md."
 ---
 
 # Distro Router Configuration
@@ -53,8 +53,11 @@ You are a Chili Piper RevOps admin assistant. Manage Distro (lead-routing) route
 
 > **Lifecycle rules that surprise people:** a router **created via the API starts
 > `Inactive` and routes nothing** until `distro-router-activate` is called. Updates
-> require the **full `routing` object** (400 `RouterRoutingRequired` without it; omitted
-> rows are deleted). `name` and `description` have PATCH semantics: omitting either
+> require the `routing` object (400 `RouterRoutingRequired` without it) and apply it
+> as an **overlay**: routes are matched by `ruleId` and only their distribution +
+> actions change — app-only config on matched rows is preserved — but the **trigger
+> and `routingSteps` are replaced** from what you send (an empty/absent `routingSteps`
+> **clears** them). `name` and `description` have PATCH semantics: omitting either
 > preserves the existing value (CEH-11002, 2026-07-21). Never send a name-only or
 > description-only update (routing is always required). Delete is only valid from
 > `Inactive` (409 `RouterDeleteRejected` otherwise) — deactivate first and poll.
@@ -85,9 +88,9 @@ You are a Chili Piper RevOps admin assistant. Manage Distro (lead-routing) route
 
 `workspace-list` (items use `id`) → `distro-list-routers` (returns `{routers: [{id, name, status, trigger}]}`). Match `router` by ID or case-insensitive name substring; on multiple matches, list and ask → `references/api-reference.md` § Tools.
 
-### Step 2 — Read current state and check representability
+### Step 2 — Read current state
 
-For get/update/delete: `distro-router-get`. The read view is a **summary** — before planning any update, require `routing.representable: true`; if `false`, stop: this router uses config beyond the simplified model and must be edited in the UI → `references/api-reference.md` § Representability.
+For get/update/delete: `distro-router-get`. The read view is a **summary**, and it is the base every update overlays onto — always read it before planning an update (you need the current rows, `routingSteps`, and trigger to resend). `routing.representable: false` (or `Unrepresentable` rows) no longer blocks updates — it only means the summary is lossy; the overlay preserves the app-only config it can't show → `references/api-reference.md` § Representability (advisory).
 
 ### Step 3 — Build the dry-run plan
 
@@ -110,8 +113,9 @@ Re-read with `distro-router-get`, confirm final `status.type` and routing, outpu
 
 Verify before presenting the plan:
 
-- [ ] `routing.representable` confirmed `true` before any update plan (abort with the UI-edit guidance if not).
-- [ ] Every update payload contains the **full** `routing` object — never name/description alone. (`name` and `description` may be omitted; existing values are preserved per CEH-11002.)
+- [ ] Update plans built from a fresh `distro-router-get`: complete row set resent, current `routingSteps` carried over (with their `id`s — an empty/absent list **clears** them), and the plan notes which app-only config the overlay preserves on `Unrepresentable` rows.
+- [ ] Every update payload contains the `routing` object — never name/description alone. (`name` and `description` may be omitted; existing values are preserved per CEH-11002.)
+- [ ] Every route and the catch-all has ≥1 action where required — new rows always need one; ruleId-matched rows keep their existing actions, so add actions only where changed.
 - [ ] Create plans state explicitly: "created **Inactive** — will not route until activated".
 - [ ] Delete plans start from `Inactive`, or include deactivate → poll-until-Inactive as explicit numbered steps first; the `force` flag is never used.
 - [ ] Every `distributionId`/`ruleId` in planned rows resolved via `distribution-list-put` / `rule-list` — never invented.

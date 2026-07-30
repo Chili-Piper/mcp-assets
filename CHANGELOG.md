@@ -25,6 +25,23 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
   `mcp-servers/chili-piper/README.md` and a `gemini/` row to the root README index.
 
 ### Changed
+- **`distro-router-configuration` 0.2.0** (SKILL + paired GPT + regenerated
+  `openapi.yaml`) — **`distro-router-update` is now an overlay; the
+  abort-on-unrepresentable rule is retired** (live spec v1.311.1, the DISTRO-4621
+  deferral of DISTRO-4614's opaque-preserve overlay has landed for Distro). Sent routes
+  are matched to the router's existing routing by `ruleId` (catch-all to catch-all) and
+  only their distribution + actions swap in — app-only config (SLAs, matchers, campaign
+  addition, lead-to-contact conversion, send-to-routers, duplicate-matching) is
+  preserved, so **any router can be edited**; `routing.representable` is advisory only.
+  Documented the sharp edges that come with it: the trigger and `routingSteps` are
+  still **replaced** from what you send (empty/absent `routingSteps` **clears** them —
+  read them back first, carry step `id`s); ≥1 action per route and on the catch-all is
+  required to publish (`ruleId`-matched rows keep their existing actions); the overlay
+  applies to the router's editable **draft** (unpublished app edits included); and a
+  failed update is **not rolled back** — publish failure leaves the changes on an
+  unpublished draft, re-activation failure leaves the new config published but the
+  router `Inactive` (typed 422 either way). `routing` remains required on every update
+  and name/description keep their CEH-11002 PATCH semantics.
 - **`concierge-router-configuration` 0.1.1** (SKILL + paired GPT) — documented the
   **data-field API gap** surfaced while building `concierge-router-builder` (#65): no
   MCP/Edge tool lists, reads, creates, or maps data fields, and web-form mapping is
