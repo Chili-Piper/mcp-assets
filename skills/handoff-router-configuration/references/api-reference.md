@@ -43,10 +43,10 @@ routing: {
 }
 outcome (write) = {type: "Schedule", assignment*, meetingTypeId*, crmActions?}
 assignment = {type: "Distribution", distributionId} | {type: "User", userId}
-crmActions = [{type: "ConvertLead"}]
+crmActions = [{type: "ConvertLead"} | {type: "AddToCampaign", campaignId*, memberStatus*}]
 ```
 
-> **Handoff writes are Schedule-only.** No `Redirect`, no no-show `timeout`, and `ConvertLead` is the only CRM action — supplying any of those is **rejected (400)**; the full outcome set (Redirect/timeout/Notify) is concierge-only.
+> **Handoff writes are Schedule-only.** No `Redirect`, no no-show `timeout`, and the only CRM actions are `ConvertLead` and `AddToCampaign` (since CEH-11141, edge #1024, 2026-07-29 — both may appear in the same array) — supplying anything else, including `Notify`, is **rejected (400)**; the full outcome set (Redirect/timeout/Notify) is concierge-only.
 
 > **UI visibility caveat (2026-07-30):** on Concierge routers, an API-written `ConvertLead` was verified to publish and fire but NOT render in the Concierge Flow Builder (no node on the canvas, no Convert Lead in the SCHEDULED-branch ACTION menu — inspect/remove only via the API). Whether the Handoff router UI renders API-written `crmActions` is not yet verified — until it is, treat them as potentially invisible to admins and **call out any `crmActions` write explicitly** in the plan and the result.
 

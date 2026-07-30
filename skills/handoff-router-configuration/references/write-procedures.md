@@ -20,7 +20,7 @@
    - rep names/emails → `user-find` → `userId`
    - meeting type names → `meeting-type-list` → `meetingTypeId`
 3. Every `Schedule` outcome needs **both** an `assignment` (`{type: Distribution, distributionId}` or `{type: User, userId}`) **and** a `meetingTypeId`. If the human didn't name a meeting type, ask — don't default silently.
-4. The only optional per-row extra is `crmActions: [{type: "ConvertLead"}]`. Handoff writes accept **no** `Redirect` outcome, **no** `timeout`, and **no** `Notify` action — the API rejects them (400); those belong to concierge routers.
+4. The only optional per-row extra is `crmActions`, which accepts `{type: "ConvertLead"}` and/or `{type: "AddToCampaign", campaignId, memberStatus}` (CEH-11141, edge #1024, 2026-07-29). Handoff writes accept **no** `Redirect` outcome, **no** `timeout`, and **no** `Notify` action — the API rejects them (400); those belong to concierge routers. Resolve `campaignId` from the CRM (never invent it) and confirm the intended `memberStatus` with the human.
 5. `catchAll` is **required** on every create/update — if the human didn't specify one, ask what unmatched handoffs should do.
 6. When a name resolves to nothing or to several candidates, list the closest matches and ask.
 

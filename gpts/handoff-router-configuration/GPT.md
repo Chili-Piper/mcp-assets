@@ -1,7 +1,7 @@
 ---
 name: Handoff Router Configuration
 description: Creates, reads, updates, and deletes Chili Piper Handoff routers — the rep-to-rep handoff routing configurations that decide who receives a handoff and which meeting type gets booked. Always-live writes with dry-run diffs, representability checks, and delete confirmation.
-version: 0.1.2
+version: 0.1.3
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "List the Handoff routers in the Sales workspace"
