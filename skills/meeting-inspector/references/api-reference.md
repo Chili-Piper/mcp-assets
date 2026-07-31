@@ -10,8 +10,8 @@ Full field names, status codes, and known gotchas for the Chili Piper MCP tools 
 
 | Tool | Method | What it returns |
 |------|--------|----------------|
-| `meeting-list-put` | POST | Paginated meetings — envelope `{data: {list: [...]}, hasMore: "Yes"\|"No"}`. Items in `data.list[]` use `meetingId`, `meetingStatus`, `dateTime.start`/`dateTime.end`, `hostId`/`hostEmail`/`hostName`, `bookedAt`, `primaryGuest.value`, `attendees[]`, `workspaceId`. |
-| `meeting-get` | GET | Single meeting by ID — `id`, **`meetingStatus`**. Scheduled time is in the `activities` array (a `ScheduledAt`/`HappensAt` entry — no top-level `scheduledAt` or `startTime`). |
+| `meeting-list-put` | POST | Paginated meetings — envelope `{data: {list: [...]}, hasMore: "Yes"\|"No"}`. Items in `data.list[]` use `meetingId`, `meetingStatus`, `dateTime.start`/`dateTime.end`, `hostId`/`hostEmail`/`hostName`, `bookedAt`, `primaryGuest.value`, `attendees[]`, `workspaceId`, `sourceUrl` (optional booking-page URL), `sourceUrlParams` (optional Map of parsed UTM/query params). |
+| `meeting-get` | GET | Single meeting by ID — `id`, **`meetingStatus`**, `bookedAt`, `attendees[]`, `sourceUrl` (optional), `sourceUrlParams` (optional). Scheduled time is in the `activities` array (a `ScheduledAt`/`HappensAt` entry — no top-level `scheduledAt` or `startTime`). |
 | `concierge-list-routers` | GET | All routers — `{routers: [{router: {id, name, slug, routing: {rules, catchAll}, ...}, workspaceId}]}`. Access routerId at `routers[N].router.id`, slug at `routers[N].router.slug`, workspaceId at `routers[N].workspaceId`. |
 | `concierge-logs` | POST | Routing decisions — `status`, `trigger`, `guestEmail`, `triggeredAt`, `matchedPath`, `assignments`, `meetingId`, `sourceUrl`, `crmUrl`, `actionsStatus` |
 | `workspace-list` | GET | All workspaces — `[{id, name, emoji, logo, metadata, nrOfUsers}]` (items use **`id`**, not `workspaceId`; member count is `nrOfUsers`; there is no `settings`) |
@@ -61,7 +61,7 @@ args:
 ## Meeting status values (`meetingStatus`)
 
 | Value | Meaning |
-|-------|---------|
+|-------|--------|
 | `Active` | Booked — upcoming, or (if `dateTime.start` is in the past) effectively completed |
 | `Canceled` | Meeting was cancelled (note the single-`l` spelling) |
 | `NoShow` | Guest did not attend (cross-check the separate `noShowStatus` string field) |
@@ -76,7 +76,7 @@ args:
 Observed against live routing logs. Treat this as the known set; confirm any other value against a live log before branching on it.
 
 | Value | Meaning |
-|-------|---------|
+|-------|--------|
 | `Scheduled` | Lead completed booking (a `meetingId` is present) |
 | `TimedOut` | Routing session expired before the lead booked |
 | `Cancelled` | The routing session / resulting meeting was cancelled |
@@ -103,7 +103,7 @@ matchedPath: { route: { type: "RuleRoute" | "CatchAllRoute", ruleIds: [...], id:
 `trigger` is a string (e.g. `ThirdPartyForm`). Common values:
 
 | Value | What it means |
-|-------|--------------|
+|-------|-------------|
 | `ThirdPartyForm` | Web form submission (Marketo, HubSpot, Pardot, HTML form) |
 | `Direct` | Prospect visited the router URL directly |
 | `Email` | Scheduling link embedded in an email |
@@ -122,8 +122,12 @@ matchedPath: { route: { type: "RuleRoute" | "CatchAllRoute", ruleIds: [...], id:
 | Booked at | `bookedAt` | `bookedAt` |
 | Guest email | `primaryGuest.value` (also `attendees[]`) | `attendees[]` |
 | Assigned rep | `hostId` / `hostEmail` / `hostName` | `attendees[]` (host entry) |
+| Source URL | `sourceUrl` (optional) | `sourceUrl` (optional) |
+| Source URL params | `sourceUrlParams` (optional) | `sourceUrlParams` (optional) |
 
 Lead time = `dateTime.start` minus `bookedAt` (for `meeting-list-put` items). The rep is already named via `hostName`/`hostEmail` — no separate `user-find-by-ids` lookup is needed for `meeting-list-put`.
+
+**Note on two `sourceUrl` fields:** `sourceUrl` on the meeting object (meeting-get/meeting-list-put) is the booking-page URL the guest came from, added by CEH-10893. This is distinct from `sourceUrl` in `concierge-logs`, which is the URL that triggered the routing session. They often agree but can differ when the booking was rescheduled or completed via a different surface. `sourceUrlParams` (parsed UTM/query params) is only available on the meeting object, not in concierge-logs.
 
 ---
 

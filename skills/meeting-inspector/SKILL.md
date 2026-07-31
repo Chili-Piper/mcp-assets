@@ -1,8 +1,8 @@
 ---
 name: meeting-inspector
 description: Deep-dives into a single Chili Piper meeting — booking trigger, routing path, rep assignment, and outcome — to diagnose what happened and surface a next action.
-version: 0.3.1
-api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Quick API table and Step 3b updated"
+version: 0.3.2
+api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Quick API table and Step 3b updated; 2026-07-31: CEH-10893 (edge PR #1021) — meeting-get and meeting-list-put now return `sourceUrl` (booking-page URL the guest came from, Option[String]) and `sourceUrlParams` (parsed UTM/query params, Option[Map[String,String]]) directly on the meeting object; api-reference § Meeting summary fields updated."
 references:
   - api-reference
   - routing-trace
@@ -92,7 +92,7 @@ Tool envelopes and the 7-day window → `references/api-reference.md` § Hard AP
 
 ### Step 2 — Build the meeting summary
 
-Extract: meeting ID, status, scheduled time, booked-at, lead time, guest email, assigned rep.
+Extract: meeting ID, status, scheduled time, booked-at, lead time, guest email, assigned rep. Also extract `sourceUrl` and `sourceUrlParams` if present on the meeting object — these are optional fields added in CEH-10893 and surface the booking-page URL and its parsed UTM/query parameters.
 
 Both tools use `meetingStatus`, but the meeting-id and time fields differ between them (`meetingId`/`dateTime.start` in list vs `id`/`activities[]` in get). Correct field names → `references/api-reference.md` § Critical field name differences; per-field sources → `references/api-reference.md` § Meeting summary fields.
 
