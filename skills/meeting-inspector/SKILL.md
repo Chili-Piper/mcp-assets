@@ -1,8 +1,8 @@
 ---
 name: meeting-inspector
 description: Deep-dives into a single Chili Piper meeting — booking trigger, routing path, rep assignment, and outcome — to diagnose what happened and surface a next action.
-version: 0.3.2
-api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Quick API table and Step 3b updated; 2026-07-31: CEH-10893 (edge PR #1021) — meeting-get and meeting-list-put now return `sourceUrl` (booking-page URL the guest came from, Option[String]) and `sourceUrlParams` (parsed UTM/query params, Option[Map[String,String]]) directly on the meeting object; api-reference § Meeting summary fields updated."
+version: 0.3.3
+api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Quick API table and Step 3b updated; 2026-07-31: CEH-10893 (edge PR #1021) — meeting-get and meeting-list-put now return `sourceUrl` (booking-page URL the guest came from, Option[String]) and `sourceUrlParams` (parsed UTM/query params, Option[Map[String,String]]) directly on the meeting object; api-reference § Meeting summary fields updated. 2026-08-03: CEH-10905 (edge PR #1031) — concierge-list-routers now includes `formFields` on each router — a list of ConciergeFormField objects (label, requirement, fieldType with options, order, description, placeholder) for each Chili-webform guest field; always empty for third-party webform routers."
 references:
   - api-reference
   - routing-trace
@@ -70,7 +70,7 @@ Provide either `meeting_id` or `guest_email`. If neither is given, ask for it in
 |------|----------------|
 | `meeting-get` | Single meeting by ID — full detail |
 | `meeting-list-put` | Paginated meetings by date range (max 7 days per call) |
-| `concierge-list-routers` | All routers in a workspace |
+| `concierge-list-routers` | All routers in a workspace; each router now includes `formFields` (Chili-webform guest fields with label, type, options, requirement, and order; empty for third-party webforms — CEH-10905) |
 | `concierge-logs` | Routing decisions per router (max 30-day window; max 500 logs per page — paginate with `page: 0, 1, ...`) |
 | `workspace-list` | All workspaces |
 
