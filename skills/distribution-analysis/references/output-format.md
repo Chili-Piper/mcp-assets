@@ -6,6 +6,7 @@ Lead with config + rep breakdown so the "who's getting more/fewer meetings" answ
 ## Distribution Analysis — <Distribution Name>
 **Workspace:** <workspace name>  ·  **Period:** <start> – <end>
 **Handling:** <Strict|Flexible>  ·  **Active members:** <N>
+**Fairness settings:** credit-back cancel <✅|❌> / no-show <✅|❌>  ·  vacation calibration <✅|❌>  ·  stats reset <Monthly|Quarterly (from <month>)|Yearly (<month>)|Never — all-time> · tie-break <Random|AsConfigured>
 
 > Note: meetings are attributed by host rep. <Rep X> also belongs to other
 > distributions, so their counts here include meetings routed elsewhere.
@@ -47,6 +48,9 @@ Lead with config + rep breakdown so the "who's getting more/fewer meetings" answ
 | Gap opened on a specific date | A config or availability change | Check the router builder change log; confirm working hours |
 | High calendar-driven cancels for one rep | Calendar sync issue | Check that rep's calendar integration |
 | Share far from configured weight | Capping, availability, or source mix | Review `capping` and booking-source skew above |
+| High-cancel rep still tops `assigned` | Credit-back enabled — releveling working as configured | Confirm in fairness settings; only a finding if credit-back is off |
+| Rep's counts dip/spike around time off | Vacation calibration | Expected if `calibrateVacation` is on; check `vacationBuffer` if the catch-up looks wrong |
+| Stats totals ≠ date-range meeting counts | Analysis window doesn't match the reset period | State the reset period; align the date range or compare per-week trend instead |
 
 **Human decision point**
 

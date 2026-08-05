@@ -14,6 +14,7 @@ Piper MCP tools this skill uses.
 |------|----------------|
 | `workspace-list` | Workspaces → items `{id, name, nrOfUsers}` (the identifier is `id`) |
 | `distribution-list-put` | Distributions as a **top-level array**. Input `{workspaceIds: [...], name?, assignmentType?}`. Each item: `{id, published: {distributionId, name, weights: [{userId, weight}], assignmentTypeConfig: {type, handling: {type}}, capping, teamRef: {id}}, state: {userStates: [{userId, type: "Active"\|"Capped"\|"Disabled"\|"Removed"\|"NoLicense", statistics: {assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}}]}}` |
+| `distribution-workspace-settings-get` | Workspace-level round-robin fairness settings as a **flat object** (no envelope). Input `{workspaceId}`. Returns `{calibrateVacation, creditBackCancelled, creditBackNoShow, orderIfEqualState, resetPeriodicity, vacationBuffer}` |
 | `user-find-by-ids` | Resolve member `userId`s → names/emails |
 | `meeting-list-put` | Meetings in a ≤7-day window → `data.list[]` with `meetingId`, `hostId`/`hostName`, `meetingStatus`, `dateTime.start`, `scheduleOrigin`, `meetingSource`, `noShowStatus`, `history`. Envelope `{data: {list}, hasMore}`; paginate while `hasMore === "Yes"`. |
 
@@ -33,7 +34,9 @@ From the matching item:
 
 As of **DISTRO-4426 (2026-06-03)**, every `userState` variant carries
 `statistics: {assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}` —
-cumulative counts for the **current distribution period**:
+cumulative counts for the **current distribution period** (what "period" means is
+defined by the workspace's `resetPeriodicity` —
+§ distribution-workspace-settings-get — workspace fairness settings):
 
 - `assigned` — direct bookings to this rep; primary volume metric
 - `cancelled` — cancelled assignments (cancel rate = `cancelled / assigned`)
@@ -45,6 +48,50 @@ cumulative counts for the **current distribution period**:
 `(userWeight / totalWeight) × totalAssigned`, where
 `totalAssigned = sum of all members' statistics.assigned`. This fair-share target
 must be computed, not read.
+
+## distribution-workspace-settings-get — workspace fairness settings
+
+As of **CEH-10871 (2026-07-31)**, the workspace-level settings that shape the
+round-robin leveling equation are readable. Input `{workspaceId}` (from
+`workspace-list`); response is a flat object — live-validated example:
+
+```json
+{
+  "calibrateVacation": true,
+  "creditBackCancelled": true,
+  "creditBackNoShow": true,
+  "orderIfEqualState": "AsConfigured",
+  "resetPeriodicity": {"type": "Quarterly", "firstMonth": 1, "timeZone": "America/Detroit"},
+  "vacationBuffer": {"daysBeforeStart": 0, "daysBeforeEnd": 0, "recognitionEnabled": true, "freshness": "Cached"}
+}
+```
+
+These settings are **shared by every distribution in the workspace** and apply on
+top of each distribution's per-user weights:
+
+- `creditBackCancelled` / `creditBackNoShow` — when `true`, a cancelled / no-showed
+  meeting moves the rep back up the queue (they get the assignment credit back).
+  Analysis consequence: with credit-back **on**, a high-cancel rep legitimately
+  receives more new assignments (releveling, not a bug); with credit-back **off**,
+  cancels permanently consume that rep's share.
+- `calibrateVacation` — when `true`, vacationing reps are excused from the fairness
+  penalty; `vacationBuffer` (`daysBeforeStart` / `daysBeforeEnd`) pads the
+  calibration window around the vacation, `recognitionEnabled` toggles automatic
+  vacation detection, and `freshness` (`RealTime` | `Cached`) is how vacation state
+  is refreshed. Analysis consequence: post-vacation catch-up spikes or dips are
+  expected behavior.
+- `resetPeriodicity` — **defines the "current distribution period"** that
+  `distribution-list-put`'s `statistics` cover. Discriminated by `type`:
+  `{type: "Monthly", timeZone}` · `{type: "Quarterly", firstMonth (1-3), timeZone}`
+  · `{type: "Yearly", monthOfYear (1-12), timeZone}` · `{type: "Never"}`
+  (= all-time totals). Always state this period next to the statistics.
+- `orderIfEqualState` — tie-break when reps are level: `Random` | `AsConfigured`
+  (configured member order). Derived upstream; read-only.
+
+A companion `distribution-workspace-settings-update` exists (MERGE semantics;
+`resetPeriodicity`/`vacationBuffer` are whole-value replacements) but is **out of
+scope for this read-only skill** — it publishes immediately to every distribution
+in the workspace.
 
 ## meeting-list-put — classification and pattern fields
 
@@ -88,8 +135,9 @@ args:
   distribution. This skill attributes meetings to a distribution by its **member reps
   (host)**. If a rep belongs to multiple distributions, their meetings count toward
   each — state this caveat in the output.
-- **No distribution config-history endpoint.** Use `statistics` from
-  `distribution-list-put` for authoritative period totals, and `meeting-list-put` for
-  date-range slicing and booking-source / day-of-week patterns.
+- **No distribution config-history endpoint.** Current fairness settings are
+  readable (`distribution-workspace-settings-get`) but their change history is not.
+  Use `statistics` from `distribution-list-put` for authoritative period totals, and
+  `meeting-list-put` for date-range slicing and booking-source / day-of-week patterns.
 - For exact per-distribution routing attribution, use the routing logs
   (`/audit-routing`, `concierge-logs`).
