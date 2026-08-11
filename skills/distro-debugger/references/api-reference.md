@@ -81,6 +81,7 @@ outcomes.
 | `EvaluatedFromRoundRobinArs` | Round-robin with account routing strategy |
 | `FromOwnershipArs` | Assigned to the record's CRM owner |
 | `DuplicateMatchOwner` | Assigned to owner of a matching duplicate record |
+| `AssignmentTable` | Assigned via a deterministic table-based lookup |
 | `FallbackTeam` | No primary match; fell back to the team fallback |
 | `FallbackUser` | No primary match; fell back to a specific fallback user |
 | `NoDistribution` | No distribution was configured for the matched rule |

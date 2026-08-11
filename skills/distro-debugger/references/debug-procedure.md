@@ -171,3 +171,4 @@ For each stage in `stages[]`, in order:
 - `FallbackTeam` / `FallbackUser`: the primary distribution had no available rep — verify rep capacity and working hours
 - `NoUserAvailable`: all reps at capacity — increase capping or add reps
 - `FromOwnershipArs` / `DuplicateMatchOwner`: assigned by CRM ownership — verify this is the intended behavior for this rule
+- `AssignmentTable`: assigned via a table-based lookup — verify the assignment table has the correct rep-to-record mappings configured in the router
