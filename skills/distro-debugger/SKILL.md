@@ -1,7 +1,7 @@
 ---
 name: distro-debugger
 description: Debugs why a CRM record was routed (or not routed) through a Chili Piper distribution — accepts a log ID, Salesforce record ID, or contact/lead name, explains each rule stage, and recommends a targeted fix
-version: 0.3.1
+version: 0.3.2
 references:
   - api-reference
   - debug-procedure
@@ -44,7 +44,7 @@ outputs:
 tools_required: [chili-piper-mcp, salesforce-mcp]
 human_decision_point: "Review the diagnosis and decide: fix the distribution rule, manually reassign the record, or escalate to engineering"
 writes_to: "Nothing — read-only diagnostic"
-api_note: "2026-07-01 (DISTRO-4581, PR #939): distro-list-routers now returns a status field per router — Active | Inactive | Activating | Deactivating | Error{message}. Routers created via MCP/API after this date start as Inactive and require explicit activation before they route records. Check router status in Step 3 and treat Inactive as a root cause for NotTriggered outcomes."
+api_note: "2026-07-01 (DISTRO-4581, PR #939): distro-list-routers now returns a status field per router — Active | Inactive | Activating | Deactivating | Error{message}. Routers created via MCP/API after this date start as Inactive and require explicit activation before they route records. Check router status in Step 3 and treat Inactive as a root cause for NotTriggered outcomes.; 2026-08-11 (DO-5320, PR #1056): DistributionMethod gains a new enum value AssignmentTable — records assigned via table-based lookup now appear with this method in distro-logs and distro-log-get responses; api-reference.md updated."
 ---
 
 # Distribution Debugger

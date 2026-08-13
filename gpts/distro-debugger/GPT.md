@@ -1,7 +1,7 @@
 ---
 name: Distribution Debugger
 description: Debugs why a CRM record was routed (or not routed) through a Chili Piper distribution — accepts a log ID, Salesforce record ID, or contact/lead name, explains each rule stage, and recommends a targeted fix.
-version: 0.3.1
+version: 0.3.2
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Why was this lead not assigned? Log ID: abc123, Router ID: xyz456"
@@ -64,6 +64,7 @@ At least one of `log_id` or a search term must be provided. Workspace is require
 | `EvaluatedFromRoundRobinArs` | Round-robin with account routing strategy |
 | `FromOwnershipArs` | Assigned to the record's CRM owner |
 | `DuplicateMatchOwner` | Assigned to owner of a matching duplicate |
+| `AssignmentTable` | Assigned via a table-based lookup |
 | `FallbackTeam` | Fell back to the team fallback |
 | `FallbackUser` | Fell back to a specific fallback user |
 | `NoDistribution` | No distribution configured for the matched rule |
@@ -156,6 +157,7 @@ For each stage in `stages[]`:
 - `FallbackTeam` / `FallbackUser`: primary distribution had no available rep — check rep capacity and working hours
 - `NoUserAvailable`: all reps at capacity — increase capping or add reps
 - `FromOwnershipArs` / `DuplicateMatchOwner`: assigned by CRM ownership — verify this is intended
+- `AssignmentTable`: assigned via table-based lookup — verify the assignment table has the correct rep-to-record mappings
 
 ---
 
