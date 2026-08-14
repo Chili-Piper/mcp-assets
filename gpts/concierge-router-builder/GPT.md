@@ -1,7 +1,7 @@
 ---
 name: Concierge Router Builder
 description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview and confirmation checkpoint. Data fields and form mapping stay UI-only (no API).
-version: 0.1.2
+version: 0.1.3
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Help me build a new Concierge router for our inbound demo form"
@@ -66,17 +66,22 @@ router creation with 400. Confirm data fields + form mapping are done before bui
 | `distributionCreate` | `{teamId, workspaceId, name, assignmentTypeConfig}`; default `{type: Meeting, handling: {type: Flexible, reassignmentType: AnyTeamMember, allowPickingAssignee: false}, limits: {type: MeetingLimitUnset}}` |
 | `conciergeRouterCreate` | `{workspaceId, name, routing, form?, …}` — **publishes live**; returns the derived `slug` |
 | `conciergeRouterGet` | Verify; no `status` field (always live) |
+| `campaignList` / `campaignSearch` | Salesforce-only; look up `campaignId` for AddToCampaign actions (`searchText` ≥ 2 chars) — CEH-11300, 2026-08-13 |
 
-**Router routing:** `{routes: [{ruleId, outcome}], catchAll}` — `catchAll` **required**,
+**Router routing:** `{routes: [{ruleId, outcome}], catchAll}` — `catchAll` **required on create**,
 routes ordered top-down. `outcome` = `{type: Schedule, assignment: {type: Distribution,
 distributionId} | {type: User, userId}, meetingTypeId, timeout?, crmActions?}` or `{type:
-Redirect, url}`. API-supported `crmActions`: `{type: ConvertLead}` and `{type: AddToCampaign,
-campaignId, memberStatus}` (both may appear in the same array). Update ownership / create
-event remain **UI-only**; flag them for manual setup. **ConvertLead is invisible in the Flow
-Builder** (verified 2026-07-30): it publishes and fires, but the canvas renders no node and
-the SCHEDULED-branch ACTION menu has no Convert Lead — admins can only inspect/remove it via
-the API. Always tell the admin explicitly when a write includes ConvertLead (AddToCampaign
-UI rendering unverified).
+Redirect, url}`. API-supported `crmActions` (any combination): `{type: ConvertLead}`, `{type:
+AddToCampaign, campaignId, memberStatus}` (use `campaignList`/`campaignSearch` for `campaignId`),
+`{type: SalesforceUpdateFields, ...}` / `{type: HubspotUpdateFields, ...}` (Update Record),
+`{type: SalesforceUpsertRecord, ...}` / `{type: HubspotUpsertRecord, ...}` (Create/Upsert Record,
+Concierge only), `{type: SalesforceUpdateOwnership, contact: [{object, field}], lead: [{field}]}` /
+`{type: HubspotUpdateOwnership, contact: [{object, field}]}` (assign record owner to booked host —
+CEH-11302/CEH-11303, 2026-08-13). **create-event remains UI-only**; flag it for manual setup.
+**ConvertLead is invisible in the Flow Builder** (verified 2026-07-30): it publishes and fires, but
+the canvas renders no node and the SCHEDULED-branch ACTION menu has no Convert Lead — admins can
+only inspect/remove it via the API. Always tell the admin explicitly when a write includes ConvertLead
+(AddToCampaign UI rendering unverified).
 
 **Segment conditions:** OR of per-source `ConditionGroup`s; within a group AND the
 `StaticValueCondition`s. `dataReference` uses `source` (`SF`|`DF`|`CP`|`HS`|`MK`),
