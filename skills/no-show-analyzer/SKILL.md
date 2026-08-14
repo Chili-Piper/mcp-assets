@@ -1,8 +1,8 @@
 ---
 name: no-show-analyzer
 description: Analyzes Chili Piper meeting no-show patterns by trigger type, routing path, rep, or workspace using meeting-list-put and concierge-logs to surface actionable optimization opportunities
-version: 0.3.5
-api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Step 3b and preflight updated to paginate high-volume routers; 2026-07-23: DO-5176 (edge PR #996) added assigneeIds, hostIds, guestEmail, meetingTypeIds as optional server-side filters to meeting-list-put — useful for pre-filtering by specific hosts or meeting types before grouping client-side."
+version: 0.3.6
+api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Step 3b and preflight updated to paginate high-volume routers; 2026-07-23: DO-5176 (edge PR #996) added assigneeIds, hostIds, guestEmail, meetingTypeIds as optional server-side filters to meeting-list-put — useful for pre-filtering by specific hosts or meeting types before grouping client-side. 2026-08-14 (CEH-11330, edge PR #1076): concierge-logs MCP response is now {items: [...]} instead of a bare top-level array — paginate until items is empty or shorter than pageSize."
 references:
   - api-reference
   - analysis-methodology
@@ -118,7 +118,7 @@ args:
   pageSize: 500
 ```
 
-Repeat with `page: 1, 2, ...` until the response array is empty or shorter than `pageSize`. For most routers a single page is sufficient; high-volume routers (> 500 routing events in the analysis window) require multiple pages.
+Repeat with `page: 1, 2, ...` until `items` is empty or shorter than `pageSize` (CEH-11330: MCP response is `{items: [...]}`, not a bare array). For most routers a single page is sufficient; high-volume routers (> 500 routing events in the analysis window) require multiple pages.
 
 First filter to entries where `status = Scheduled` — only these reliably carry a `meetingId` to join on. Then extract `meetingId`, `trigger`, `matchedPath.route.type`, `sourceUrl`, `assignments[0].userId`, and join on `meetingId`. Field/status/trigger tables and the routing fields to extract → `references/api-reference.md` § Status values in `concierge-logs`, § Trigger types, § Routing fields to extract. Resolve `assignments[0].userId` to a name via `user-find-by-ids` if needed.
 
@@ -143,7 +143,7 @@ Verify before writing output:
 - [ ] `meeting-list-put` window ≤ 7 days per call; all chunks merged and deduped on `meetingId`.
 - [ ] `status: ["Completed", "NoShow", "Active"]` passed (NOT `["Completed","NoShow"]` only).
 - [ ] `Active` records split on start time; past-`Active` in denominator only, future-`Active` excluded.
-- [ ] `concierge-logs` window ≤ 30 days, each call carried a `routerId`, paginated until empty or short page, and only `status = Scheduled` entries joined.
+- [ ] `concierge-logs` window ≤ 30 days, each call carried a `routerId`, paginated until `items` is empty or shorter than `pageSize`, and only `status = Scheduled` entries joined.
 - [ ] Low-sample (<10 meetings) groups noted, not flagged on volume alone.
 
 ## Checkpoint
