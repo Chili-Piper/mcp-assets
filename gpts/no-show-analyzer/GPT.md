@@ -1,7 +1,7 @@
 ---
 name: No-Show Analyzer
 description: Analyzes Chili Piper meeting no-show patterns by trigger type, routing path, rep, or workspace to surface actionable optimization opportunities.
-version: 0.3.5
+version: 0.3.6
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Analyze no-show patterns for the last 30 days grouped by trigger type"

@@ -1,7 +1,7 @@
 ---
 name: Routing Audit
 description: Audits all Chili Piper concierge routers for coverage gaps — unmapped lead sources, stale ownership rules, unbalanced distributions, and catch-all overflows — before they show up as lost pipeline.
-version: 0.2.4
+version: 0.2.5
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Audit all routers across our org for coverage gaps"

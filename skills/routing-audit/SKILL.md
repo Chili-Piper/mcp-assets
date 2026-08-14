@@ -1,8 +1,8 @@
 ---
 name: routing-audit
 description: Audits all Chili Piper concierge routers for coverage gaps — unmapped lead sources, stale ownership rules, unbalanced distributions, and catch-all overflows — before they show up as lost pipeline
-version: 0.2.4
-api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Step 4 and preflight updated to paginate for complete log coverage on high-volume routers. As of DISTRO-4549 (PR #898, 2026-06-18): routing.rules[] entries and routing.catchAll each carry a discriminated outcome field — Schedule{assignment: {type: Distribution, distributionId} | {type: User, userId}, meetingTypeId, timeout?: {minutes, onTimeout: Landing|{url}}, crmActions?: [...]} or Redirect{url}. Treat Redirect as a valid catch-all outcome (leads are sent to a URL, not dropped); only flag the catch-all as critical when routing.catchAll is absent or its outcome is null/missing. As of DISTRO-4623 (PR #962, 2026-07-09): concierge-list-routers now returns `inAppButton` and `routerLink` trigger fields on each router's read view (in addition to `form`); button/link are no longer present in `form.readOnlyTriggers`. Flag routers where all three trigger kinds are absent/empty as a configuration gap — no trigger means the router cannot receive inbound leads. As of CEH-10905 (edge PR #1031, 2026-08-03): concierge-list-routers now includes `formFields` on each router — a list of ConciergeFormField objects (reference, label, requirement, fieldType with options, order, description, placeholder) for each Chili-webform guest field; always empty for third-party webform routers."
+version: 0.2.5
+api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Step 4 and preflight updated to paginate for complete log coverage on high-volume routers. As of DISTRO-4549 (PR #898, 2026-06-18): routing.rules[] entries and routing.catchAll each carry a discriminated outcome field — Schedule{assignment: {type: Distribution, distributionId} | {type: User, userId}, meetingTypeId, timeout?: {minutes, onTimeout: Landing|{url}}, crmActions?: [...]} or Redirect{url}. Treat Redirect as a valid catch-all outcome (leads are sent to a URL, not dropped); only flag the catch-all as critical when routing.catchAll is absent or its outcome is null/missing. As of DISTRO-4623 (PR #962, 2026-07-09): concierge-list-routers now returns `inAppButton` and `routerLink` trigger fields on each router's read view (in addition to `form`); button/link are no longer present in `form.readOnlyTriggers`. Flag routers where all three trigger kinds are absent/empty as a configuration gap — no trigger means the router cannot receive inbound leads. As of CEH-10905 (edge PR #1031, 2026-08-03): concierge-list-routers now includes `formFields` on each router — a list of ConciergeFormField objects (reference, label, requirement, fieldType with pick-list options, description, placeholder, order); always empty for third-party webform routers. 2026-08-14 (CEH-11330, edge PR #1076): 13 MCP list tools now return {items: [...]} instead of bare top-level arrays — both concierge-logs and distribution-list-put MCP responses are now {items: [...]}; paginate concierge-logs until items is empty or shorter than pageSize; iterate distribution-list-put items to reach individual records."
 references:
   - api-reference
   - audit-procedure
@@ -107,15 +107,17 @@ on the router object as of DISTRO-4623; they are no longer reported inside
 For each router, pull `concierge-logs` over the `log_days` window and compute total leads,
 catch-all rate (`matchedPath.route.type == "CatchAllRoute"`), and rule-match rate
 (`RuleRoute`). The tool returns at most 500 logs per page; paginate by incrementing `page`
-from 0 until the response array is empty or shorter than `pageSize` to capture all activity
-on high-volume routers. Full procedure + flag thresholds → `references/audit-procedure.md`
+from 0 until `items` is empty or shorter than `pageSize` to capture all activity on
+high-volume routers (CEH-11330: MCP response is `{items: [...]}`, not a bare array). Full
+procedure + flag thresholds → `references/audit-procedure.md`
 § Analyzing logs for catch-all overflow. The 30-day limit + required `routerId` →
 `references/api-reference.md` § Hard API limits.
 
 ### Step 5 — Check distribution balance
 
-For each workspace, pull `distribution-list-put` (a top-level array) and inspect active
-members, weights, handling, and assignment `statistics`. Full procedure + flag thresholds
+For each workspace, pull `distribution-list-put` and inspect active
+members, weights, handling, and assignment `statistics`. The MCP response is `{items: [...]}`
+— iterate `items` to reach each distribution record (CEH-11330). Full procedure + flag thresholds
 → `references/audit-procedure.md` § Checking distribution balance.
 
 ### Step 6 — Output
@@ -129,7 +131,7 @@ Verify before writing output:
 
 - [ ] Required inputs resolved (`workspace` → `id`, or all workspaces fetched).
 - [ ] Field names taken from `references/api-reference.md`, not guessed.
-- [ ] `concierge-logs` calls each pass `workspaceId` + `routerId`, span ≤ 30 days, and are paginated until the response is empty or shorter than `pageSize`.
+- [ ] `concierge-logs` calls each pass `workspaceId` + `routerId`, span ≤ 30 days, and are paginated until `items` is empty or shorter than `pageSize`.
 - [ ] `log_days` respected (default 7, capped at 30).
 - [ ] Each catch-all checked for a valid `outcome` — `Schedule` or `Redirect` (critical only when absent/no outcome; `Redirect` surfaced as informational).
 - [ ] Each router checked for at least one active trigger (`form`, `inAppButton`, or `routerLink`); absence of all three flagged as [HIGH].
