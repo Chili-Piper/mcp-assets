@@ -1,7 +1,7 @@
 ---
 name: Concierge Router Builder
 description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview and confirmation checkpoint. Data fields and form mapping stay UI-only (no API).
-version: 0.1.3
+version: 0.1.4
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Help me build a new Concierge router for our inbound demo form"
@@ -68,7 +68,7 @@ router creation with 400. Confirm data fields + form mapping are done before bui
 | `conciergeRouterGet` | Verify; no `status` field (always live) |
 | `campaignList` / `campaignSearch` | Salesforce-only; look up `campaignId` for AddToCampaign actions (`searchText` ≥ 2 chars) — CEH-11300, 2026-08-13 |
 
-**Router routing:** `{routes: [{ruleId, outcome}], catchAll}` — `catchAll` **required on create**,
+**Router routing:** `{routes: [{ruleId, outcome}], catchAll}` — `catchAll` **optional on create** (CEH-11358 — omit for a router with no fallback path; unmatched requests are not scheduled),
 routes ordered top-down. `outcome` = `{type: Schedule, assignment: {type: Distribution,
 distributionId} | {type: User, userId}, meetingTypeId, timeout?, crmActions?}` or `{type:
 Redirect, url}`. API-supported `crmActions` (any combination): `{type: ConvertLead}`, `{type:
