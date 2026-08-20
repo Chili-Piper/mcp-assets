@@ -1,7 +1,7 @@
 ---
 name: Concierge Router Builder
-description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview and confirmation checkpoint. Data fields and form mapping stay UI-only (no API).
-version: 0.1.4
+description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview and confirmation checkpoint. Data fields stay UI-only; third-party webform trigger mapping is now API-writable via thirdPartyForm.
+version: 0.1.5
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Help me build a new Concierge router for our inbound demo form"
@@ -29,16 +29,11 @@ distributions, and the router itself. Be conversational; offer best-practice def
 ahead, and **never create anything before the confirmation step**. The build is **not
 transactional** — if a step fails, earlier objects remain.
 
-**Data fields and web-form mapping are UI-only prerequisites** — there is no API to list,
-create, or map data fields, and no API to map a form. The router can only *reference* data
-fields that already exist: standard defaults (`PersonEmail`, `PersonFirstName`, …) are
-always valid; custom fields need their UUID from the app. An unknown `dataField` fails
-router creation with 400. Confirm data fields + form mapping are done before building.
+**Data fields are a prerequisite** (standard defaults always valid; custom fields need their UUID from the app or `dataFieldCreate`). For **Chili-managed webform** routers: web-form mapping is also UI-only — confirm both are done before building. For **third-party webform** routers: trigger field mapping is now API-writable via `thirdPartyForm: [{formFieldName, dataField, label?}]` in the `conciergeRouterCreate` call — no UI mapping step needed (CEH-11363, 2026-08-19). An unknown `dataField` fails router creation with 400.
 
 ## Phases
 
-1. **Concept check & prerequisites** — gauge familiarity; confirm data fields set up **and**
-   form mapped (both UI-only). Pause if either is missing.
+1. **Concept check & prerequisites** — gauge familiarity; confirm data fields exist (standard defaults always valid; custom fields via `dataFieldCreate` or the app). For Chili-managed webform routers: also confirm form mapping done in the UI. For third-party webform routers: `thirdPartyForm` mapping set in the create call — no UI step.
 2. **Discovery interview** — `tenantGet` + `listWorkspaces` to orient, `conciergeListRouters`
    to discover valid `dataField` references. Ask: workspace + name; form fields; ownership
    rule (recommend first); customer routing; segments (size/region — SMB 1–250, MM 251–1,500,
@@ -64,7 +59,7 @@ router creation with 400. Confirm data fields + form mapping are done before bui
 | `meetingTypeCreate` | `{workspaceId, name, duration}` (`"30 minutes"`); **not atomic** — set invite fields in the create call, repair with update, never re-create |
 | `ruleCreate` | `dto`: `CreateRuleRequest` (segment) or `CreateOwnershipRuleRequest` (ownership, carries `teamId`); every conditions node needs a `type` discriminator; **live immediately** |
 | `distributionCreate` | `{teamId, workspaceId, name, assignmentTypeConfig}`; default `{type: Meeting, handling: {type: Flexible, reassignmentType: AnyTeamMember, allowPickingAssignee: false}, limits: {type: MeetingLimitUnset}}` |
-| `conciergeRouterCreate` | `{workspaceId, name, routing, form?, …}` — **publishes live**; returns the derived `slug` |
+| `conciergeRouterCreate` | `{workspaceId, name, routing, form?, thirdPartyForm?, …}` — **publishes live**; returns the derived `slug`; `thirdPartyForm: [{formFieldName, dataField, label?}]` for external-form routers (mutually exclusive with `form` — CEH-11363, 2026-08-19) |
 | `conciergeRouterGet` | Verify; no `status` field (always live) |
 | `campaignList` / `campaignSearch` | Salesforce-only; look up `campaignId` for AddToCampaign actions (`searchText` ≥ 2 chars) — CEH-11300, 2026-08-13 |
 
@@ -95,5 +90,5 @@ from a `ruleList` result when possible — they already carry the discriminators
 - **Not transactional:** on any failure, stop, report what was created (IDs) and what
   failed, and offer to resume or hand off — never silently abandon a half-built router.
 - Plans and results list routing as `rule → team → meeting type → distribution`; results
-  report the booking `slug`; hand-off leads with the UI-only items (data fields, form
+  report the booking `slug`; hand-off leads with the UI-only items (data fields, Chili-managed form
   mapping, UI-only CRM actions).

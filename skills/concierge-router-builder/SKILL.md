@@ -1,7 +1,7 @@
 ---
 name: concierge-router-builder
-description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview and confirmation checkpoint. Data fields and form mapping stay UI-only (no API).
-version: 0.1.4
+description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview and confirmation checkpoint. Data fields stay UI-only; third-party webform trigger mapping is now API-writable via thirdPartyForm.
+version: 0.1.5
 references:
   - discovery
   - segment-presets
@@ -28,11 +28,11 @@ outputs:
   - name: result
     description: Everything built with IDs (teams, meeting types, rules, distributions, router) plus the router's booking slug — only after confirmation
   - name: next_steps
-    description: UI-only actions the API can't do (data fields, form mapping, most CRM actions) and the go-live checklist
+    description: UI-only actions the API can't do (data fields, Chili-managed form mapping, most CRM actions) and the go-live checklist
 tools_required: [chili-piper-mcp]
 human_decision_point: "The Phase 2 confirmation. Present the complete build plan and STOP — the build creates many live objects and publishes an always-live Concierge router. Nothing is created until the admin confirms."
-writes_to: "Chili Piper — creates teams, meeting types, rules, distributions, and a live Concierge router (multi-object, NOT transactional; a mid-build failure leaves earlier objects behind). Data fields and web-form mapping are UI-only and out of scope."
-api_note: "2026-07-21: data-field read/create and form mapping have NO MCP/Edge API — they are UI-only prerequisites (Settings → Data Fields; Concierge Form Mapping). The router's form/rule `dataField` references must already exist: standard defaults (PersonEmail, PersonFirstName, …) are always valid; custom fields need their UUID from the UI. An unknown `dataField` fails concierge-router-create with 400. Field truth → references/api-reference.md.; 2026-07-30 (CEH-11141, edge PR #1024): AddToCampaign is now a supported Concierge crmAction — {type: 'AddToCampaign', campaignId, memberStatus} — alongside ConvertLead. Update ownership and create-event remain UI-only. Preflight checklist updated.; 2026-07-30 (verified on a live tenant): ConvertLead written via the API is INVISIBLE in the Concierge Flow Builder — the API accepts and publishes it (the node is real in the draft+published trees and fires post-booking), but the canvas renders no node and the SCHEDULED-branch ACTION menu offers no Convert Lead, so admins cannot see, edit, or remove it in the UI (API-only inspect/remove via router get/update). Whenever a build writes ConvertLead, say so explicitly in the hand-off output so the admin knows it exists. AddToCampaign UI rendering not yet verified. 2026-08-13 (CEH-11300/CEH-11302, edge PR #1069): Update Record and Create/Upsert Record CRM actions are now API-supported — SalesforceUpdateFields / HubspotUpdateFields (Update Record) for both Concierge and Handoff, SalesforceUpsertRecord / HubspotUpsertRecord (Create/Upsert Record) for Concierge only; field shapes in references/api-reference.md. campaign-list / campaign-search are now available to look up Salesforce campaignIds for AddToCampaign actions. 2026-08-13 (CEH-11303, edge PR #1072): SalesforceUpdateOwnership / HubspotUpdateOwnership are now API-supported — always assigns the CRM record owner to the booked host — so 'update ownership' is removed from the UI-only list. create-event remains UI-only. 2026-08-18 (CEH-11358, edge PR #1087): catchAll is now OPTIONAL on concierge-router-create — omitting it produces a router with no fallback path (unmatched requests are not scheduled). Previously required."
+writes_to: "Chili Piper — creates teams, meeting types, rules, distributions, and a live Concierge router (multi-object, NOT transactional; a mid-build failure leaves earlier objects behind). Data fields are UI-only (or data-field-create). Chili-managed form mapping is also UI-only. Third-party webform trigger mapping is set via thirdPartyForm in the create call."
+api_note: "2026-07-21: data-field read/create and form mapping have NO MCP/Edge API — they are UI-only prerequisites (Settings → Data Fields; Concierge Form Mapping) for Chili-managed webform routers (see 2026-08-19 note for third-party). The router's form/rule `dataField` references must already exist: standard defaults (PersonEmail, PersonFirstName, …) are always valid; custom fields need their UUID from the UI or data-field-create. An unknown `dataField` fails concierge-router-create with 400. Field truth → references/api-reference.md.; 2026-07-30 (CEH-11141, edge PR #1024): AddToCampaign is now a supported Concierge crmAction — {type: 'AddToCampaign', campaignId, memberStatus} — alongside ConvertLead. Update ownership and create-event remain UI-only. Preflight checklist updated.; 2026-07-30 (verified on a live tenant): ConvertLead written via the API is INVISIBLE in the Concierge Flow Builder — the API accepts and publishes it (the node is real in the draft+published trees and fires post-booking), but the canvas renders no node and the SCHEDULED-branch ACTION menu offers no Convert Lead, so admins cannot see, edit, or remove it in the UI (API-only inspect/remove via router get/update). Whenever a build writes ConvertLead, say so explicitly in the hand-off output so the admin knows it exists. AddToCampaign UI rendering not yet verified. 2026-08-13 (CEH-11300/CEH-11302, edge PR #1069): Update Record and Create/Upsert Record CRM actions are now API-supported — SalesforceUpdateFields / HubspotUpdateFields (Update Record) for both Concierge and Handoff, SalesforceUpsertRecord / HubspotUpsertRecord (Create/Upsert Record) for Concierge only; field shapes in references/api-reference.md. campaign-list / campaign-search are now available to look up Salesforce campaignIds for AddToCampaign actions. 2026-08-13 (CEH-11303, edge PR #1072): SalesforceUpdateOwnership / HubspotUpdateOwnership are now API-supported — always assigns the CRM record owner to the booked host — so 'update ownership' is removed from the UI-only list. create-event remains UI-only. 2026-08-18 (CEH-11358, edge PR #1087): catchAll is now OPTIONAL on concierge-router-create — omitting it produces a router with no fallback path (unmatched requests are not scheduled). Previously required. 2026-08-19 (CEH-11363, edge PR #1088): for third-party webform routers, trigger field mapping is now API-writable via thirdPartyForm: [{formFieldName, dataField, label?}] in concierge-router-create (mutually exclusive with form). The 2026-07-21 'form mapping is UI-only' note applies only to Chili-managed webform routers — third-party form mapping no longer requires a UI step. Data fields still must exist before building (standard defaults always valid; custom fields via data-field-create API or the Settings UI)."
 ---
 
 # Concierge Router Builder
@@ -48,10 +48,7 @@ admin is unsure.
 > confirmation**. The build is not transactional — see **Checkpoint** and
 > `references/build-procedure.md` § Partial-build recovery.
 
-> **Data fields are a UI-only prerequisite.** There is no MCP tool to list, create, or map
-> data fields, and no way to map a web form via the API. The router can only *reference*
-> data fields that already exist. Confirm they are set up before building (Phase 0B) and
-> use only valid `dataField` references → `references/api-reference.md` § Data fields (the API gap).
+> **Data fields are a prerequisite.** Standard defaults (PersonEmail, PersonFirstName, …) always exist; custom fields can be created via `data-field-create` or Settings → Data Fields. The router can only *reference* data fields that already exist. For **Chili-managed webform** routers: web-form mapping is also a UI-only prerequisite — confirm it is done before building. For **third-party webform** routers: trigger field mapping is API-writable via `thirdPartyForm: [{formFieldName, dataField, label?}]` on the create call — no UI step needed (CEH-11363). Use only valid `dataField` references → `references/api-reference.md`.
 
 > **Prefer live data over training.** Load `references/api-reference.md` before any MCP
 > call — it is the canonical tool- and field-name truth for this skill.
@@ -78,9 +75,12 @@ admin is unsure.
 ### Phase 0 — Concept check & prerequisites
 
 Gauge the admin's familiarity with router building blocks (router, rules, teams,
-distributions, meeting types) and offer the primer if needed. Then confirm the two
-**UI-only prerequisites** are done: **data fields** (Settings → Data Fields) and **web-form
-mapping**. Neither can be done via the API — pause until the admin confirms both.
+distributions, meeting types) and offer the primer if needed. Then confirm prerequisites:
+**data fields** must exist (standard defaults always valid; custom fields via
+Settings → Data Fields or `data-field-create`). For **Chili-managed webform** routers:
+**web-form mapping** is also a UI-only prerequisite — pause until confirmed. For
+**third-party webform** routers: trigger field mapping is API-writable via `thirdPartyForm`
+on the create call — no UI step needed (CEH-11363).
 Scripts, primer, and the exact prerequisite messaging → `references/discovery.md` § Phase 0.
 
 ### Phase 1 — Discovery interview
@@ -110,14 +110,14 @@ parallelization, and mid-build failure handling → `references/build-procedure.
 ### Phase 4 — Verify & hand off
 
 `concierge-router-get` to confirm the router, then present what was built (with IDs and the
-booking slug), the **UI-only follow-ups** (data-field/form tweaks, UI-only CRM actions), and
+booking slug), the **UI-only follow-ups** (data-field/form tweaks for Chili-managed form routers, UI-only CRM actions), and
 the go-live checklist → `references/output-format.md` § Result and § Go-live checklist.
 
 ## Preflight audit
 
 Verify before presenting the plan (and before any build):
 
-- [ ] Both UI-only prerequisites confirmed by the admin: data fields set up **and** the web form mapped (or a Chili form is used).
+- [ ] Data fields set up (UI or `data-field-create` API). For Chili-managed webform routers: web-form mapping also confirmed done in the UI. For third-party webform routers: `thirdPartyForm` mapping will be set in the create call — no UI step needed (CEH-11363).
 - [ ] Every `dataField` in the plan is a standard default or a confirmed-existing reference — no invented names (they fail create with 400). → `references/api-reference.md` § Data fields (the API gap).
 - [ ] Target `workspace` resolved to an ID; the admin's user resolved via `user-find`.
 - [ ] Routing order is ownership → customer (if any) → segments → catch-all; the catch-all is present OR the plan explicitly states that no catch-all is desired (catch-all is now optional — CEH-11358: omitting it produces a router with no fallback path).
@@ -139,4 +139,4 @@ Never build without this confirmation, even if the request sounded imperative.
 
 - **PII present:** rep names/emails (team members), rule/field labels; no guest data is read
 - **Storage:** ephemeral — nothing persists after the skill completes
-- **Writes:** creates teams, meeting types, rules, distributions, and a live Concierge router. Not transactional. Data fields and form mapping are UI-only and never touched by this skill.
+- **Writes:** creates teams, meeting types, rules, distributions, and a live Concierge router. Not transactional. Data fields are UI-only (or data-field-create). Chili-managed form mapping is UI-only. Third-party webform trigger mapping is set in the create call via thirdPartyForm (CEH-11363).
