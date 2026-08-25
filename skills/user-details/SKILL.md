@@ -1,7 +1,7 @@
 ---
 name: user-details
 description: Pulls a full profile for any Chili Piper user — teams, workspaces, meeting types, scheduling links, and recent meeting activity — for onboarding audits, offboarding checks, and rep-level troubleshooting
-version: 0.1.6
+version: 0.1.7
 references:
   - api-reference
   - output-format
@@ -28,7 +28,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the profile and decide: onboard the user to missing teams, fix routing gaps, or proceed with offboarding"
 writes_to: "Nothing — read-only diagnostic"
-api_note: "Field names validated against live MCP responses. Full field-name truth, limits, and gotchas live in references/api-reference.md. user-read returns license info but NO calendar/CRM connection status; user-find is needed first if you have an email or name rather than a user ID. workspace-list items use `id` (not `workspaceId`); team-list-put results use `id` (not `teamId`) and include `workspaceId`. team-list-put member filter is live (server-side filtering by userId) and accepts an optional name filter (DISTRO-4472). meeting-export-v2-put supports server-side filters hostIds, assigneeIds, bookerIds, meetingTypeIds, status. licenses gains an optional `tier` field (CEH-10353); `distro`, `concierge`, `conciergeLive`, `chat` are optional booleans (default false); `chiliCalOrg` and `handoff` remain required. scheduling-link-list-admin-one-on-one, -group, and -ownership are live (DISTRO-4548) — query all five link types to enumerate every scheduling link this user is part of. DO-4340 (edge PR #982, 2026-07-23): scheduling-link-list-personal deprecated in favour of scheduling-link-list-personal-v2, which returns {links:[...]} consistent with all other scheduling-link-list-* tools."
+api_note: "Field names validated against live MCP responses. Full field-name truth, limits, and gotchas live in references/api-reference.md. user-read returns license info but NO calendar/CRM connection status; user-find is needed first if you have an email or name rather than a user ID. workspace-list items use `id` (not `workspaceId`); team-list-put results use `id` (not `teamId`) and include `workspaceId`. team-list-put member filter is live (server-side filtering by userId) and accepts an optional name filter (DISTRO-4472). meeting-export-v2-put supports server-side filters hostIds, assigneeIds, bookerIds, meetingTypeIds, status. licenses gains an optional `tier` field (CEH-10353); `distro`, `concierge`, `conciergeLive`, `chat` are optional booleans (default false); `chiliCalOrg` and `handoff` remain required. scheduling-link-list-admin-one-on-one, -group, and -ownership are live (DISTRO-4548) — query all five link types to enumerate every scheduling link this user is part of. DO-4340 (edge PR #982, 2026-07-23): scheduling-link-list-personal deprecated in favour of scheduling-link-list-personal-v2, which returns {links:[...]} consistent with all other scheduling-link-list-* tools. CEH-11406 (edge PR #1096, 2026-08-24): user-read now returns the full personal profile — firstName, lastName, jobTitle, conferenceDetails, location, phoneNumber, slug, timezone, and workingHours — in addition to the existing id/email/name/isSuperAdmin/licenses/workspaces fields. CEH-11455 (edge PR #1110, 2026-08-25): user-update (PATCH) is now available for profile edits with tri-state field semantics: absent field = unchanged, explicit null = clear/reset, value = set."
 ---
 
 # User Details
@@ -80,9 +80,12 @@ args:
   userId: <resolved user ID>
 ```
 
-Extract `id`, `email`, `name`, `isSuperAdmin`, `licenses`, and `workspaces`. The
-licenses object shape, the `workspaces` (not `workspaceIds`) gotcha, and the absent
-calendar/CRM connection fields → `references/api-reference.md` § user-read field names.
+Extract `id`, `email`, `name`, `isSuperAdmin`, `licenses`, and `workspaces`. As of CEH-11406,
+`user-read` also returns personal details (`firstName`, `lastName`, `jobTitle`,
+`conferenceDetails`, `location`, `phoneNumber`, `slug`), `timezone`, and `workingHours` —
+include these in the profile output. The licenses object shape, the `workspaces` (not
+`workspaceIds`) gotcha, and the absent calendar/CRM connection fields →
+`references/api-reference.md` § user-read field names.
 
 ### Step 3 — Resolve workspace memberships
 
