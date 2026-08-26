@@ -65,7 +65,9 @@ duration string: `"30 minutes"`, `"1 hour"`.
 `rule-create` → `{dto}` where `dto` is one variant (choose by kind):
 
 - **Segment (non-ownership):** `{type: "CreateRuleRequest", workspaceId*, name*, conditions*}`
-- **Ownership:** `{type: "CreateOwnershipRuleRequest", workspaceId*, name*, conditions*, teamId?}`
+- **Ownership:** `{type: "CreateOwnershipRuleRequest", workspaceId*, name*, conditions*, teamId*}`
+  ⚠ **teamId is required** (CEH-11428, 2026-08-25) — omitting it is rejected with 400.
+  An ownership rule without a team can never match; the API now enforces this at create time.
 
 Every conditions node carries a `type` discriminator. Typical segment shape (OR of
 per-source groups; AND within a group):
@@ -155,8 +157,9 @@ another; fix/delete the leftover in the Concierge app.
 ## Typed errors
 
 | Error | HTTP | Meaning / behavior |
-|-------|:---:|--------------------|
+|-------|:---:|-----------------|
 | invalid `dataField` | 400 | Field doesn't exist — use a standard default or a real UUID; create custom fields in the UI first |
+| missing `teamId` on ownership rule | 400 | CEH-11428: teamId is required on CreateOwnershipRuleRequest |
 | publish-failure | 422 | Router saved as an unpublished draft — nothing live; fix/delete the draft in the Concierge app, don't blind-retry |
 | `RouterWorkspaceNotManageable` | 4xx | Workspace can't be managed by this key / isn't a team workspace |
 | rule revision conflict | 409 | Re-fetch the rule (`rule-list`) and retry |
