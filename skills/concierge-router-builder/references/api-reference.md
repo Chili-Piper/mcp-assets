@@ -90,7 +90,7 @@ Ownership rule condition (routes to the record owner; optionally a custom owner 
 ```
 conditions: {type: "ConditionGroup", id: "<any>", operator: "or", conditions: [
   {type: "OwnershipCondition", conditionId: "<any>",
-   ownership: {source: "SF", object: "Account", field: "OwnerId"},
+   ownership: {source: "SF", object: "Account", field: "OwnerId"},   # required (CEH-11450)
    searchOwnershipBy: "CrmIdOrEmail"}   # or a custom field, e.g. field: "CSM__c"
 ]}
 ```
@@ -160,6 +160,7 @@ another; fix/delete the leftover in the Concierge app.
 |-------|:---:|-----------------|
 | invalid `dataField` | 400 | Field doesn't exist — use a standard default or a real UUID; create custom fields in the UI first |
 | missing `teamId` on ownership rule | 400 | CEH-11428: teamId is required on CreateOwnershipRuleRequest |
+| missing `ownership` on OwnershipCondition | 400 | CEH-11450: every OwnershipCondition must include `ownership: {source, object, field}`; omitting it is rejected with `OwnershipConditionMissingReference` |
 | publish-failure | 422 | Router saved as an unpublished draft — nothing live; fix/delete the draft in the Concierge app, don't blind-retry |
 | `RouterWorkspaceNotManageable` | 4xx | Workspace can't be managed by this key / isn't a team workspace |
 | rule revision conflict | 409 | Re-fetch the rule (`rule-list`) and retry |
