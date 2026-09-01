@@ -5,6 +5,14 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Added
+- **Cursor plugin (`.cursor-plugin/plugin.json` + root `mcp.json`).** Makes this repo
+  installable as a first-party [Cursor](https://cursor.com) plugin (also surfaced in the
+  Grok bot plugin list), reusing the same `skills/` and `commands/` as the Claude plugin.
+  The plugin points at the same hosted MCP
+  (`https://fire.chilipiper.com/api/fire-edge/v1/org/mcp`) and uses the existing one-click
+  OAuth flow — no JSON to paste, API key optional. Ships the official Chili Piper logo
+  (`assets/chili-piper-logo.svg`) and a Cursor install path in the README, ready for
+  submission to the Cursor Marketplace.
 - **`concierge-router-builder` skill (new, writes) + paired GPT +
   `/build-concierge-router` command.** A guided, end-to-end builder that stands up a
   complete Concierge web-form router from scratch — teams, meeting types, rules

@@ -20,6 +20,7 @@ Maintained by Chili Piper. These are ready-to-use AI specialists — meeting dia
 | [`gpts/`](gpts/) | **ChatGPT Custom GPTs** — the ChatGPT equivalent of each skill, with a GPT Actions schema. |
 | [`mcp-servers/chili-piper/`](mcp-servers/chili-piper/) | **MCP setup guide** — connect the Chili Piper MCP via API key or OAuth. |
 | [`gemini/`](gemini/) | **Google Gemini guide** — connect via Gemini CLI, Gen AI SDK / ADK, or Gemini Enterprise. |
+| [`.claude-plugin/`](.claude-plugin/) · [`.cursor-plugin/`](.cursor-plugin/) | **Plugin manifests** — the Claude and Cursor plugins that bundle the MCP with these skills and commands. |
 | [`docs/`](docs/) | Authoring methodology, QA status tracker, and org-level deployment guide. |
 
 A **Skill** is a small, self-contained instruction set that teaches an AI agent how to do one Chili Piper task correctly — which MCP tools to call, in what order, and how to format the result. A **GPT** is the same capability packaged for ChatGPT.
@@ -94,6 +95,15 @@ Options A and B install the full plugin (skills + slash commands + MCP config) a
 Want only one skill, or to push a single skill as an **Organization skill**? Download it from the [latest release](https://github.com/Chili-Piper/mcp-assets/releases/latest) (e.g. [`meeting-inspector.zip`](https://github.com/Chili-Piper/mcp-assets/releases/latest/download/meeting-inspector.zip)) and upload it via **Customize → Skills → ＋** (added as a Personal skill; admins can choose **Organization** + **Share**).
 
 **Option D — ChatGPT:** deploy the matching Custom GPT — see [`gpts/README.md`](gpts/README.md).
+
+**Option E — Cursor (plugin):**
+
+This repo ships a Cursor plugin (`.cursor-plugin/plugin.json` + a root `mcp.json`) that bundles the Chili Piper MCP with the same `skills/` and `commands/`.
+
+- **From the Marketplace:** open **Cursor → Settings → Plugins** (or the Marketplace) and search **"chili piper"**, then install. It's also discoverable from the Grok bot plugin list.
+- **Local / pre-release:** copy this repo into `~/.cursor/plugins/local/chili-piper`, reload Cursor, then install and log in.
+
+On first use Cursor runs the same one-click **OAuth** login the Chili Piper MCP already supports — no JSON to paste and no API key to manage. Prefer an API key instead? Follow [`mcp-servers/chili-piper/README.md`](mcp-servers/chili-piper/README.md) (`CHILI_PIPER_API_KEY`).
 
 ### 3. Run a skill
 

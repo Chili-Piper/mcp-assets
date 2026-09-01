@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "chili-piper": {
+      "url": "https://fire.chilipiper.com/api/fire-edge/v1/org/mcp"
+    }
+  }
+}
