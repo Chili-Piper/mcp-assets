@@ -19,11 +19,12 @@ dist/
 **/.local/
 
 # Root-level data files (use synthetic fixtures in fixtures/ instead)
-# Note: .mcp.json and .secrets.baseline are excluded from this pattern via negation
+# Note: .mcp.json, mcp.json and .secrets.baseline are excluded from this pattern via negation
 /*.csv
 /*.parquet
 /*.json
 !/.mcp.json
+!/mcp.json
 !/.secrets.baseline
 /*.xlsx
 /*.xls

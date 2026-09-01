@@ -1,0 +1,22 @@
+{
+  "name": "chili-piper",
+  "version": "1.0.0",
+  "description": "Official Chili Piper plugin — connects the Chili Piper MCP (meeting routing, scheduling, handoff, and analytics) and ships vetted skills and commands for meeting diagnostics, routing audits, no-show analysis, availability checks, and user onboarding/offboarding.",
+  "author": {
+    "name": "Chili Piper"
+  },
+  "homepage": "https://www.chilipiper.com/products/mcp",
+  "repository": "https://github.com/Chili-Piper/mcp-assets",
+  "license": "MIT",
+  "keywords": [
+    "chili-piper",
+    "mcp",
+    "meetings",
+    "scheduling",
+    "routing",
+    "sales",
+    "crm",
+    "calendar"
+  ],
+  "logo": "assets/chili-piper-logo.svg"
+}
