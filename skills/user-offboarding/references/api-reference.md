@@ -23,7 +23,7 @@ the Chili Piper MCP tools this skill uses.
 | `team-create` | Create a new team in a workspace → `{id, workspaceId, name, members, metadata}` — accepts `workspaceId` (req), `name` (req), `members` (opt, initial user IDs) |
 | `team-delete` | Permanently delete a team → `{id, workspaceId, name, members, metadata}` — the deleted record; requires `team.remove` permission; fails if active distributions still reference the team; use only when retiring the team itself, not just removing a member |
 | `meeting-cancel` | Cancel a meeting (triggers rebook flow if configured) |
-| `distribution-list-put` | Distributions — input takes `workspaceIds` (array) + optional `name`, `assignmentType`. Returns a top-level array; members are in `published.weights[]` (`{userId, weight}`) and `state.userStates[]` (`{userId, type: "Active"\|"Capped"\|"Disabled"\|"Removed"\|"NoLicense", statistics: {assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}}`). For flagging only — distribution membership cannot be modified via MCP. |
+| `distribution-list-put` | Distributions — input takes `workspaceIds` (array) + optional `name`, `assignmentType`. Returns `{results: [...], total, page, pageSize}`; iterate `results` to reach each distribution. Members in `published.weights[]` (`{userId, weight}`) and `state.userStates[]` (`{userId, type: "Active"\|"Capped"\|"Disabled"\|"Removed"\|"NoLicense", statistics: {assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}}`). For flagging only — distribution membership cannot be modified via MCP. (CEH-11548, 2026-09-01) |
 
 ---
 
