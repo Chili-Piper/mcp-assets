@@ -16,7 +16,7 @@ Piper MCP tools this skill uses.
 | `concierge-list-routers` | Routers in a workspace → `{routers: [{router: {id, name, slug, routing: {rules: [...], catchAll: {outcome: ...}}}, workspaceId}]}`. routerId is `routers[N].router.id`; rules and catch-all on `routers[N].router.routing`. Each rule row and the catch-all carry `outcome`: `{type: "Schedule", assignment: {type: "Distribution", distributionId} \| {type: "User", userId}, meetingTypeId, timeout?: {minutes, onTimeout: "Landing"\|{url}}, crmActions?: [...]}` or `{type: "Redirect", url}`. |
 | `rule-list` | Active routing rules, **workspace-scoped** (no routerId). Input `{filter: {ruleBuilderVersion: ["ExplicitV1"] (required), workspaceId?, name?, type?}, pagination}`. Returns `{results: [{id, name, type, conditions, workspaceId, metadata: {revision}}], total}`. `type` is `OwnershipRule` or `NonOwnershipRule`. |
 | `concierge-logs` | Routing decisions → `status`, `matchedPath` (object), `guestEmail`, `triggeredAt`, `assignments`, `meetingId`. `matchedPath.route.type` is `RuleRoute` or `CatchAllRoute`. 30-day max window; requires `workspaceId` + `routerId`. |
-| `distribution-list-put` | Distributions — **top-level array** (no `results` wrapper). Each item `{id, published: {distributionId, name, weights: [{userId, weight}], assignmentTypeConfig: {type, handling: {type}}, capping, teamRef: {id}}, state: {userStates: [{userId, type: "Active"\|"Capped"\|"Disabled"\|"Removed"\|"NoLicense", statistics: {assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}}]}}`. Input takes `workspaceIds` (array) + optional `name`, `assignmentType` filters. |
+| `distribution-list-put` | Distributions — `{results: [{id, published: {distributionId, name, weights: [{userId, weight}], assignmentTypeConfig: {type, handling: {type}}, capping, teamRef: {id}}, state: {userStates: [{userId, type: "Active"\|"Capped"\|"Disabled"\|"Removed"\|"NoLicense", statistics: {assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}}]}}, ...], total, page, pageSize}`. Iterate `results` to reach individual records. Input takes `workspaceIds` (array) + optional `name`, `assignmentType` filters. (CEH-11548, 2026-09-01) |
 
 ---
 
@@ -32,8 +32,8 @@ Piper MCP tools this skill uses.
   for richer rule detail (conditions, type, revision).
 - **`rule-list` requires `filter.ruleBuilderVersion: ["ExplicitV1"]`** — omitting it
   returns nothing useful.
-- **`distribution-list-put` returns a top-level array** (no `results` wrapper) and takes
-  `workspaceIds` (an array).
+- **`distribution-list-put` returns `{results: [...], total, page, pageSize}`** — iterate
+  `results` to reach individual distribution records; takes `workspaceIds` (an array). (CEH-11548)
 
 ## concierge-list-routers — router object shape
 
