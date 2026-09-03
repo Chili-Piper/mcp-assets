@@ -1,7 +1,7 @@
 ---
 name: Concierge Router Builder
 description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview and confirmation checkpoint. Data fields stay UI-only; third-party webform trigger mapping is now API-writable via thirdPartyForm.
-version: 0.1.7
+version: 0.1.8
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Help me build a new Concierge router for our inbound demo form"
@@ -72,7 +72,11 @@ AddToCampaign, campaignId, memberStatus}` (use `campaignList`/`campaignSearch` f
 `{type: SalesforceUpsertRecord, ...}` / `{type: HubspotUpsertRecord, ...}` (Create/Upsert Record,
 Concierge only), `{type: SalesforceUpdateOwnership, contact: [{object, field}], lead: [{field}]}` /
 `{type: HubspotUpdateOwnership, contact: [{object, field}]}` (assign record owner to booked host —
-CEH-11302/CEH-11303, 2026-08-13). **create-event remains UI-only**; flag it for manual setup.
+CEH-11302/CEH-11303, 2026-08-13), and `{type: SalesforceCreateEvent, ...}` / `{type:
+HubspotCreateEngagement, ...}` (Create Event — post-booking calendar event in CRM; `relatedTo`
+optional, full relation set supported on Concierge; `meetingCancellationBehavior` default `DoNothing`,
+`guestsBehavior` default `DoNothing`, `owner` default `Assignee` — CEH-11590, 2026-09-03).
+**There are no remaining UI-only CRM action types for Concierge.**
 **ConvertLead is invisible in the Flow Builder** (verified 2026-07-30): it publishes and fires, but
 the canvas renders no node and the SCHEDULED-branch ACTION menu has no Convert Lead — admins can
 only inspect/remove it via the API. Always tell the admin explicitly when a write includes ConvertLead
@@ -96,4 +100,4 @@ from a `ruleList` result when possible — they already carry the discriminators
   failed, and offer to resume or hand off — never silently abandon a half-built router.
 - Plans and results list routing as `rule → team → meeting type → distribution`; results
   report the booking `slug`; hand-off leads with the UI-only items (data fields, Chili-managed form
-  mapping, UI-only CRM actions).
+  mapping).
