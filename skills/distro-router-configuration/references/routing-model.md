@@ -27,7 +27,7 @@ routing: {
 ## Resolving IDs (never invent them)
 
 - **Rules** → `rule-list` with `filter: {ruleBuilderVersion: ["ExplicitV1"], workspaceId}` (per QA ground truth — don't pass `routerId`). Match by rule name; put the rule's ID in `ruleId`.
-- **Distributions** → `distribution-list-put` (returns a **top-level array**). Name lives in `published.name`, ID in `id`.
+- **Distributions** → `distribution-list-put` (returns `{results: [...], total, page, pageSize}` — iterate `results`, CEH-11548). Name lives in `published.name`, ID in `id`.
 - When `changes` names a rule or distribution that doesn't resolve, list the closest candidates and ask — never guess an ID.
 
 ## Row actions (per row and on the catch-all)

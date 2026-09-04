@@ -14,17 +14,23 @@
 `meeting-type-create` body (`MeetingTypeCreate`):
 
 ```
-{workspaceId*, name*, duration*, description?, inviteTitle?, inviteDescription?, location?, sharedWith?}
+{workspaceId*, name*, duration*, description?, inviteTitle?, inviteDescription?, location?, sharedWith?, idempotencyKey?}
 ```
 
 - `duration` is a FiniteDuration string (`"30 minutes"`).
 - `inviteTitle` defaults to `name` when omitted.
+- `idempotencyKey` — a **caller-generated UUID** (CEH-11596), passed through as the meeting type's id. Generate one per logical create and reuse it on retries.
 - `buffers`, `meetingLimit`, `status` are **not** settable on create — apply them with a follow-up `meeting-type-update`.
 
 **Non-atomic create recovery:** Edge applies some optional fields via an internal follow-up
-patch. If create errors after the type already exists (verify with `meeting-type-list` by
-name), **do not re-create** — that risks a duplicate. Re-run `meeting-type-update` against
-the created ID to finish applying the remaining fields.
+patch, so a create can error after the type already exists. A create sent **with**
+`idempotencyKey` is safe to retry verbatim: the same key returns the already-created meeting
+type instead of duplicating it; the same key with a **different payload** fails with 409.
+Caveat: the idempotent-return semantics need meeting-types-service ≥ v1.81.0 in prod — on an
+older backend a same-key retry 500s. So when the key was not used (or the backend version is
+unknown), fall back to the old recovery: verify with `meeting-type-list` by name, **do not
+blind-re-create** (that risks a duplicate), and re-run `meeting-type-update` against the
+created ID to finish applying the remaining fields.
 
 ## Update a meeting type
 

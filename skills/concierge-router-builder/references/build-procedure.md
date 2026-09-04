@@ -52,19 +52,28 @@ Capture each `distributionId`.
 
 ## Step 6 — Router  *(last; needs rule + distribution + meeting-type IDs)*
 
-`concierge-router-create` `{workspaceId, name, routing, form?, inAppButton?, routerLink?}`:
+`concierge-router-create` `{workspaceId, name, routing, routingSteps?, form?, inAppButton?, routerLink?}`:
 
 - `routing.routes` in order — ownership → customer → segments — each `{ruleId, outcome}`
   with `outcome: {type: "Schedule", assignment: {type: "Distribution", distributionId},
   meetingTypeId, timeout?, crmActions?}`. Use `{type: "User", userId}` only for a specific host.
-- `routing.catchAll` — **required**; Schedule (fallback team) or Redirect per the plan.
+- `routing.catchAll` — optional (CEH-11358); Schedule (fallback team) or Redirect per the
+  plan, or omitted only when the plan explicitly states no fallback path is desired.
+- `routingSteps` — only when the plan includes pre-routing enrichment/spam-check (CEH-11538):
+  ordered `{type: "Enrichment", waterfalls: [{dataField, waterfallId}], timeoutSeconds?}`
+  and/or `{type: "SpamCheck", writeSpamScoreToDataField}` steps. Resolve every `waterfallId`
+  via `enrichment-waterfall-list` first (CEH-11541) — it is unvalidated on write and a stale
+  id only fails at publish.
 - `form` — planned fields, each `{dataField, label, required}`, **including `PersonEmail`**.
   Add `routerLink` / `inAppButton` if requested (each must include `PersonEmail`).
-- `crmActions` settable here is `[{type: "ConvertLead"}]` and/or `[{type: "Notify", slackChannel?}]`
-  (ConvertLead is the only CRM-mutating one; Notify posts to Slack). Other CRM actions are
-  UI-only — captured for the hand-off, not sent. **If ConvertLead is written, warn the admin
-  in the hand-off output:** it publishes and fires, but the Flow Builder does not render it —
-  they won't see it in the UI (verified 2026-07-30 → api-reference.md).
+- `crmActions` settable here is the full API-supported set: ConvertLead, Notify{slackChannel?},
+  AddToCampaign{campaignId, memberStatus}, SalesforceUpdateFields / HubspotUpdateFields,
+  SalesforceUpsertRecord / HubspotUpsertRecord (Concierge only), SalesforceUpdateOwnership /
+  HubspotUpdateOwnership, and SalesforceCreateEvent / HubspotCreateEngagement (Create Event —
+  CEH-11590) — shapes and defaults → api-reference.md § Router. **Nothing CRM-action-typed
+  remains UI-only.** **If ConvertLead is written, warn the admin in the hand-off output:** it
+  publishes and fires, but the Flow Builder does not render it — they won't see it in the UI
+  (verified 2026-07-30 → api-reference.md).
 - On invalid `dataField` (400): re-check valid references via `concierge-list-routers` and
   retry with a corrected reference — do not invent names.
 

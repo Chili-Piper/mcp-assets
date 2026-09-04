@@ -41,7 +41,7 @@ Group by the selected dimension:
 
 For each group calculate:
 
-- Total meetings (Completed + NoShow)
+- Total meetings (Completed + NoShow + past-Active — the same denominator as the no-show rate formula above)
 - No-show count
 - No-show rate (%)
 

@@ -15,7 +15,7 @@ Field names verified against the live public Edge API spec, 2026-07-30 (v1.311.1
 | `distro-router-activate` | `POST /v1/org/distro/routers/{routerId}/activate` | `Inactive → (Activating) → Active`; idempotent |
 | `distro-router-deactivate` | `POST /v1/org/distro/routers/{routerId}/deactivate` | `Active → Deactivating → Inactive`; **async**; idempotent |
 | `rule-list` | — | Rules for routing rows. Filter `{ruleBuilderVersion: ["ExplicitV1"], workspaceId}` — do not pass `routerId` |
-| `distribution-list-put` | — | Distributions → **top-level array**; names in `published.name`, ID in `id` |
+| `distribution-list-put` | — | Distributions → `{results: [...], total, page, pageSize}` — iterate `results` (CEH-11548); names in `published.name`, ID in `id` |
 
 ## DistroRouterView (get/create/update/activate/deactivate response)
 

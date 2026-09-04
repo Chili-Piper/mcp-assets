@@ -72,7 +72,8 @@ Calculate:
 
 ## Checking distribution balance
 
-For each workspace, pull `distribution-list-put` (response is a top-level array; balance
+For each workspace, pull `distribution-list-put` (response is `{results: [...], total,
+page, pageSize}` — iterate `results`, CEH-11548; balance
 fields → `references/api-reference.md` § distribution-list-put — balance fields):
 
 ```yaml

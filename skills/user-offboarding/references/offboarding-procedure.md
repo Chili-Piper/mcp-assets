@@ -78,7 +78,8 @@ args:
   workspaceIds: [<workspace id>]
 ```
 
-The response is a top-level array. Flag distributions where this user's `userId` appears
+The response is `{results: [...], total, page, pageSize}` — iterate `results` (CEH-11548).
+Flag distributions where this user's `userId` appears
 in `published.weights[]` or in `state.userStates[]` with `type: "Active"`. Optionally use
 the `name` filter to look for a specific distribution. Distribution membership cannot be
 updated via MCP — flag these for manual removal in the router builder.

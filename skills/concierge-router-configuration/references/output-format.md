@@ -62,7 +62,7 @@ Audit trail:
 
 - Every plan and result carries the **always-live** warning; delete plans lead with the slug/URL that dies.
 - Outcomes render as `Schedule → <assignee> · <meeting type>` or `Redirect → <url>`; resolved names with raw IDs in parentheses on first mention.
-- Read-only outcome variants (`OwnerAssign`, `ContactOptions`, `CrmAction`, `Other`) render as-is; in overlay plans they are marked "(preserved)" unless their `ruleId` is deliberately overwritten.
+- Read-only outcome variants (`OwnerAssign`, `ContactOptions`, `CrmAction`, `Other`) render as-is; in overlay plans they are marked "(preserved)" unless their `ruleId` is deliberately overwritten. `ContactOptions` renders its three branch CRM-action chains (CEH-11599) — `meeting` / `callSuccess` / `callMissed`, each an ordered action list (absent branches omitted, `Other{kind}` placeholders named).
 - Overlay plans (app-built router, `representable: false`) replace the mode line with `Write mode: overlay patch — only listed rules change; all other rows and app-built config preserved` and never list a row as "removed".
 - Rename plans state the derived slug change: `URL: /inbound-demo → /<new-slug> (re-derived from name)`.
 - Create results report the booking URL from the returned `slug` (populated since DISTRO-4626).

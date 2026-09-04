@@ -59,4 +59,4 @@ Audit trail:
 - Every plan and result carries the **always-live** warning — there is no inactive staging state to fall back on.
 - Outcomes render as `Schedule → <assignee> · <meeting type>`; read-only variants render by name (`OwnerAssign`, `Redirect → <url>`, …) and, in overlay plans, are marked "(preserved)". Resolved names with raw IDs in parentheses on first mention.
 - Overlay plans (app-built router, `representable: false`) replace the mode line with `Write mode: overlay patch — only listed rules change; all other rows and app-built config preserved` and never list a row as "removed".
-- Read-only outcome variants (`OwnerAssign`, `ContactOptions`, `CrmAction`, `Other`) render as-is with a note that they can't be edited via this API.
+- Read-only outcome variants (`OwnerAssign`, `ContactOptions`, `CrmAction`, `Other`) render as-is with a note that they can't be edited via this API. `ContactOptions` renders its three branch CRM-action chains (CEH-11599) — `meeting` / `callSuccess` / `callMissed`, each an ordered action list (absent branches omitted, `Other{kind}` placeholders named) — though Handoff routers do not actually produce this variant.

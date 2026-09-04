@@ -1,7 +1,7 @@
 ---
 name: User Offboarding
 description: Safely removes a departing Chili Piper rep — surfaces open meetings that need reassignment, removes them from workspaces and teams, and produces an audit trail — making rep offboarding repeatable and zero-leak.
-version: 0.1.9
+version: 0.1.10
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Offboard departing rep john@company.com — show me the plan first"

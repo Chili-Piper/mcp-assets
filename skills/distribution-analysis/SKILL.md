@@ -1,7 +1,7 @@
 ---
 name: distribution-analysis
 description: Analyzes a Chili Piper round-robin distribution for a workspace and date range — meeting counts by rep, imbalance vs. configured weights, day-of-week and source skew, and cancellations — interpreted against the workspace's fairness settings (credit-back, vacation calibration, reset period). Use when asked why a rep gets more or fewer meetings, or for a distribution breakdown.
-version: 0.2.0
+version: 0.2.1
 references:
   - api-reference
   - output-format
@@ -34,6 +34,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the imbalance findings and decide whether to rebalance weights, fix calendar/availability for an under-booked rep, or adjust the distribution in the router builder"
 writes_to: "Nothing — read-only diagnostic. Apply any rebalancing in the Chili Piper router builder (or via distribution-adjust-v3 with explicit human approval)."
+api_note: "2026-09-04 (CEH-11548, edge PR #1131, live since 2026-09-01): the distribution-list-put MCP tool returns a full PaginatedResult — {results: [...], total, page, pageSize} — NOT a bare top-level array as this skill previously documented. Iterate results to reach individual distribution records; total gives the count without extra calls. references/api-reference.md § Tools and Step 2 updated accordingly."
 ---
 
 # Distribution Analysis
@@ -83,11 +84,12 @@ args:
 tool: distribution-list-put
 args:
   workspaceIds: [<workspace.id>]
-  name: <distribution>          # omit if you were given a distributionId; filter the array instead
+  name: <distribution>          # omit if you were given a distributionId; filter results instead
 ```
 
+The response is `{results: [...], total, page, pageSize}` — iterate `results` (CEH-11548).
 Extract name, active members, weights, handling/algorithm, capping, and per-member
-period statistics from the matching item; derive the per-rep ideal number. If no
+period statistics from the matching `results[]` item; derive the per-rep ideal number. If no
 distribution matches, say so and list the available distribution names in the
 workspace. Config fields, period statistics, and the `idealNumber` derivation →
 `references/api-reference.md` § distribution-list-put — config fields and
