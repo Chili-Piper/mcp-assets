@@ -1,7 +1,7 @@
 ---
 name: meeting-type-management
 description: Manages Chili Piper team meeting types and their email/SMS reminders — list, inspect, create, update, delete — with dry-run planning, guest-visible-field safety (inviteTitle/inviteDescription vs internal description), and reminder attach/detach.
-version: 0.1.2
+version: 0.1.3
 references:
   - api-reference
   - write-operations

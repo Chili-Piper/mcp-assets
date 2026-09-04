@@ -16,12 +16,12 @@
 1. Parse `changes` into rows: each row = a rule (condition) → an outcome.
 2. Resolve every ID from live calls — never invent:
    - rule names → `rule-list` (`filter: {ruleBuilderVersion: ["ExplicitV1"], workspaceId}`) → `ruleId`
-   - distribution names → `distribution-list-put` (top-level array; `published.name` / `id`)
+   - distribution names → `distribution-list-put` (`{results: [...], total, page, pageSize}` — iterate `results`, CEH-11548; `published.name` / `id`)
    - rep names/emails → `user-find` → `userId`
    - meeting type names → `meeting-type-list` → `meetingTypeId`
 3. Every `Schedule` outcome needs **both** an `assignment` (`{type: Distribution, distributionId}` or `{type: User, userId}`) **and** a `meetingTypeId`. If the human didn't name a meeting type, ask — don't default silently.
-4. The only optional per-row extra is `crmActions`, which accepts `{type: "ConvertLead"}` and/or `{type: "AddToCampaign", campaignId, memberStatus}` (CEH-11141, edge #1024, 2026-07-29). Handoff writes accept **no** `Redirect` outcome, **no** `timeout`, and **no** `Notify` action — the API rejects them (400); those belong to concierge routers. Resolve `campaignId` from the CRM (never invent it) and confirm the intended `memberStatus` with the human.
-5. `catchAll` is **required** on every create/update — if the human didn't specify one, ask what unmatched handoffs should do.
+4. The only optional per-row extra is `crmActions`, which accepts any combination of `{type: "ConvertLead"}`, `{type: "AddToCampaign", campaignId, memberStatus}` (CEH-11141), `{type: "SalesforceUpdateFields", ...}` / `{type: "HubspotUpdateFields", ...}`, `{type: "SalesforceUpdateOwnership", ...}` / `{type: "HubspotUpdateOwnership", ...}` (CEH-11302/CEH-11303), and `{type: "SalesforceCreateEvent", ...}` / `{type: "HubspotCreateEngagement", ...}` (CEH-11588/11589) — shapes and defaults → api-reference § Write shapes. Handoff writes accept **no** `Redirect` outcome, **no** `timeout`, **no** `Notify`, and **no** Upsert variants — the API rejects them (400); those belong to concierge routers. A `SalesforceCreateEvent.relatedTo` of `ExplicitObject`/`RelationDisabled` is a typed 400. `Other{kind}` appears only on read and is rejected on write. Resolve `campaignId` from the CRM (never invent it) and confirm the intended `memberStatus` with the human.
+5. `catchAll` is **optional** on create and update (CEH-11358) — omitting it on create produces a router with no fallback path; on update it preserves the current catch-all. If the human didn't specify one, ask what unmatched handoffs should do and state the choice in the plan.
 6. When a name resolves to nothing or to several candidates, list the closest matches and ask.
 
 ## Create

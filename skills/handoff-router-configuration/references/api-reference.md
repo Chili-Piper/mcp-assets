@@ -13,7 +13,7 @@ Field names verified against the live public Edge API spec, 2026-07-15 (v1.287.2
 | `handoff-router-update` | `PUT /v1/org/handoff/routers/handoff/{routerId}` | Full-replace (representable router) or overlay patch (app-built router) — **live immediately** |
 | `handoff-router-delete` | `DELETE /v1/org/handoff/routers/handoff/{routerId}` | Delete — irreversible |
 | `rule-list` | — | Rules for rows: filter `{ruleBuilderVersion: ["ExplicitV1"], workspaceId}` — no `routerId` |
-| `distribution-list-put` | — | Distributions → **top-level array**; name = `published.name`, ID = `id` |
+| `distribution-list-put` | — | Distributions → `{results: [...], total, page, pageSize}` — iterate `results` (CEH-11548); name = `published.name`, ID = `id` |
 | `meeting-type-list` | — | Resolve meeting type names → IDs for Schedule outcomes |
 | `user-find` | — | Resolve user names/emails → IDs for User assignments |
 
@@ -30,7 +30,7 @@ routing: {
 }
 ```
 
-Read-view `outcome` variants: `Schedule {distributionId?, userId?, meetingTypeId?}` · `Redirect {url?}` · `OwnerAssign` · `ContactOptions` · `CrmAction` · `Other {kind}`. Variants beyond `Schedule` exist only on read — they summarize UI configurations this API cannot write. Since DISTRO-4614 they no longer block updates: an update on such a router is applied as an **overlay** (rows matched by `ruleId`), and a row whose outcome is an unrepresentable variant is **preserved verbatim as long as your payload doesn't list its `ruleId`** (see § Representability).
+Read-view `outcome` variants: `Schedule {distributionId?, userId?, meetingTypeId?, crmActions?}` · `Redirect {url?}` · `OwnerAssign` · `ContactOptions {meeting?, callSuccess?, callMissed?}` · `CrmAction` · `Other {kind}`. Variants beyond `Schedule` exist only on read — they summarize UI configurations this API cannot write. `Schedule.crmActions` is the **complete** post-booking chain (CEH-11588/11589): an unmodellable node reads as an `Other {kind}` placeholder instead of collapsing the whole array to `null`; `representable` is `false` iff a placeholder was emitted. `ContactOptions` carries per-branch CRM-action chains since CEH-11599 (`meeting`/`callSuccess`/`callMissed`, each an ordered list of the same union incl. `Other`; `null` = branch absent, `[]` = present with no actions) — the variant is kept for accuracy, but Handoff routers never actually produce it (it is a Concierge call-flow node); it stays read-only. Since DISTRO-4614 they no longer block updates: an update on such a router is applied as an **overlay** (rows matched by `ruleId`), and a row whose outcome is an unrepresentable variant is **preserved verbatim as long as your payload doesn't list its `ruleId`** (see § Representability).
 
 ## Write shapes
 
@@ -39,14 +39,29 @@ Read-view `outcome` variants: `Schedule {distributionId?, userId?, meetingTypeId
 ```
 routing: {
   routes: [{ruleId*, outcome*}],       # evaluated in order; ruleId required on every row
-  catchAll*: outcome                   # REQUIRED
+  catchAll?: outcome                   # optional on create AND update (CEH-11358); omit on update to preserve
 }
 outcome (write) = {type: "Schedule", assignment*, meetingTypeId*, crmActions?}
 assignment = {type: "Distribution", distributionId} | {type: "User", userId}
-crmActions = [{type: "ConvertLead"} | {type: "AddToCampaign", campaignId*, memberStatus*}]
+crmActions = [{type: "ConvertLead"}
+           | {type: "AddToCampaign", campaignId*, memberStatus*}
+           | {type: "SalesforceUpdateFields", contact: [{object, field, value}], lead: [{field, value}]}
+           | {type: "HubspotUpdateFields", contact: [{object, field, value}]}
+           | {type: "SalesforceUpdateOwnership", contact: [{object, field}], lead: [{field}]}
+           | {type: "HubspotUpdateOwnership", contact: [{object, field}]}
+           | {type: "SalesforceCreateEvent", relatedTo?, meetingCancellationBehavior?, guestsBehavior?}
+           | {type: "HubspotCreateEngagement", relatedTo?, owner?, meetingCancellationBehavior?}]
+           # {type: "Other", kind} is READ-only (unmodellable-node placeholder) — rejected on write
+SalesforceCreateEvent.relatedTo = {type: "Account"} | {type: "Opportunity"} | {type: "Case"}
+           | {type: "Campaign", campaignId} | {type: "NoRelationNeeded"}       # omit ⇒ no relation
+           # Handoff REJECTS {type: "ExplicitObject", id} and {type: "RelationDisabled"} (typed 400)
+HubspotCreateEngagement.relatedTo = {type: "Company"} | {type: "Ticket"} | {type: "Deal"}  # omit ⇒ no relation
+guestsBehavior = {type: "CreateEvents"} | {type: "DoNothing"}                  # default DoNothing
+owner          = {type: "Assignee"} | {type: "Booker"}                         # default Assignee
+meetingCancellationBehavior = {type: "DeleteEvent"} | {type: "DoNothing"}      # default DoNothing
 ```
 
-> **Handoff writes are Schedule-only.** No `Redirect`, no no-show `timeout`, and the only CRM actions are `ConvertLead` and `AddToCampaign` (since CEH-11141, edge #1024, 2026-07-29 — both may appear in the same array) — supplying anything else, including `Notify`, is **rejected (400)**; the full outcome set (Redirect/timeout/Notify) is concierge-only.
+> **Handoff writes are Schedule-only.** No `Redirect` and no no-show `timeout`. The Handoff CRM-action write set is: `ConvertLead`, `AddToCampaign` (CEH-11141), `SalesforceUpdateFields`/`HubspotUpdateFields` and `SalesforceUpdateOwnership`/`HubspotUpdateOwnership` (CEH-11302/CEH-11303), and `SalesforceCreateEvent`/`HubspotCreateEngagement` (CEH-11588/11589, 2026-09-03) — any combination in one array. Still **NO `Notify` and NO `SalesforceUpsertRecord`/`HubspotUpsertRecord`** — those are structurally absent from the Handoff write schema (Concierge-only) and fail decoding (400). A `SalesforceCreateEvent.relatedTo` of `ExplicitObject` or `RelationDisabled` is rejected with a typed 400 (`HandoffRouterConversionError`) — Handoff's backend cannot store those relations. The full outcome set (Redirect/timeout/Notify/Upsert) is concierge-only.
 
 > **UI visibility caveat (2026-07-30):** on Concierge routers, an API-written `ConvertLead` was verified to publish and fire but NOT render in the Concierge Flow Builder (no node on the canvas, no Convert Lead in the SCHEDULED-branch ACTION menu — inspect/remove only via the API). Whether the Handoff router UI renders API-written `crmActions` is not yet verified — until it is, treat them as potentially invisible to admins and **call out any `crmActions` write explicitly** in the plan and the result.
 

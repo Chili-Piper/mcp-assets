@@ -1,7 +1,7 @@
 ---
 name: Meeting Inspector
 description: Deep-dives into a single Chili Piper meeting — booking trigger, routing path, rep assignment, and outcome — to diagnose what happened and surface a next action.
-version: 0.3.3
+version: 0.3.4
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Inspect the last meeting for guest@example.com"
@@ -135,8 +135,8 @@ Check every condition below. Flag any that are true.
 | **Late cancellation** | `meetingStatus = Canceled` AND cancelled within 2 h of `dateTime.start` | Medium |
 | **Long lead time + no-show** | Lead time > 5 days AND `meetingStatus = NoShow` | High — recency decay likely |
 | **Rep assignment mismatch** | Router-assigned rep ≠ meeting record rep (`hostId`) | High — reassigned after routing |
-| **Routing fallthrough** | `matchedPath.route.type = CatchAllRoute` (or `matchedPath` absent) | Medium — hit catch-all |
-| **Unrouted meeting** | No routing log found | Low — direct/manual booking |
+| **Routing fallthrough** | `matchedPath.route.type = CatchAllRoute` | Medium — no specific rule matched; hit catch-all |
+| **Unrouted meeting** | No routing log found, or its `matchedPath` is null/blank | Low — direct/manual booking |
 | **CRM write-back failure** | `actionsStatus` is not a success state | Medium |
 
 **Plain-language explanations:**
@@ -145,8 +145,8 @@ Check every condition below. Flag any that are true.
 - **Late cancellation:** Cancelled within 2 h of start — guest likely forgot or had a last-minute conflict. Check whether confirmation included a clear agenda.
 - **Long lead time + no-show:** Lead time > 5 days significantly increases no-show risk (recency decay). Shortening the booking window or adding SMS reminders can reduce recurrence.
 - **Rep assignment mismatch:** Router assigned a different rep than the meeting record shows. Most common cause: stale Salesforce ownership. Meeting was manually reassigned after routing.
-- **Routing fallthrough:** No rule matched — hit the catch-all or was dropped. Review `sourceUrl` to see which page triggered the router.
-- **Unrouted meeting:** No concierge log found. Booked via direct link, handoff, or manual rep booking. Not necessarily a problem.
+- **Routing fallthrough:** No specific rule matched — `matchedPath.route.type` is `CatchAllRoute`. Review `sourceUrl` to see which page triggered the router.
+- **Unrouted meeting:** No concierge log found (or the log carries no `matchedPath`). Booked via direct link, handoff, or manual rep booking. Not necessarily a problem.
 - **CRM write-back failure:** Meeting exists in Chili Piper but post-routing CRM actions (Salesforce task, campaign association) didn't complete. Deal may not reflect this meeting. Escalate to RevOps admin.
 
 ---

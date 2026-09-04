@@ -1,7 +1,7 @@
 ---
 name: scheduling-link-management
 description: Lists, creates, updates, and deletes Chili Piper scheduling links across all four admin link types (round-robin, admin one-on-one, group, ownership) plus personal-link auditing — with dry-run planning and delete safety (deletion instantly breaks the link's booking URL).
-version: 0.1.0
+version: 0.1.1
 references:
   - api-reference
   - write-operations
@@ -44,7 +44,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the dry-run plan before setting dry_run=false — deleting a scheduling link is irreversible and instantly breaks its booking URL everywhere it is embedded or shared."
 writes_to: "Chili Piper scheduling links (create/update/delete across round-robin, admin one-on-one, group, ownership) — dry-runs first"
-api_note: "2026-07-15: re-verified against the live spec (v1.287.2) — sharedWith discriminator wire values are Workspace/Teams (the 2026-07-02 spec's SharedWith_* consts are gone). 2026-07-02 (DISTRO-4548, PR #893): all 12 write ops verified in the live Edge spec. Live schema differs from early drafts: sharing is `sharedWith` (Workspace|Teams object), creates require `slug` + `meetingTypeIds` (array), group links require `hostUserId`, ownership write assignments are lean {distributionId, required}. Use `scheduling-link-list-personal`, not the -deprecated variant. Field truth → references/api-reference.md."
+api_note: "2026-07-15: re-verified against the live spec (v1.287.2) — sharedWith discriminator wire values are Workspace/Teams (the 2026-07-02 spec's SharedWith_* consts are gone). 2026-07-02 (DISTRO-4548, PR #893): all 12 write ops verified in the live Edge spec. Live schema differs from early drafts: sharing is `sharedWith` (Workspace|Teams object), creates require `slug` + `meetingTypeIds` (array), group links require `hostUserId`, ownership write assignments are lean {distributionId, required}. Use `scheduling-link-list-personal`, not the -deprecated variant. Field truth → references/api-reference.md. 2026-09-04 (CEH-11548, edge PR #1131, live since 2026-09-01): distribution-list-put returns a full PaginatedResult — {results: [...], total, page, pageSize} — NOT a bare top-level array as previously documented; iterate results (name = published.name, ID = id)."
 ---
 
 # Scheduling Link Management

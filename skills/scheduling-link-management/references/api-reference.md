@@ -12,7 +12,7 @@ Field names verified against the live public Edge API spec, 2026-07-02. The tool
 | `scheduling-link-list-group` | `POST /v1/org/schedulingLinks/list-group` | Same filter style |
 | `scheduling-link-list-ownership` | `POST /v1/org/schedulingLinks/list-ownership` | Same filter style |
 
-Helper tools: `workspace-list` (items use `id`), `meeting-type-list`, `distribution-list-put` (**top-level array**; name = `published.name`, ID = `id`), `user-find`.
+Helper tools: `workspace-list` (items use `id`), `meeting-type-list`, `distribution-list-put` (`{results: [...], total, page, pageSize}` — iterate `results`, CEH-11548; name = `published.name`, ID = `id`), `user-find`.
 
 ## Detail shapes (list/create/update responses)
 

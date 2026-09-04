@@ -19,8 +19,9 @@ live call before using it.
 | `rule-create` | Create an ownership or segment rule (live immediately, revision 1) |
 | `rule-list` | Existing rules — copy conditions/`workspaceId`; filter `{ruleBuilderVersion: ["ExplicitV1"], workspaceId}` |
 | `distribution-create` | Create + publish a distribution (assignment pool) |
-| `distribution-list-put` | Existing distributions → **top-level array**; name = `published.name`, ID = `id` |
+| `distribution-list-put` | Existing distributions → `{results: [...], total, page, pageSize}` — iterate `results` (CEH-11548); name = `published.name`, ID = `id` |
 | `meeting-type-list` | Existing meeting types (verify names) |
+| `enrichment-waterfall-list` | Enrichment waterfalls for `routingSteps` (read-only, CEH-11541): `{workspaceId*, pagination?}` → `{results: [{id, name, isCustom, isTemplate, fields, tiedToDataField?, exclusivelyFor?, metadata}], total, page, pageSize}` |
 | `concierge-router-create` | Create + **publish live** the router (no draft state via API) |
 | `concierge-router-get` | Read back for verification → `ConciergeRouter` (no `status` field) |
 
@@ -121,26 +122,51 @@ tune caps later with `distribution-adjust-v3`. Other `type`s: `Record`, `Convers
 
 ## Router
 
-`concierge-router-create` → `{workspaceId*, name*, routing*}` + optional `form`,
-`inAppButton`, `routerLink`, `branding`, `localizations`. **Publishes live on success**;
-the URL `slug` is derived from `name` and returned. `workspaceId` must be a **team**
-workspace.
+`concierge-router-create` → `{workspaceId*, name*, routing*}` + optional `routingSteps`,
+`form`, `inAppButton`, `routerLink`, `branding`, `localizations`. **Publishes live on
+success**; the URL `slug` is derived from `name` and returned. `workspaceId` must be a
+**team** workspace.
 
 > **Sync note:** this router write grammar is duplicated in `concierge-router-configuration`'s
 > `references/api-reference.md` (verified 07-15). Update both together when the API changes.
 
 ```
-routing: {routes: [{ruleId*, outcome*}], catchAll*}        # catchAll REQUIRED; routes ordered top-down
+routing: {routes: [{ruleId*, outcome*}], catchAll?}        # catchAll optional (CEH-11358); routes ordered top-down
+routingSteps?: [step]                                       # pre-routing steps, run in order BEFORE the rule rows (CEH-11538); default empty
+step = {type: "Enrichment", waterfalls*: [{dataField, waterfallId}], timeoutSeconds?}  # waterfalls non-empty; timeoutSeconds whole seconds
+     | {type: "SpamCheck", writeSpamScoreToDataField}       # boolean; NO spam-path/onSpam outcome field by design
+     | {type: "Unrepresentable", kind}                      # READ-only marker — never write it
 outcome = {type: "Schedule", assignment*, meetingTypeId*, timeout?, crmActions?}
         | {type: "Redirect", url*}
 assignment = {type: "Distribution", distributionId} | {type: "User", userId}
 timeout    = {minutes*, onTimeout*: {type: "Landing"} | {type: "Url", url}}   # omit → default 10 min → Landing
-crmActions = [{type: "ConvertLead"} | {type: "Notify", slackChannel?} | {type: "AddToCampaign", campaignId, memberStatus}]  # CEH-11141, 2026-07-29: AddToCampaign sends to a Salesforce campaign
+crmActions = [{type: "ConvertLead"}
+           | {type: "Notify", slackChannel?}                                   # omit slackChannel → notify the assignee
+           | {type: "AddToCampaign", campaignId, memberStatus}                 # CEH-11141: sends to a Salesforce campaign
+           | {type: "SalesforceUpdateFields", contact: [{object, field, value}], lead: [{field, value}]}
+           | {type: "HubspotUpdateFields", contact: [{object, field, value}]}
+           | {type: "SalesforceUpsertRecord", settings} | {type: "HubspotUpsertRecord", settings}   # Concierge only
+           | {type: "SalesforceUpdateOwnership", contact: [{object, field}], lead: [{field}]}
+           | {type: "HubspotUpdateOwnership", contact: [{object, field}]}
+           | {type: "SalesforceCreateEvent", relatedTo?, meetingCancellationBehavior?, guestsBehavior?}
+           | {type: "HubspotCreateEngagement", relatedTo?, owner?, meetingCancellationBehavior?}]
+           # {type: "Other", kind} is READ-only (unmodellable-node placeholder) — rejected on write
+SalesforceCreateEvent.relatedTo = {type: "Account"} | {type: "Opportunity"} | {type: "Case"}
+           | {type: "Campaign", campaignId} | {type: "ExplicitObject", id}
+           | {type: "NoRelationNeeded"} | {type: "RelationDisabled"}           # omit relatedTo ⇒ no relation
+HubspotCreateEngagement.relatedTo = {type: "Company"} | {type: "Ticket"} | {type: "Deal"}  # omit ⇒ no relation
+guestsBehavior = {type: "CreateEvents"} | {type: "DoNothing"}                  # default DoNothing
+owner          = {type: "Assignee"} | {type: "Booker"}                         # default Assignee
+meetingCancellationBehavior = {type: "DeleteEvent"} | {type: "DoNothing"}      # default DoNothing
 form[]        = {dataField*, label*, required*, description?, hidden?}         # MUST include PersonEmail; hidden = a prefilled value
 inAppButton[] = {dataField*}                                                  # MUST include PersonEmail
 routerLink[]  = {dataField*, label*, required*, hidden?}                       # MUST include PersonEmail; gives a shareable Router Link URL
 branding      = {coverImage?, headingText?, language?}
 ```
+
+**`waterfallId` is an opaque string** — resolve it via `enrichment-waterfall-list` (match by
+`name`, take `id`), **never invent it**: it is passed through unvalidated, so a stale/wrong
+id only surfaces as a failure at publish time (CEH-11538/CEH-11541).
 
 > **ConvertLead is invisible in the Flow Builder (verified 2026-07-30, live tenant).** The API
 > accepts and publishes `{type: "ConvertLead"}` — the node is real in the draft and published

@@ -13,7 +13,7 @@ Piper MCP tools this skill uses.
 | Tool | What it returns |
 |------|----------------|
 | `workspace-list` | All workspaces → items `{id, name, nrOfUsers}`. The identifier is **`id`** (NOT `workspaceId`); pass `id` as the `workspaceId` argument to other tools. |
-| `concierge-list-routers` | Routers in a workspace → `{routers: [{router: {id, name, slug, routing: {rules: [...], catchAll: {outcome: ...}}}, workspaceId}]}`. routerId is `routers[N].router.id`; rules and catch-all on `routers[N].router.routing`. Each rule row and the catch-all carry `outcome`: `{type: "Schedule", assignment: {type: "Distribution", distributionId} \| {type: "User", userId}, meetingTypeId, timeout?: {minutes, onTimeout: "Landing"\|{url}}, crmActions?: [...]}` or `{type: "Redirect", url}`. |
+| `concierge-list-routers` | Routers in a workspace → `{routers: [{router: {id, name, slug, routing: {rules: [...], catchAll: {outcome: ...}}}, workspaceId}]}`. routerId is `routers[N].router.id`; rules and catch-all on `routers[N].router.routing`. Each rule row and the catch-all carry `outcome`: `{type: "Schedule", assignment: {type: "Distribution", distributionId} \| {type: "User", userId}, meetingTypeId, timeout?: {minutes, onTimeout: "Landing"\|{url}}, crmActions?: [...]}`, `{type: "Redirect", url}`, or a read-only variant — `OwnerAssign`, `ContactOptions {meeting?, callSuccess?, callMissed?}`, `CrmAction`, `Other {kind}` (see § Routing outcomes). |
 | `rule-list` | Active routing rules, **workspace-scoped** (no routerId). Input `{filter: {ruleBuilderVersion: ["ExplicitV1"] (required), workspaceId?, name?, type?}, pagination}`. Returns `{results: [{id, name, type, conditions, workspaceId, metadata: {revision}}], total}`. `type` is `OwnershipRule` or `NonOwnershipRule`. |
 | `concierge-logs` | Routing decisions → `status`, `matchedPath` (object), `guestEmail`, `triggeredAt`, `assignments`, `meetingId`. `matchedPath.route.type` is `RuleRoute` or `CatchAllRoute`. 30-day max window; requires `workspaceId` + `routerId`. |
 | `distribution-list-put` | Distributions — `{results: [{id, published: {distributionId, name, weights: [{userId, weight}], assignmentTypeConfig: {type, handling: {type}}, capping, teamRef: {id}}, state: {userStates: [{userId, type: "Active"\|"Capped"\|"Disabled"\|"Removed"\|"NoLicense", statistics: {assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}}]}}, ...], total, page, pageSize}`. Iterate `results` to reach individual records. Input takes `workspaceIds` (array) + optional `name`, `assignmentType` filters. (CEH-11548, 2026-09-01) |
@@ -48,11 +48,26 @@ not a rule** in `routing.rules[]`.
 catch-all carry a discriminated `outcome` field:
 
 - `{type: "Schedule", assignment: {type: "Distribution", distributionId} | {type: "User", userId}, meetingTypeId, timeout?: {minutes, onTimeout: "Landing"|{url}}, crmActions?: [...]}`
-  — assign to a distribution or user and book a meeting type.
+  — assign to a distribution or user and book a meeting type. `crmActions` is the
+  **complete** post-booking chain (CEH-11590/11591, 2026-09-03): an unmodellable node
+  appears as an `{type: "Other", kind}` placeholder instead of collapsing the whole array
+  to `null`; a placeholder also means the router reads `representable: false`.
 - `{type: "Redirect", url}` — send the lead to a URL instead of booking.
 
-Both are valid catch-all outcomes: leads are handled either way. Only a catch-all that is
-absent or has a null/missing `outcome` drops leads.
+Routers built in the app can additionally carry read-only variants this API cannot write
+(report them, don't flag them as errors):
+
+- `{type: "OwnerAssign"}` — assign to the CRM record/contact owner.
+- `{type: "ContactOptions", meeting?, callSuccess?, callMissed?}` — a call-flow node;
+  since CEH-11599 (2026-09-04) each branch is an ordered CRM-action chain (same union
+  incl. `Other`): `meeting` = the direct book-a-meeting branch, `callSuccess` /
+  `callMissed` = the call branches. `null` = branch absent, `[]` = present with no
+  actions. Audit the chains; the variant itself stays unwritable.
+- `{type: "CrmAction"}` — a CRM action used as the row outcome.
+- `{type: "Other", kind}` — any other backend node, named by `kind`.
+
+Any Schedule/Redirect outcome is a valid catch-all: leads are handled either way. Only a
+catch-all that is absent or has a null/missing `outcome` drops leads.
 
 ## rule-list — rule detail fields
 
