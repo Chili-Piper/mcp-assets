@@ -1,7 +1,7 @@
 ---
 name: Meeting Type Management
 description: Manages Chili Piper team meeting types and their email/SMS reminders — list, inspect, create, update, delete — with dry-run planning, guest-visible-field safety (inviteTitle/inviteDescription vs internal description), and reminder attach/detach.
-version: 0.1.1
+version: 0.1.2
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "List all meeting types in the Sales workspace"
@@ -45,7 +45,7 @@ When a user says "change the description", ask whether they mean the guest-visib
 | `listWorkspaces` | Workspaces → items use `id` |
 | `meetingTypeList` | All team meeting types (optional `workspaceId`). **Returns `reminders: null`** — use get for reminders; includes `isActive: boolean` (derived: true iff status == Active) |
 | `meetingTypeGet` | One meeting type with real `reminders[]` |
-| `meetingTypeCreate` | `{workspaceId*, name*, duration*, description?, inviteTitle?, inviteDescription?, location?, sharedWith?}` — buffers/limits/status need a follow-up update |
+| `meetingTypeCreate` | `{workspaceId*, name*, duration*, description?, inviteTitle?, inviteDescription?, location?, sharedWith?, idempotencyKey?}` — buffers/limits/status need a follow-up update; pass a caller-generated UUID as `idempotencyKey` to make the create idempotent (retry with same key returns the existing type or 409 on payload mismatch; requires backend v1.81.0+) |
 | `meetingTypeUpdate` | Patch: `{name?, description?, inviteTitle?, inviteDescription?, duration?, status?, location?, buffers?, meetingLimit?, sharedWith?}` |
 | `meetingTypeDelete` | Irreversible |
 | `meetingTypeAttachReminder` / `meetingTypeDetachReminder` | Associate/dissociate an existing reminder (idempotent; return the updated meeting type) |
