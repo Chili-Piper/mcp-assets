@@ -37,6 +37,7 @@ Every skill is built on **[progressive disclosure](docs/methodology.md)** (Anthr
 | [distribution-analysis](skills/distribution-analysis/) | Analyze a round-robin distribution — meeting counts by rep, imbalance vs. weights, skew, cancellations | ✅ |
 | [availability-inspector](skills/availability-inspector/) | Diagnose why a rep or team shows no available slots | ✅ |
 | [concierge-debugger](skills/concierge-debugger/) | Trace why a specific lead didn't book | ✅ |
+| [concierge-router-builder](skills/concierge-router-builder/) | Build a complete Concierge web-form router through a guided discovery and confirmation workflow | ⚠️ writes |
 | [distro-debugger](skills/distro-debugger/) | Debug why a CRM record was (or wasn't) routed through a distribution — rule stage by rule stage | ✅ |
 | [chat-conversation-inspector](skills/chat-conversation-inspector/) | Inspect Chat AI conversation logs — routing outcomes, transcripts, abandonment analysis | ✅ |
 | [org-meeting](skills/org-meeting/) | Org-wide meeting volume and health snapshot | ✅ |
@@ -108,7 +109,7 @@ Start a new Codex task after installation. Codex can select a matching skill aut
 $meeting-inspector 81c1a018-35c6-4a05-9623-17b9cc606ce7
 ```
 
-This installs the skills for the current user. Re-run the installer when you want to pick up repository updates.
+This installs the skills for the current user. The installer will not overwrite an existing skill folder; to update, remove the old installed copy first or maintain a Git clone and symlink its skill folders.
 
 **Option E — ChatGPT:**
 
