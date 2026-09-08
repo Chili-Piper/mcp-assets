@@ -1,7 +1,7 @@
 ---
 name: chat-conversation-inspector
 description: Inspects Chili Piper Chat AI conversation logs for a workspace — routing-outcome breakdowns (Routed/NotRouted/Abandoned), full bot/guest transcripts, and abandonment analysis. Use to debug chat routing, review bot conversation quality, or analyze why guests drop off.
-version: 0.1.1
+version: 0.1.2
 references:
   - api-reference
   - analysis-procedure
@@ -40,7 +40,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the outcome breakdown and abandonment findings — decide whether the fix is playbook configuration, bot response quality, or rep availability, and who should own it"
 writes_to: "Nothing — read-only"
-api_note: "2026-07-15: chat-logs live in the deployed MCP (since DISTRO-4429, PR #882). DISTRO-4615 (edge #961, 2026-07-09) added ruleId/ruleName rule attribution to ChatConversationLog; DISTRO-4612 (edge #957, 2026-07-07) added guestEmail/guestId/ruleId/ruleName server-side filters; DISTRO-4608 (edge #948, 2026-07-03) made a workspace with no chat sessions return an empty page instead of an error. Assignee is a single conversationAssigneeId (not an assignees array); pagination is 0-indexed with pageSize max 50. Field-name truth → references/api-reference.md. 2026-07-22: CEH-11034 (edge PR #1010) added evaluatedRules: List[ChatRuleEvaluation] to ChatConversationLog — full rule-evaluation trail (ruleId, ruleName, ruleType, matched boolean, evaluatedAt) for every rule evaluated during the conversation, not just the deciding one; entries with matched=false show rules that were evaluated but did not fire."
+api_note: "2026-07-15: chat-logs live in the deployed MCP (since DISTRO-4429, PR #882). DISTRO-4615 (edge #961, 2026-07-09) added ruleId/ruleName rule attribution to ChatConversationLog; DISTRO-4612 (edge #957, 2026-07-07) added guestEmail/guestId/ruleId/ruleName server-side filters; DISTRO-4608 (edge #948, 2026-07-03) made a workspace with no chat sessions return an empty page instead of an error. Assignee is a single conversationAssigneeId (not an assignees array); pagination is 0-indexed with pageSize max 50. Field-name truth → references/api-reference.md. 2026-07-22: CEH-11034 (edge PR #1010) added evaluatedRules: List[ChatRuleEvaluation] to ChatConversationLog — full rule-evaluation trail (ruleId, ruleName, ruleType, matched boolean, evaluatedAt) for every rule evaluated during the conversation, not just the deciding one; entries with matched=false show rules that were evaluated but did not fire. 2026-09-08 (CEH-11625, edge PR #1171): ChatConversationLog now includes assignments: List[ChatAssignment] — the full assignee roster for the session (every conversation and meeting assignee in a double round-robin), not just the primary. Each entry: {assigneeId, method (e.g. FlexibleRoundRobin), assignmentType ('Conversation'|'Meeting')}. conversationAssigneeId is retained as the primary assignee label. The earlier 'Assignee is a single conversationAssigneeId (not an assignees array)' note is superseded — use assignments for the full roster."
 ---
 
 # Chat Conversation Inspector
@@ -101,7 +101,7 @@ Exact layout → `references/output-format.md` § Templates.
 Verify before writing output:
 
 - [ ] `start`/`end` sent as ISO-8601 date-times and the window is ≤ 30 days per call (longer ranges chunked).
-- [ ] Field names taken from `references/api-reference.md`, not guessed — assignee is `conversationAssigneeId` (single value), guest email is `guestEmail`.
+- [ ] Field names taken from `references/api-reference.md`, not guessed — primary assignee is `conversationAssigneeId`; full roster in `assignments[]` ({assigneeId, method, assignmentType}); guest email is `guestEmail`.
 - [ ] Pagination exhausted (`page` incremented from 0 until `page * pageSize + results.length ≥ total`) or the shortfall is stated in the output.
 - [ ] Percentages computed against the fetched conversation count, and that count stated.
 - [ ] Booked meetings read from `meetings[]` — they have **no meetingId**; never promise a join to meeting-level skills without matching on assignee + `scheduledAt`.
