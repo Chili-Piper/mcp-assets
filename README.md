@@ -106,7 +106,7 @@ $skill-installer install every skill from https://github.com/Chili-Piper/mcp-ass
 Start a new Codex task after installation. Codex can select a matching skill automatically, or you can invoke one explicitly:
 
 ```
-$meeting-inspector 81c1a018-35c6-4a05-9623-17b9cc606ce7
+$meeting-inspector <meeting-id>
 ```
 
 This installs the skills for the current user. The installer will not overwrite an existing skill folder; to update, remove the old installed copy first or maintain a Git clone and symlink its skill folders.
