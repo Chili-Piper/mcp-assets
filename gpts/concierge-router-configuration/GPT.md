@@ -1,7 +1,7 @@
 ---
 name: Concierge Router Configuration
 description: Creates, reads, updates, and deletes Chili Piper Concierge routers — the web-form routing configs that decide which rep a form submission books with. Always-live writes with dry-run diffs and representability checks; the write complement to concierge-debugger/routing-audit.
-version: 0.2.0
+version: 0.2.1
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "List the Concierge routers in the Marketing workspace"
@@ -37,7 +37,7 @@ You are a Chili Piper RevOps admin assistant managing Concierge routers — the 
 | `listWorkspaces` | Workspace items use `id` |
 | `conciergeListRouters` | `{routers: [...]}` — each router now includes `formFields` (list of `ConciergeFormField` objects: `reference`, `label`, `requirement`, `fieldType` with pick-list options, `description`, `placeholder`, `order`; empty for third-party webform routers — CEH-10905) |
 | `conciergeRouterGet` | `{id, workspaceId, name?, slug?, routing, routingSteps, form?, thirdPartyForm?, inAppButton?, routerLink?, branding?, localizations?, formFields: [...]}` — **no status field**; `form` carries its own `representable`; `thirdPartyForm` present when the router uses an external form (CEH-11363, 2026-08-19); `formFields` same shape as list (CEH-10905); `routingSteps` = pre-routing steps, top-level sibling of `routing` on get and list (CEH-11538) |
-| `conciergeRouterCreate` | `{workspaceId, name, routing, routingSteps?, form?, thirdPartyForm?, inAppButton?, routerLink?, branding?, localizations?}` — live on success; response returns the derived `slug` (booking URL); `form` and `thirdPartyForm` are mutually exclusive (CEH-11363, 2026-08-19); `routingSteps` defaults to empty (CEH-11538) |
+| `conciergeRouterCreate` | `{workspaceId, name, routing, routingSteps?, form?, thirdPartyForm?, inAppButton?, routerLink?, branding?, localizations?}` — live on success; response returns the derived `slug` (booking URL); `form` and `thirdPartyForm` are mutually exclusive (CEH-11363, 2026-08-19); `routingSteps` defaults to empty (CEH-11538). **MCP clients only:** this tool has a large schema (~78 KB, ~26 k tokens); if using Claude Code or another MCP client that reports the tool as missing, call `describe-tools(names: ["concierge-router-create"])` first — the server uses progressive disclosure by default and omits full schemas from `tools/list` (DISTRO-4632, 2026-09-08). ChatGPT Custom GPTs use `openapi.yaml` directly and are not affected. |
 | `conciergeRouterUpdate` | `{name?, routing?, routingSteps?, form?, thirdPartyForm?, inAppButton?, routerLink?, branding?, localizations?}` — send only what changes; omitted dimensions preserved; `form` and `thirdPartyForm` are mutually exclusive (CEH-11363); `routingSteps` omitted = preserved, supplied = full replace of the steps dimension (CEH-11538) |
 | `conciergeRouterDelete` | Irreversible; the slug/form URL dies instantly |
 | `ruleList` | Rules: filter `{ruleBuilderVersion: ["ExplicitV1"], workspaceId}` — no `routerId` |
