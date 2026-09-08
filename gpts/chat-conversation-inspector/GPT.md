@@ -1,7 +1,7 @@
 ---
 name: Chat Conversation Inspector
 description: Inspects Chili Piper Chat AI conversation logs for a workspace — routing-outcome breakdowns (Routed/NotRouted/Abandoned), full bot/guest transcripts, and abandonment analysis. Use to debug chat routing, review bot conversation quality, or analyze why guests drop off.
-version: 0.1.1
+version: 0.1.2
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "What share of chat conversations were routed vs abandoned last week in the Sales workspace?"
@@ -53,7 +53,8 @@ This GPT is **read-only** — it never writes anything to Chili Piper.
 | `ruleId?`, `ruleName?` | Matched (earliest-executed) routing rule; **both absent when no rule ran** — group as "(no rule matched)" |
 | `evaluatedRules?` | Full rule-evaluation trail: `[{ruleId, ruleName, ruleType, matched, evaluatedAt}]`; entries with `matched: false` show rules evaluated but not fired. Added CEH-11034 (2026-07-22). |
 | `repJoined`, `chatAiStarted`, `meetingBooked` | Booleans |
-| `conversationAssigneeId?` | **Single** assignee user ID — there is no `assignees` array |
+| `conversationAssigneeId?` | Primary assignee user ID (single value; retained for backwards compatibility — see `assignments[]` for the full roster) |
+| `assignments[]` | Full assignee roster: `{assigneeId, method, assignmentType}` — `method` e.g. `FlexibleRoundRobin`; `assignmentType` `Conversation`\|`Meeting` (all double round-robin candidates). Added CEH-11625 (2026-09-08). |
 | `meetings[]` | `{assigneeId, origin, scheduledAt}` — **no meetingId exists**; correlate with meetings by assignee + scheduledAt |
 | `messages[]` | `{role: Bot \| Guest, content, timestamp}` — full transcript (no `Rep` role exists) |
 

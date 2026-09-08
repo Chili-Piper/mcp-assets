@@ -1,7 +1,7 @@
 ---
 name: distribution-analysis
 description: Analyzes a Chili Piper round-robin distribution for a workspace and date range — meeting counts by rep, imbalance vs. configured weights, day-of-week and source skew, and cancellations — interpreted against the workspace's fairness settings (credit-back, vacation calibration, reset period). Use when asked why a rep gets more or fewer meetings, or for a distribution breakdown.
-version: 0.2.1
+version: 0.2.2
 references:
   - api-reference
   - output-format
@@ -34,7 +34,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the imbalance findings and decide whether to rebalance weights, fix calendar/availability for an under-booked rep, or adjust the distribution in the router builder"
 writes_to: "Nothing — read-only diagnostic. Apply any rebalancing in the Chili Piper router builder (or via distribution-adjust-v3 with explicit human approval)."
-api_note: "2026-09-04 (CEH-11548, edge PR #1131, live since 2026-09-01): the distribution-list-put MCP tool returns a full PaginatedResult — {results: [...], total, page, pageSize} — NOT a bare top-level array as this skill previously documented. Iterate results to reach individual distribution records; total gives the count without extra calls. references/api-reference.md § Tools and Step 2 updated accordingly."
+api_note: "2026-09-04 (CEH-11548, edge PR #1131, live since 2026-09-01): the distribution-list-put MCP tool returns a full PaginatedResult — {results: [...], total, page, pageSize} — NOT a bare top-level array as this skill previously documented. Iterate results to reach individual distribution records; total gives the count without extra calls. references/api-reference.md § Tools and Step 2 updated accordingly. 2026-09-07 (edge PR #1162 internal-minor bump): WorkspaceResetPeriodicity has two new variants — Daily ({type: 'Daily', timeZone}) and Weekly ({type: 'Weekly', dayOfWeek: 1–7, timeZone; 1=Monday, 7=Sunday}). Prior variants (Monthly/Quarterly/Yearly/Never) are unchanged. Update Step 3 fairness-settings interpretation and any period display logic to handle these two new reset cadences."
 ---
 
 # Distribution Analysis
