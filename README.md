@@ -16,14 +16,14 @@ Maintained by Chili Piper. These are ready-to-use AI specialists — meeting dia
 
 | Folder | What it is |
 |--------|-----------|
-| [`skills/`](skills/) | **Claude Code / Claude Skills** — drop-in specialists that call the Chili Piper MCP. One job each, done well. |
+| [`skills/`](skills/) | **Agent Skills for Claude and OpenAI Codex** — drop-in specialists that call the Chili Piper MCP. One job each, done well. |
 | [`gpts/`](gpts/) | **ChatGPT Custom GPTs** — the ChatGPT equivalent of each skill, with a GPT Actions schema. |
 | [`mcp-servers/chili-piper/`](mcp-servers/chili-piper/) | **MCP setup guide** — connect the Chili Piper MCP via API key or OAuth. |
 | [`gemini/`](gemini/) | **Google Gemini guide** — connect via Gemini CLI, Gen AI SDK / ADK, or Gemini Enterprise. |
 | [`.claude-plugin/`](.claude-plugin/) · [`.cursor-plugin/`](.cursor-plugin/) | **Plugin manifests** — the Claude and Cursor plugins that bundle the MCP with these skills and commands. |
 | [`docs/`](docs/) | Authoring methodology, QA status tracker, and org-level deployment guide. |
 
-A **Skill** is a small, self-contained instruction set that teaches an AI agent how to do one Chili Piper task correctly — which MCP tools to call, in what order, and how to format the result. A **GPT** is the same capability packaged for ChatGPT.
+A **Skill** is a small, self-contained instruction set that teaches an AI agent how to do one Chili Piper task correctly — which MCP tools to call, in what order, and how to format the result. The same Agent Skills format works in Claude and OpenAI Codex. A **GPT** is a separate Custom GPT packaging of the capability for ChatGPT.
 
 Every skill is built on **[progressive disclosure](docs/methodology.md)** (Anthropic's Agent Skills convention), so an agent loads only the slice of a skill the current step needs.
 
@@ -37,6 +37,7 @@ Every skill is built on **[progressive disclosure](docs/methodology.md)** (Anthr
 | [distribution-analysis](skills/distribution-analysis/) | Analyze a round-robin distribution — meeting counts by rep, imbalance vs. weights, skew, cancellations | ✅ |
 | [availability-inspector](skills/availability-inspector/) | Diagnose why a rep or team shows no available slots | ✅ |
 | [concierge-debugger](skills/concierge-debugger/) | Trace why a specific lead didn't book | ✅ |
+| [concierge-router-builder](skills/concierge-router-builder/) | Build a complete Concierge web-form router through a guided discovery and confirmation workflow | ⚠️ writes |
 | [distro-debugger](skills/distro-debugger/) | Debug why a CRM record was (or wasn't) routed through a distribution — rule stage by rule stage | ✅ |
 | [chat-conversation-inspector](skills/chat-conversation-inspector/) | Inspect Chat AI conversation logs — routing outcomes, transcripts, abandonment analysis | ✅ |
 | [org-meeting](skills/org-meeting/) | Org-wide meeting volume and health snapshot | ✅ |
@@ -94,9 +95,27 @@ Options A and B install the full plugin (skills + slash commands + MCP config) a
 
 Want only one skill, or to push a single skill as an **Organization skill**? Download it from the [latest release](https://github.com/Chili-Piper/mcp-assets/releases/latest) (e.g. [`meeting-inspector.zip`](https://github.com/Chili-Piper/mcp-assets/releases/latest/download/meeting-inspector.zip)) and upload it via **Customize → Skills → ＋** (added as a Personal skill; admins can choose **Organization** + **Share**).
 
-**Option D — ChatGPT:** deploy the matching Custom GPT — see [`gpts/README.md`](gpts/README.md).
+**Option D — OpenAI Codex (standalone skills):**
 
-**Option E — Cursor (plugin):**
+First connect the Chili Piper MCP as a plugin by following the [ChatGPT/Codex setup in the Help Center](https://help.chilipiper.com/hc/en-us/articles/50430350863635-How-do-I-connect-Chili-Piper-via-MCP#connect-chatgpt). Then ask Codex:
+
+```
+$skill-installer install every skill from https://github.com/Chili-Piper/mcp-assets/tree/main/skills
+```
+
+Start a new Codex task after installation. Codex can select a matching skill automatically, or you can invoke one explicitly:
+
+```
+$meeting-inspector 81c1a018-35c6-4a05-9623-17b9cc606ce7
+```
+
+This installs the skills for the current user. The installer will not overwrite an existing skill folder; to update, remove the old installed copy first or maintain a Git clone and symlink its skill folders.
+
+**Option E — ChatGPT:**
+
+Connect the Chili Piper MCP as a plugin using the [Help Center instructions](https://help.chilipiper.com/hc/en-us/articles/50430350863635-How-do-I-connect-Chili-Piper-via-MCP#connect-chatgpt). If you prefer a dedicated Custom GPT with predefined conversation starters, deploy the matching GPT from [`gpts/`](gpts/README.md).
+
+**Option F — Cursor (plugin):**
 
 This repo ships a Cursor plugin (`.cursor-plugin/plugin.json` + a root `mcp.json`) that bundles the Chili Piper MCP with the same `skills/` and `commands/`.
 
