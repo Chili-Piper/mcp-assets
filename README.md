@@ -188,6 +188,38 @@ Each skill carries a `version` in its frontmatter and a maturity level (`draft` 
 
 ---
 
+## Troubleshooting
+
+### Agent reports a tool as "not found" or can't call it (Claude Code, Cursor, Windsurf, Cline)
+
+**Symptom:** The agent says something like "I can't find the `concierge-router-create` tool" or refuses to call a tool it should have access to — even though the MCP is connected and the skill is installed.
+
+**Cause:** The Chili Piper MCP server uses **progressive tool disclosure** by default for known AI clients (Claude Code, Claude Desktop, Cursor, Windsurf, Cline, Continue). Instead of returning every tool's full input schema in `tools/list` — which would be hundreds of thousands of tokens across 100+ tools — the listing returns a compact stub for each tool. The full schema must be fetched on demand.
+
+Write tools tend to have the largest schemas. `concierge-router-create` in particular is ~78 KB (~26 k tokens), so an agent that skips loading its schema genuinely cannot construct a valid call.
+
+**Fix — fetch the schema first:**
+
+```
+describe-tools(names: ["concierge-router-create"])
+```
+
+Or fetch several at once before starting a workflow:
+
+```
+describe-tools(names: ["concierge-router-create", "concierge-router-update", "rule-list"])
+```
+
+Skills in this repository handle this automatically — the skill instructions tell the agent to call `describe-tools` as part of its setup. If you're calling tools directly without a skill, add this step manually before the first tool call.
+
+**Alternative — revert to the legacy full-schema listing:**
+
+Pass `X-MCP-Tool-Schemas: full` as a request header in your MCP client configuration. This sends every tool's complete schema in every `tools/list` response (the behaviour before 2026-09-01). Note the token overhead is substantial on a 100+ tool server — `concierge-router-create` alone adds ~26 k tokens per call.
+
+**Not affected:** ChatGPT Custom GPTs (they use `openapi.yaml` directly, not `tools/list`) and any MCP client not in the progressive-disclosure allowlist — those receive the full schema listing unchanged.
+
+---
+
 ## Data & security
 
 This repository contains **zero customer data** — skills are instructions only. Your data stays in your Chili Piper account and is accessed live via the MCP using your own credentials. See [SECURITY.md](SECURITY.md).
