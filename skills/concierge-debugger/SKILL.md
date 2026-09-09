@@ -1,8 +1,8 @@
 ---
 name: concierge-debugger
 description: Debugs why a specific lead did not book — traces the concierge routing session, identifies the rule that fired (or why none did), and recommends a targeted fix
-version: 0.2.4
-api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Step 2 and preflight updated to paginate when searching for a lead in high-volume routers. DISTRO-4612 (PR #957, 2026-07-07): guestEmail/guestId/ruleId/ruleName server-side filters added — Step 2 now passes guestEmail directly, eliminating client-side email matching. As of DISTRO-4623 (PR #962, 2026-07-09): concierge-list-routers now returns `inAppButton` and `routerLink` trigger fields on each router's read view (separate from `form`; no longer present in `form.readOnlyTriggers`). Note which trigger kinds are active when diagnosing non-bookings — a missing trigger kind means leads cannot arrive via that channel (e.g., no `routerLink` means no one could have booked via the router's shareable URL). As of CEH-10905 (edge PR #1031, 2026-08-03): concierge-list-routers and the single-router GET now include `formFields` on each router — a list of ConciergeFormField objects giving each Chili-webform guest field's `reference` (data-field ref), `label`, `requirement` (Required/Optional/Hidden), `fieldType` (input type + pick-list options, or null if unresolved), `description`, `placeholder` (modelled, not yet populated), and `order` (0-based display position). Always empty for third-party webform routers."
+version: 0.2.5
+api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Step 2 and preflight updated to paginate when searching for a lead in high-volume routers. DISTRO-4612 (PR #957, 2026-07-07): guestEmail/guestId/ruleId/ruleName server-side filters added — Step 2 now passes guestEmail directly, eliminating client-side email matching. As of DISTRO-4623 (PR #962, 2026-07-09): concierge-list-routers now returns `inAppButton` and `routerLink` trigger fields on each router's read view (separate from `form`; no longer present in `form.readOnlyTriggers`). Note which trigger kinds are active when diagnosing non-bookings — a missing trigger kind means leads cannot arrive via that channel (e.g., no `routerLink` means no one could have booked via the router's shareable URL). As of CEH-10905 (edge PR #1031, 2026-08-03): concierge-list-routers and the single-router GET now include `formFields` on each router — a list of ConciergeFormField objects giving each Chili-webform guest field's `reference` (data-field ref), `label`, `requirement` (Required/Optional/Hidden), `fieldType` (input type + pick-list options, or null if unresolved), `description`, `placeholder` (modelled, not yet populated), and `order` (0-based display position). Always empty for third-party webform routers. 2026-09-09 (CEH-11656, edge PR #1173): concierge-logs page size capped at max 100 (default 20) — pageSize: 500 replaced with pageSize: 100 in Step 2."
 references:
   - api-reference
   - diagnosis
@@ -94,7 +94,7 @@ args:
   end: <ISO-8601 end of date_range>
   guestEmail: <guest_email>
   page: 0
-  pageSize: 500
+  pageSize: 100
 ```
 
 The server filters by `guestEmail` — every returned entry is a match; no client-side email comparison needed. Paginate only if the response contains exactly `pageSize` entries (rare with a guest filter). The 30-day window and `routerId` requirement → `references/api-reference.md` § Hard API limits.
