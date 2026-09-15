@@ -1,7 +1,7 @@
 ---
 name: Distro Router Configuration
 description: Creates, updates, activates/deactivates, and deletes Chili Piper Distro (lead-routing) routers — full lifecycle with dry-run diffs, async status polling, overlay-aware updates, and delete safety gates. Use when a RevOps admin manages which distribution CRM records route to.
-version: 0.2.1
+version: 0.2.2
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "List all Distro routers in the Inbound workspace and their statuses"
@@ -52,7 +52,7 @@ Active —deactivate→ Deactivating (async, poll!) → Inactive —delete→ go
 | `listWorkspaces` | Workspace items use `id` |
 | `distroListRouters` | `{routers: [{id, name, status, trigger}]}` |
 | `distroRouterGet` | Full view: `{id, workspaceId, name, description?, status, routing}` |
-| `distroRouterCreate` | `{workspaceId, name, routing}` → **Inactive** |
+| `distroRouterCreate` | `{workspaceId, name, routing}` → **Inactive**; `routing.routes` is optional (defaults to empty — catch-all-only routers need not send `"routes": []`, CEH-11715) |
 | `distroRouterUpdate` | `{name?, description?, routing}` — routing always required, applied as an **overlay** by `ruleId` (trigger & routingSteps replaced); `name`/`description` are PATCH semantics (omitting preserves existing value, CEH-11002) |
 | `distroRouterActivate` / `distroRouterDeactivate` | Idempotent; async — poll |
 | `distroRouterDelete` | Only from Inactive; irreversible |
@@ -61,7 +61,7 @@ Active —deactivate→ Deactivating (async, poll!) → Inactive —delete→ go
 
 **`status` is an object**: `{type: Active|Inactive|Activating|Deactivating|Error}`; `Error` carries a `message` — surface it.
 
-**Routing write shape:** `{trigger: {objectType: Lead|Contact|Account|Opportunity|Case|CustomObject|DuplicateLead|DuplicateContact|AccountTeamMember, eventTypes: [{type: NewRecord|UpdateField|NewRecordOrUpdateField|Scheduled|Signal}]}, routes: [{ruleId, distributionId, actions}], catchAll: {distributionId, actions}, routingSteps?}`. `ruleId` is required on every row; ≥1 action per route and on the catch-all to publish (matched rows keep existing actions on update). Resolve every `ruleId`/`distributionId` from `ruleList`/`distributionListPut` — never invent IDs.
+**Routing write shape:** `{trigger: {objectType: Lead|Contact|Account|Opportunity|Case|CustomObject|DuplicateLead|DuplicateContact|AccountTeamMember, eventTypes: [{type: NewRecord|UpdateField|NewRecordOrUpdateField|Scheduled|Signal}]}, routes?: [{ruleId, distributionId, actions}], catchAll: {distributionId, actions}, routingSteps?}`. `routes` is optional (defaults to empty — omit for catch-all-only routers, CEH-11715); `ruleId` is required on every row when routes are supplied; ≥1 action per route and on the catch-all to publish (matched rows keep existing actions on update). Resolve every `ruleId`/`distributionId` from `ruleList`/`distributionListPut` — never invent IDs. **Supported `actions`:** `{type: 'ConvertLead'}` (converts the CRM record), `{type: 'AddToCampaign', campaignId, memberStatus}` (adds to a Salesforce campaign — resolve `campaignId` via `campaignList`/`campaignSearch`). Both valid on routes and catchAll (CEH-11703, 2026-09-14).
 
 **Representability is advisory (no more update rejection):** the read view is a summary — `routing.representable: false` (or a `{type: "Unrepresentable", kind}` outcome) only means the summary is lossy for app-only features (SLAs, matchers, non-round-robin distributions, app-only actions). **Any router can be updated**: the overlay changes only the distribution + actions you address by `ruleId` and preserves the app-only config it can't show. In plans, list `Unrepresentable` rows and what the overlay preserves — never present them as a blocker. `known: false` still means Edge couldn't interpret the router at all — read it in the app first. Actions: ≥1 per route and on the catch-all is required to publish; a `ruleId`-matched row keeps its existing actions, so send actions only where changed or on new rows.
 
