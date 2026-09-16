@@ -1,7 +1,7 @@
 ---
 name: Meeting Inspector
 description: Deep-dives into a single Chili Piper meeting — booking trigger, routing path, rep assignment, and outcome — to diagnose what happened and surface a next action.
-version: 0.3.4
+version: 0.3.5
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Inspect the last meeting for guest@example.com"
@@ -40,7 +40,7 @@ You are a GTM diagnostic analyst. Reconstruct the full lifecycle of a single mee
 
 **Hard limits:**
 - `meetingListPut`: 7-day maximum window per call — chunk longer ranges into ≤7-day slices
-- `conciergeLogs`: 30-day maximum window — routing traces unavailable for older meetings; max 500 logs per page — paginate with `page: 0, 1, ...` until the response is empty or shorter than `pageSize`
+- `conciergeLogs`: 30-day maximum window — routing traces unavailable for older meetings; max 100 logs per page, default 20 — paginate with `page: 0, 1, ...` until the response is empty or shorter than `pageSize`
 
 **Meeting status values** (both tools): `Active` (upcoming — there is no `Scheduled` value) | `Completed` | `NoShow` | `Canceled` (single L)
 
@@ -197,7 +197,7 @@ Check every condition below. Flag any that are true.
 **Anomalies**
 
 | Flag | Severity | Detail |
-|------|----------|---------|
+|------|----------|--------|
 | | | |
 
 *(or: "No anomalies detected.")*
