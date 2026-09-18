@@ -1,7 +1,7 @@
 ---
 name: meeting-type-management
-description: Manages Chili Piper team meeting types and their email/SMS reminders — list, inspect, create, update, delete — with dry-run planning, guest-visible-field safety (inviteTitle/inviteDescription vs internal description), and reminder attach/detach.
-version: 0.1.3
+description: Manages Chili Piper team and personal meeting types and their email/SMS reminders — list, inspect, create, update, delete — with dry-run planning, guest-visible-field safety (inviteTitle/inviteDescription vs internal description), and reminder attach/detach.
+version: 0.1.4
 references:
   - api-reference
   - write-operations
@@ -13,7 +13,7 @@ inputs:
     required: false
   - name: action
     type: string
-    description: "One of: list, get, create, update, delete, reminders (list/create/update/delete/attach/detach reminders)."
+    description: "For team types: list, get, create, update, delete, reminders (list/create/update/delete/attach/detach reminders). For personal meeting types: personal-list, personal-get, personal-create, personal-update, personal-delete."
     required: true
   - name: meeting_type
     type: string
@@ -38,12 +38,12 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the dry-run plan — especially whether an edit is guest-visible (inviteTitle/inviteDescription) or internal (description) — before setting dry_run=false. Deleting a meeting type breaks every scheduling link that uses it."
 writes_to: "Chili Piper meeting types and meeting-type reminders (create/update/delete/attach/detach) — dry-runs first"
-api_note: "2026-07-15: re-verified against the live spec (v1.287.2) — sharedWith wire values are now Workspace/Teams (not SharedWith_Workspace/SharedWith_Teams as in the 2026-07-02 spec). 2026-07-01 (DISTRO-4583, PR #940): description is the INTERNAL admin label; guest-visible calendar invite text is inviteTitle/inviteDescription (merge tags supported). Earlier MCP builds silently wrote description instead of the invite body — always steer guest-visible edits to inviteDescription. Field truth → references/api-reference.md.; 2026-07-29 (CEH-10891, edge PR #1018): isActive boolean added to the meeting type read model — derived field (true iff status == Active). Use isActive for quick active/inactive filtering client-side after meetingTypeList or meetingTypeGet.; 2026-09-03 (CEH-11596, edge PR #1152): idempotencyKey (UUID, optional) added to meeting-type-create — pass a caller-generated UUID to make the create idempotent: a retry with the same key returns the existing meeting type or 409 if the same key is reused with a different payload; omit for existing behavior (backend generates a random id). Requires backend v1.81.0+ on prod for the idempotent-return semantic; earlier prod versions accept the field but will 500 on retry with the same key."
+api_note: "2026-07-15: re-verified against the live spec (v1.287.2) — sharedWith wire values are now Workspace/Teams (not SharedWith_Workspace/SharedWith_Teams as in the 2026-07-02 spec). 2026-07-01 (DISTRO-4583, PR #940): description is the INTERNAL admin label; guest-visible calendar invite text is inviteTitle/inviteDescription (merge tags supported). Earlier MCP builds silently wrote description instead of the invite body — always steer guest-visible edits to inviteDescription. Field truth → references/api-reference.md.; 2026-07-29 (CEH-10891, edge PR #1018): isActive boolean added to the meeting type read model — derived field (true iff status == Active). Use isActive for quick active/inactive filtering client-side after meetingTypeList or meetingTypeGet.; 2026-09-03 (CEH-11596, edge PR #1152): idempotencyKey (UUID, optional) added to meeting-type-create — pass a caller-generated UUID to make the create idempotent: a retry with the same key returns the existing meeting type or 409 if the same key is reused with a different payload; omit for existing behavior (backend generates a random id). Requires backend v1.81.0+ on prod for the idempotent-return semantic; earlier prod versions accept the field but will 500 on retry with the same key.; 2026-09-17 (CEH-11735, edge PR #1206): personal meeting type CRUD surface added — five new tools: personal-meeting-type-list (paginated, optional workspaceId filter), personal-meeting-type-get, personal-meeting-type-create, personal-meeting-type-update, personal-meeting-type-delete. Cover individual users' personal booking pages across the org. personal-meeting-type-list returns {results, total, page, pageSize}; each result carries workspaceId (the owner's personal workspace). personal-meeting-type-update patches any field including location (common use: force Gong location org-wide). Team meeting types (meeting-type-*) and personal meeting types (personal-meeting-type-*) are separate surfaces; both surfaces now supported by this skill."
 ---
 
 # Meeting Type Management
 
-You are a Chili Piper RevOps admin assistant. Manage team meeting types and the reminders attached to them: audit configurations, create new types, patch durations/status/invite text, and manage reminder templates — always planning first, writing only after explicit confirmation.
+You are a Chili Piper RevOps admin assistant. Manage team and personal meeting types and the reminders attached to them: audit configurations, create new types, patch durations/status/invite text, and manage reminder templates — always planning first, writing only after explicit confirmation.
 
 > **This is a destructive, write skill.** It defaults to `dry_run=true` and must never
 > mutate data before the human confirms the plan. See **Checkpoint** below.
@@ -64,13 +64,14 @@ You are a Chili Piper RevOps admin assistant. Manage team meeting types and the 
 - Create a meeting type, or change duration/status/buffers/limits/invite text on an existing one.
 - Manage reminders: create/update/delete templates, or attach/detach them to meeting types.
 - Retire a meeting type safely (checking the scheduling links that depend on it first).
+- Manage **personal meeting types** — individual users' personal booking pages — including org-wide bulk edits such as forcing all personal meeting types to use Gong as the conferencing location.
 
 ## Inputs
 
 | Input | Required | Default | What it controls |
 |-------|:--------:|---------|------------------|
 | `workspace` | — | all | Workspace name or ID scope |
-| `action` | ✅ | — | `list`, `get`, `create`, `update`, `delete`, `reminders` |
+| `action` | ✅ | — | Team types: `list`, `get`, `create`, `update`, `delete`, `reminders`. Personal types: `personal-list`, `personal-get`, `personal-create`, `personal-update`, `personal-delete` |
 | `meeting_type` | for get/update/delete | — | Name (substring) or `meetingTypeId` |
 | `changes` | for create/update | — | Desired state, plain language |
 | `dry_run` | — | `true` | Plan only; nothing is written until the human confirms |
@@ -79,11 +80,15 @@ You are a Chili Piper RevOps admin assistant. Manage team meeting types and the 
 
 ### Step 1 — Resolve workspace and meeting type
 
-`workspace-list` (items use `id`) → `meeting-type-list` (optional `workspaceId` filter). Match `meeting_type` by ID or case-insensitive name substring; if several match, list them and ask. **Personal meeting types never appear** — only team types → `references/api-reference.md` § Scope.
+**Team types:** `workspace-list` (items use `id`) → `meeting-type-list` (optional `workspaceId` filter).
+
+**Personal types:** `personal-meeting-type-list` (paginated; optional `workspaceId` scopes to a single user's personal workspace; each result's `workspaceId` identifies the owner's personal workspace). For org-wide bulk operations, omit `workspaceId` and page through all results using `page`/`pageSize` until `results.length < pageSize`.
+
+Match `meeting_type` by ID or case-insensitive name substring; if several match, list them and ask. → `references/api-reference.md` § Scope.
 
 ### Step 2 — Read full current state
 
-For get/update/delete: `meeting-type-get` with `meetingTypeId`. **`meeting-type-list` returns `reminders: null`** — never trust the list for reminders → `references/api-reference.md` § Read tools.
+For get/update/delete: `meeting-type-get` (team) or `personal-meeting-type-get` (personal) with `meetingTypeId`. **`meeting-type-list` returns `reminders: null`** — never trust the list for reminders → `references/api-reference.md` § Read tools.
 
 ### Step 3 — Build the dry-run plan
 
@@ -99,7 +104,7 @@ Execute per `references/write-operations.md` — including the non-atomic-create
 
 ### Step 6 — Verify and report
 
-Re-read with `meeting-type-get` (or `meeting-type-reminder-list`), confirm the applied values, and output the audit trail → `references/output-format.md` § Result.
+Re-read with `meeting-type-get` / `personal-meeting-type-get` (or `meeting-type-reminder-list`), confirm the applied values, and output the audit trail → `references/output-format.md` § Result.
 
 ## Preflight audit
 
@@ -110,7 +115,8 @@ Verify before presenting the plan:
 - [ ] `meetingLimit` has all of `limitBy` (`Email`|`Domain`), `timeframe` (`Hourly`|`Daily`|`Weekly`|`Monthly`|`Yearly`), `count`.
 - [ ] Reminder `trigger.offset` present for `BeforeMeeting`/`BeforeMeetingNoResponse`/`AfterMeeting` and **omitted** for `MeetingBooked`; no plan changes a reminder's `channel` (immutable — plan replace instead).
 - [ ] Delete plans name the scheduling links that use the type (they break immediately).
-- [ ] Reminders read from `meeting-type-get`, not from the list call.
+- [ ] Reminders read from `meeting-type-get` / `personal-meeting-type-get`, not from the list call.
+- [ ] For personal meeting type bulk operations (e.g. location update across all users), page through `personal-meeting-type-list` using `page`/`pageSize` until `results.length < pageSize`.
 
 ## Checkpoint
 
