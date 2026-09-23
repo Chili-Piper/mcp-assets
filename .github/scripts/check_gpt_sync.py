@@ -19,7 +19,7 @@ import sys
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SKILLS, GPTS = os.path.join(REPO, "skills"), os.path.join(REPO, "gpts")
 
-NO_GPT = set()  # skills that deliberately have no ChatGPT counterpart
+NO_GPT = {"onboarding-chili-piper"}  # skills that deliberately have no ChatGPT counterpart (onboarding: multi-file, multi-product build exceeds GPT instruction limits)
 
 
 def version_of(path):
