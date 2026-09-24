@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: Chili Piper — Distribution Analysis Actions
-  version: 1.321.2
+  version: 1.494.0
   description: GPT Actions for the distribution-analysis GPT — a subset of the Chili Piper Edge API. Authenticate
     with a Bearer API key (Admin Center → API Keys).
 servers:
@@ -17,12 +17,8 @@ paths:
       tags:
       - workspace
       summary: Read all workspaces
-      description: "[operation: workspace-list]\n\n\n\nREAD-ONLY\n\n\n\nList the workspaces that partition\
-        \ the org and their workspaceIds.\n\n\n\nLists the workspaces that partition the org and yields\
-        \ the workspaceId most other calls need to scope their work. Hierarchy: Tenant → Workspaces →\
-        \ Teams → Users. Paginated (default pageSize 200).\n\n→\n\n    [{workspaceId, name, settings}]\n\
-        \nsee: workspace-list-users (members), workspace-add/remove-users (manage membership), meeting-list/export\
-        \ (filter by workspaceId), concierge-logs (filter by workspaceId)"
+      description: 'READ-ONLY. Read all workspaces. List the workspaces that partition the org and their
+        workspaceIds. Params: page, pageSize.'
       operationId: workspaceList
       parameters:
       - name: page
@@ -100,17 +96,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - workspace.read
+      x-mcp-tool: workspace-list
   /v2/org/distribution/list:
     put:
       tags:
       - distribution
       summary: List all distributions (PUT)
-      description: "[operation: distribution-list-put]\n\n\n\nREAD-ONLY\n\n\n\nBrowse published distributions\
-        \ in the org (preferred list).\n\n\n\nBrowses published distributions in the org — the preferred,\
-        \ non-deprecated list. Filters go in the request body (avoiding query-string length limits): workspaceIds,\
-        \ name (substring match), and assignmentType (\"Record\" | \"Meeting\" | \"Conversation\"). Paginated\
-        \ (pageSize default 200).\n\n→\n\n    {results: [{distributionId, name, teamId, assignees, assignmentTypeConfig,\
-        \ capping}]}\n\nsee: distribution-list (GET equivalent)"
+      description: READ-ONLY. List all distributions (PUT). Browse published distributions in the org
+        (preferred list). Takes a JSON body.
       operationId: distributionListPut
       requestBody:
         content:
@@ -173,26 +166,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - distribution.read
+      x-mcp-tool: distribution-list-put
   /v1/org/distribution/workspace-settings:
     get:
       tags:
       - distribution
       summary: Get workspace distribution settings
-      description: "[operation: distribution-workspace-settings-get]\n\n\n\nREAD-ONLY\n\n\n\nRead a workspace's\
-        \ round-robin distribution (fairness/leveling) settings.\n\n\n\nReturns the workspace-level round-robin\
-        \ settings that shape the fairness/leveling equation applied on top of each distribution's per-user\
-        \ weights and calibration. These knobs are shared by every distribution in the workspace, so an\
-        \ analysis skill should read them before reasoning about how assignments are balanced (otherwise\
-        \ it may misassume the leveling rules). Reflects the published (live) settings only. Pass the\
-        \ target `workspaceId` (from workspace-list).\n\n→\n\n    {calibrateVacation, creditBackCancelled,\
-        \ creditBackNoShow, orderIfEqualState (\"Random\"|\"AsConfigured\"), resetPeriodicity, vacationBuffer:\
-        \ {daysBeforeStart, daysBeforeEnd, recognitionEnabled, freshness (\"RealTime\"|\"Cached\")}}\n\
-        \n- resetPeriodicity: discriminated by `type`:\n\n    {type: \"Monthly\", timeZone}\n    {type:\
-        \ \"Quarterly\", firstMonth (1-3), timeZone}\n    {type: \"Yearly\", monthOfYear (1-12), timeZone}\n\
-        \    {type: \"Never\"}\n\n  Note: creditBackCancelled / creditBackNoShow move a user back up the\
-        \ queue when a meeting is cancelled / no-showed; calibrateVacation excuses vacationing users from\
-        \ the fairness penalty.\n\nsee: distribution-workspace-settings-update (edit these settings),\
-        \ workspace-list (resolve workspaceId), distribution-list-put (per-distribution weights/calibration)"
+      description: 'READ-ONLY. Get workspace distribution settings. Read a workspace''s round-robin distribution
+        (fairness/leveling) settings. Params: workspaceId (required).'
       operationId: distributionWorkspaceSettingsGet
       parameters:
       - name: workspaceId
@@ -257,37 +238,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - distribution.read
+      x-mcp-tool: distribution-workspace-settings-get
   /v1/org/user/find-by-id:
     post:
       tags:
       - user
       summary: Finds users by IDs
-      description: '[operation: user-find-by-ids]
-
-
-
-
-        READ-ONLY
-
-
-
-
-        Batch-fetch full profiles for a set of userIds.
-
-
-
-
-        Batch-fetches full profiles for a known set of userIds in one request — the id-list counterpart
-        to user-read. The body is a bare JSON array of userId UUIDs (e.g. ["uuid1", "uuid2"]), not wrapped
-        in an object.
-
-
-        → paginated list of users, each with: {id, name, email, isSuperAdmin, licenses, workspaces, salesforce:
-        {email, id} (opt), hubspot: {email, id} (opt), slug (opt), managedWorkspaces, managedTeams}
-
-
-        see: user-find/find-by-filter (look up userIds), user-update-licenses/team-add-users/workspace-add-users
-        (act on results)'
+      description: 'READ-ONLY. Finds users by IDs. Batch-fetch full profiles for a set of userIds. Params:
+        page, pageSize. Takes a JSON body.'
       operationId: userFindByIds
       parameters:
       - name: page
@@ -375,18 +333,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - user.read
+      x-mcp-tool: user-find-by-ids
   /v2/org/meetings/meetings:
     put:
       tags:
       - meetings
       summary: Meetings (PUT)
-      description: "[operation: meeting-list-put]\n\n\n\nREAD-ONLY\n\n\n\nList meetings within a time\
-        \ range, paginated.\n\n\n\nReturns meetings within a time range (paginated). Prefer this over\
-        \ the GET form: filters travel in the request body, so long workspace or status lists don't hit\
-        \ URL-length limits. Narrow by workspace and by status (Active, Canceled, NoShow, Completed).\
-        \ The window may not exceed 7 days.\n\n→\n\n    {results: [{meetingId, status, scheduledAt, attendees,\
-        \ assignedUserId, workspaceId}], pagination}\n\nsee: meeting-export-v2-put (CSV export with richer\
-        \ host/assignee/booker filters), meeting-get (full record)"
+      description: READ-ONLY. Meetings (PUT). List meetings within a time range, paginated. Takes a JSON
+        body.
       operationId: meetingListPut
       requestBody:
         content:
@@ -449,6 +403,7 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - meeting.read
+      x-mcp-tool: meeting-list-put
 components:
   securitySchemes:
     apiKeyAuth:
@@ -459,86 +414,108 @@ components:
       name: Authorization
       in: header
   schemas:
-    UserWeight:
-      title: UserWeight
+    DistributionAssignmentTypeConfig:
+      title: DistributionAssignmentTypeConfig
+      oneOf:
+      - $ref: '#/components/schemas/DistributionAssignmentTypeConfig_Conversation'
+      - $ref: '#/components/schemas/DistributionAssignmentTypeConfig_Meeting'
+      - $ref: '#/components/schemas/DistributionAssignmentTypeConfig_Record'
+      discriminator:
+        propertyName: type
+        mapping:
+          Conversation: '#/components/schemas/DistributionAssignmentTypeConfig_Conversation'
+          Meeting: '#/components/schemas/DistributionAssignmentTypeConfig_Meeting'
+          Record: '#/components/schemas/DistributionAssignmentTypeConfig_Record'
+    HubspotUser:
+      title: HubspotUser
       type: object
       required:
-      - userId
-      - weight
+      - email
+      - id
       properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        weight:
-          description: Relative assignment share for the user (0–10000, default 100); higher weight receives
-            proportionally more assignments, 0 disables the user.
+        email:
+          $ref: '#/components/schemas/Email'
+          description: Email of the linked HubSpot user.
+        id:
+          description: Identifier of the linked HubSpot user.
           type: integer
-          format: int32
-          minimum: 0
-          maximum: 10000
-    MeetingLimitReset_Monthly:
-      title: MeetingLimitReset_Monthly
+          format: int64
+    Levels:
+      title: Levels
       type: object
       required:
-      - every
-      - startsOn
-      - resetDay
-      - timezone
-      - type
+      - current
+      - nextAssignmentDelta
+      - total
       properties:
-        every:
-          type: integer
-          format: int32
-          exclusiveMinimum: 0
-        startsOn:
-          type: string
-          format: date
-        resetDay:
-          type: integer
-          format: int32
-          minimum: 1
-          maximum: 28
-        timezone:
-          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
-          examples:
-          - America/New_York
-          type: string
-        type:
-          type: string
-          const: Monthly
-    VacationBuffer:
-      title: VacationBuffer
+        current:
+          description: Earned score plus prolonged-reservation projection, before manual calibration.
+          type: number
+        nextAssignmentDelta:
+          description: Score increment that will be added if this user receives the next assignment. Forward-looking;
+            not included in `current` or `total`.
+          type: number
+        calibrationDelta:
+          description: Manual-calibration adjustment applied on top of `current`. Absent when no calibration
+            is in effect. When present, `total = current + calibrationDelta`.
+          type: number
+        total:
+          description: Current score with manual calibration applied.
+          type: number
+    Prioritization:
+      title: Prioritization
       type: object
-      required:
-      - daysBeforeStart
-      - daysBeforeEnd
-      - recognitionEnabled
-      - freshness
       properties:
-        daysBeforeStart:
-          description: Days before a vacation starts to stop assigning to the user.
-          type: integer
-          format: int32
-        daysBeforeEnd:
-          description: Days before a vacation ends after which the user becomes assignable again.
-          type: integer
-          format: int32
-        recognitionEnabled:
-          description: Whether vacations are recognized at all (calendars are consulted).
-          type: boolean
-        freshness:
-          $ref: '#/components/schemas/VacationFreshness'
-    WorkspaceResetPeriodicity_Yearly:
-      title: WorkspaceResetPeriodicity_Yearly
-      description: Counters reset once a year in `monthOfYear` (1-12) in the given time zone.
+        queue:
+          description: Ordered list of active user IDs in the order they will receive the next assignments.
+            This is the authoritative assignment-ordering surface; level fields are informational.
+          type: array
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        onVacation:
+          description: Users currently on vacation and skipped by the queue until they return.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        reachedCap:
+          description: Users who have reached their assignment cap for the current period and are skipped
+            until the cap resets.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+    DistributionAssignmentType:
+      title: DistributionAssignmentType
+      type: string
+      enum:
+      - Record
+      - Meeting
+      - Conversation
+    WorkInterval:
+      title: WorkInterval
       type: object
       required:
-      - monthOfYear
+      - start
+      - end
+      properties:
+        start:
+          description: Start of the working interval as a local time (HH:mm), in the schedule timezone.
+          type: string
+        end:
+          description: End of the working interval as a local time (HH:mm); must be after start.
+          type: string
+    WorkspaceResetPeriodicity_Monthly:
+      title: WorkspaceResetPeriodicity_Monthly
+      description: Counters reset at the start of every month in the given time zone.
+      type: object
+      required:
       - timeZone
       - type
       properties:
-        monthOfYear:
-          type: integer
-          format: int32
         timeZone:
           description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
           examples:
@@ -546,107 +523,50 @@ components:
           type: string
         type:
           type: string
-          const: Yearly
-    DistributionUserState_Removed:
-      title: DistributionUserState_Removed
-      description: User was removed from the team entirely — historical record, no assignments will go
-        to this user.
-      type: object
-      required:
-      - userId
-      - total
-      - removedAt
-      - statistics
-      - type
-      properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        total:
-          type: integer
-          format: int32
-        removedAt:
-          type: string
-          format: date-time
-        statistics:
-          $ref: '#/components/schemas/UserStatistics'
-        type:
-          type: string
-          const: Removed
-    DistributionUserState_Capped:
-      title: DistributionUserState_Capped
-      description: User has reached their assignment cap for the current period and is temporarily excluded
-        until the cap resets.
-      type: object
-      required:
-      - userId
-      - total
-      - statistics
-      - type
-      properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        total:
-          type: integer
-          format: int32
-        statistics:
-          $ref: '#/components/schemas/UserStatistics'
-        type:
-          type: string
-          const: Capped
-    DistributionId:
-      title: DistributionId
+          const: Monthly
+    WorkspaceId:
+      title: WorkspaceId
       examples:
-      - 7f8a1b2c-3d4e-4f5a-8b9c-0d1e2f3a4b5c
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
       type: string
       pattern: '[^\s\\/]+'
-    MeetingHandling:
-      title: MeetingHandling
-      oneOf:
-      - $ref: '#/components/schemas/MeetingHandling_Flexible'
-      - $ref: '#/components/schemas/MeetingHandling_Strict'
-      discriminator:
-        propertyName: type
-        mapping:
-          Flexible: '#/components/schemas/MeetingHandling_Flexible'
-          Strict: '#/components/schemas/MeetingHandling_Strict'
-    TeamRef:
-      title: TeamRef
-      type: object
-      required:
-      - id
-      - revision
-      properties:
-        id:
-          $ref: '#/components/schemas/TeamId'
-        revision:
-          type: integer
-          format: int32
-    Map_String:
-      title: Map_String
-      type: object
-      additionalProperties:
-        type: string
-    MeetingLimit_MeetingLimitUnset:
-      title: MeetingLimit_MeetingLimitUnset
+    RecordHandling_Strict:
+      title: RecordHandling_Strict
       type: object
       required:
       - type
       properties:
-        type:
-          type: string
-          const: MeetingLimitUnset
-    MeetingHandling_Strict:
-      title: MeetingHandling_Strict
-      type: object
-      required:
-      - hideAssignee
-      - type
-      properties:
-        hideAssignee:
-          type: boolean
         type:
           type: string
           const: Strict
+    DistributedAssignmentLimit:
+      title: DistributedAssignmentLimit
+      type: object
+      required:
+      - resetPeriodicity
+      properties:
+        userCaps:
+          description: Per-user assignment caps.
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/UserLimit'
+        resetPeriodicity:
+          $ref: '#/components/schemas/DistributedAssignmentLimitReset'
+    UserCalibration:
+      title: UserCalibration
+      type: object
+      required:
+      - userId
+      - calibration
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        calibration:
+          description: Manual offset added to this user's computed score to bias their position in the
+            assignment queue (signed).
+          type: integer
+          format: int32
     UserStatistics:
       title: UserStatistics
       type: object
@@ -677,14 +597,592 @@ components:
           description: Number of assignments originally made to this user that were reassigned away.
           type: integer
           format: int32
-    Tier:
-      title: Tier
+    MeetingHandling_Strict:
+      title: MeetingHandling_Strict
+      type: object
+      required:
+      - hideAssignee
+      - type
+      properties:
+        hideAssignee:
+          type: boolean
+        type:
+          type: string
+          const: Strict
+    UserPersonalDetails:
+      title: UserPersonalDetails
+      type: object
+      required:
+      - email
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: The user's email address.
+        firstName:
+          description: The user's first name.
+          type: string
+        lastName:
+          description: The user's last name.
+          type: string
+        jobTitle:
+          description: The user's job title.
+          type: string
+        conferenceDetails:
+          description: Free-text conferencing details shown on the user's meetings.
+          type: string
+        location:
+          description: The user's location.
+          type: string
+        phoneNumber:
+          description: The user's phone number.
+          type: string
+        imageUrl:
+          description: URL of the user's profile picture.
+          type: string
+        customCompanyLogoUrl:
+          description: URL of a custom company logo shown on the user's booking pages.
+          type: string
+    DistributedAssignmentLimitReset:
+      title: DistributedAssignmentLimitReset
+      oneOf:
+      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_Daily'
+      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_HourlyRolling'
+      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_Monthly'
+      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_Weekly'
+      discriminator:
+        propertyName: type
+        mapping:
+          Daily: '#/components/schemas/DistributedAssignmentLimitReset_Daily'
+          HourlyRolling: '#/components/schemas/DistributedAssignmentLimitReset_HourlyRolling'
+          Monthly: '#/components/schemas/DistributedAssignmentLimitReset_Monthly'
+          Weekly: '#/components/schemas/DistributedAssignmentLimitReset_Weekly'
+    UserLicenses:
+      title: UserLicenses
+      type: object
+      required:
+      - chiliCalOrg
+      - handoff
+      properties:
+        distro:
+          description: Whether the user holds a Distro (lead-routing) license.
+          type: boolean
+        chiliCalOrg:
+          description: Whether the user holds a ChiliCal organization license.
+          type: boolean
+        concierge:
+          description: Whether the user holds a Concierge license.
+          type: boolean
+        conciergeLive:
+          description: Whether the user holds a Concierge Live license.
+          type: boolean
+        chat:
+          description: Whether the user holds a Chat license.
+          type: boolean
+        handoff:
+          description: Whether the user holds a Handoff license.
+          type: boolean
+        tier:
+          $ref: '#/components/schemas/Tier'
+    DistributionUserState_NoLicense:
+      title: DistributionUserState_NoLicense
+      description: User is still on the team but has lost their license, so they cannot receive assignments.
+        Re-licensing restores them.
+      type: object
+      required:
+      - userId
+      - total
+      - licenseRemovedAt
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        licenseRemovedAt:
+          type: string
+          format: date-time
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: NoLicense
+    HttpQueryResponse_A:
+      title: HttpQueryResponse_A
+      type: object
+      required:
+      - data
+      - hasMore
+      - hasMoreItems
+      properties:
+        data: {}
+        hasMore:
+          $ref: '#/components/schemas/HasMore'
+        hasMoreItems:
+          description: Whether more results exist beyond this page; drives pagination.
+          type: boolean
+    MeetingStatus:
+      title: MeetingStatus
       type: string
       enum:
-      - RoutingAndScheduling
-      - Experiences
-      - ChiliDataPlatform
-    User1:
+      - Active
+      - Canceled
+      - NoShow
+      - Completed
+    WorkingHours:
+      title: WorkingHours
+      type: object
+      properties:
+        monday:
+          description: Working intervals on Monday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        tuesday:
+          description: Working intervals on Tuesday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        wednesday:
+          description: Working intervals on Wednesday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        thursday:
+          description: Working intervals on Thursday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        friday:
+          description: Working intervals on Friday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        saturday:
+          description: Working intervals on Saturday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        sunday:
+          description: Working intervals on Sunday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+    DistributionId:
+      title: DistributionId
+      examples:
+      - 7f8a1b2c-3d4e-4f5a-8b9c-0d1e2f3a4b5c
+      type: string
+      pattern: '[^\s\\/]+'
+    PaginatedResult_Workspace:
+      title: PaginatedResult_Workspace
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workspace'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    OrderIfEqualState:
+      title: OrderIfEqualState
+      description: Tie-break ordering when two users have an equal level. Currently always "AsConfigured"
+        upstream.
+      type: string
+      enum:
+      - AsConfigured
+      - Random
+    MeetingLimit:
+      title: MeetingLimit
+      oneOf:
+      - $ref: '#/components/schemas/MeetingLimit_MeetingLimitSet'
+      - $ref: '#/components/schemas/MeetingLimit_MeetingLimitUnset'
+      discriminator:
+        propertyName: type
+        mapping:
+          MeetingLimitSet: '#/components/schemas/MeetingLimit_MeetingLimitSet'
+          MeetingLimitUnset: '#/components/schemas/MeetingLimit_MeetingLimitUnset'
+    MeetingHandling:
+      title: MeetingHandling
+      oneOf:
+      - $ref: '#/components/schemas/MeetingHandling_Flexible'
+      - $ref: '#/components/schemas/MeetingHandling_Strict'
+      discriminator:
+        propertyName: type
+        mapping:
+          Flexible: '#/components/schemas/MeetingHandling_Flexible'
+          Strict: '#/components/schemas/MeetingHandling_Strict'
+    MeetingLimit_MeetingLimitUnset:
+      title: MeetingLimit_MeetingLimitUnset
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: MeetingLimitUnset
+    Email:
+      title: Email
+      examples:
+      - john.doe@acme.com
+      type: string
+      pattern: .+@.+
+    UserLimit:
+      title: UserLimit
+      type: object
+      required:
+      - userId
+      - limit
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        limit:
+          description: Maximum assignments this user may receive per reset period (non-negative).
+          type: integer
+          format: int32
+          minimum: 0
+    PaginatedResult_Distribution:
+      title: PaginatedResult_Distribution
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Distribution'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    DistributionState:
+      title: DistributionState
+      type: object
+      properties:
+        userStates:
+          description: Per-user state and statistics for every user in the distribution.
+          type: array
+          items:
+            $ref: '#/components/schemas/DistributionUserState'
+        lastReset:
+          description: When the distribution's counters were last reset; absent if never reset.
+          type: string
+          format: date-time
+    DistributedAssignmentLimitReset_Daily:
+      title: DistributedAssignmentLimitReset_Daily
+      type: object
+      required:
+      - timeZone
+      - type
+      properties:
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Daily
+    MeetingLimitReset_Weekly:
+      title: MeetingLimitReset_Weekly
+      type: object
+      required:
+      - every
+      - startsOn
+      - resetDayOfWeek
+      - timezone
+      - type
+      properties:
+        every:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        startsOn:
+          type: string
+          format: date
+        resetDayOfWeek:
+          examples:
+          - MONDAY
+          type: string
+          enum:
+          - MONDAY
+          - TUESDAY
+          - WEDNESDAY
+          - THURSDAY
+          - FRIDAY
+          - SATURDAY
+          - SUNDAY
+        timezone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Weekly
+    Workspace:
+      title: Workspace
+      type: object
+      required:
+      - id
+      - name
+      - metadata
+      properties:
+        id:
+          $ref: '#/components/schemas/WorkspaceId'
+          description: Unique identifier of the workspace.
+        name:
+          description: Human-readable workspace name.
+          type: string
+        emoji:
+          description: Optional emoji shown as the workspace's icon.
+          type: string
+        logo:
+          description: Optional URL of the workspace's logo image.
+          type: string
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+    Distribution:
+      title: Distribution
+      type: object
+      required:
+      - id
+      - published
+      - state
+      - prioritization
+      properties:
+        id:
+          $ref: '#/components/schemas/DistributionId'
+        published:
+          $ref: '#/components/schemas/ConfigurationDTO'
+        state:
+          $ref: '#/components/schemas/DistributionState'
+        prioritization:
+          $ref: '#/components/schemas/Prioritization'
+    MeetingLimitReset:
+      title: MeetingLimitReset
+      oneOf:
+      - $ref: '#/components/schemas/MeetingLimitReset_Daily'
+      - $ref: '#/components/schemas/MeetingLimitReset_Monthly'
+      - $ref: '#/components/schemas/MeetingLimitReset_Weekly'
+      discriminator:
+        propertyName: type
+        mapping:
+          Daily: '#/components/schemas/MeetingLimitReset_Daily'
+          Monthly: '#/components/schemas/MeetingLimitReset_Monthly'
+          Weekly: '#/components/schemas/MeetingLimitReset_Weekly'
+    DistributionUserState:
+      title: DistributionUserState
+      oneOf:
+      - $ref: '#/components/schemas/DistributionUserState_Active'
+      - $ref: '#/components/schemas/DistributionUserState_Capped'
+      - $ref: '#/components/schemas/DistributionUserState_Disabled'
+      - $ref: '#/components/schemas/DistributionUserState_NoLicense'
+      - $ref: '#/components/schemas/DistributionUserState_Removed'
+      discriminator:
+        propertyName: type
+        mapping:
+          Active: '#/components/schemas/DistributionUserState_Active'
+          Capped: '#/components/schemas/DistributionUserState_Capped'
+          Disabled: '#/components/schemas/DistributionUserState_Disabled'
+          NoLicense: '#/components/schemas/DistributionUserState_NoLicense'
+          Removed: '#/components/schemas/DistributionUserState_Removed'
+    DistributionAssignmentTypeConfig_Conversation:
+      title: DistributionAssignmentTypeConfig_Conversation
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Conversation
+    MeetingHandling_Flexible:
+      title: MeetingHandling_Flexible
+      type: object
+      required:
+      - reassignmentType
+      - allowPickingAssignee
+      - type
+      properties:
+        reassignmentType:
+          $ref: '#/components/schemas/ReassignmentType'
+        allowPickingAssignee:
+          type: boolean
+        type:
+          type: string
+          const: Flexible
+    WorkspaceResetPeriodicity_Quarterly:
+      title: WorkspaceResetPeriodicity_Quarterly
+      description: Counters reset every quarter; `firstMonth` (1-3) is the first month of the quarter.
+      type: object
+      required:
+      - firstMonth
+      - timeZone
+      - type
+      properties:
+        firstMonth:
+          type: integer
+          format: int32
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Quarterly
+    RecordHandling:
+      title: RecordHandling
+      oneOf:
+      - $ref: '#/components/schemas/RecordHandling_Strict'
+      - $ref: '#/components/schemas/RecordHandling_WorkingHours'
+      discriminator:
+        propertyName: type
+        mapping:
+          Strict: '#/components/schemas/RecordHandling_Strict'
+          WorkingHours: '#/components/schemas/RecordHandling_WorkingHours'
+    WorkspaceResetPeriodicity_Never:
+      title: WorkspaceResetPeriodicity_Never
+      description: Counters never reset automatically.
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Never
+    SalesforceUser:
+      title: SalesforceUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: Email of the linked Salesforce user.
+        id:
+          description: Identifier of the linked Salesforce user.
+          type: string
+          pattern: '[^\s\\/]+'
+        name:
+          description: Display name of the linked Salesforce user, when known.
+          type: string
+          minLength: 1
+        active:
+          description: Whether the linked Salesforce user is active, when known.
+          type: boolean
+    DistributionUserState_Active:
+      title: DistributionUserState_Active
+      description: User is active in the distribution and eligible for assignments. Carries the user's
+        current level.
+      type: object
+      required:
+      - userId
+      - total
+      - level
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        level:
+          $ref: '#/components/schemas/Levels'
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: Active
+    VacationFreshness:
+      title: VacationFreshness
+      description: Whether vacation state is read live (RealTime) or from cache (Cached).
+      type: string
+      enum:
+      - Cached
+      - RealTime
+    WorkspaceResetPeriodicity_Yearly:
+      title: WorkspaceResetPeriodicity_Yearly
+      description: Counters reset once a year in `monthOfYear` (1-12) in the given time zone.
+      type: object
+      required:
+      - monthOfYear
+      - timeZone
+      - type
+      properties:
+        monthOfYear:
+          type: integer
+          format: int32
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Yearly
+    UserWeight:
+      title: UserWeight
+      type: object
+      required:
+      - userId
+      - weight
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        weight:
+          description: Relative assignment share for the user (0–10000, default 100); higher weight receives
+            proportionally more assignments, 0 disables the user.
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 10000
+    WorkspaceResetPeriodicity_Weekly:
+      title: WorkspaceResetPeriodicity_Weekly
+      description: Counters reset every week on `dayOfWeek` (1=Monday .. 7=Sunday) in the given time zone.
+      type: object
+      required:
+      - dayOfWeek
+      - timeZone
+      - type
+      properties:
+        dayOfWeek:
+          type: integer
+          format: int32
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Weekly
+    User:
       title: User
       type: object
       required:
@@ -740,21 +1238,145 @@ components:
           description: The user's personal workspace, when they have one.
           type: string
           pattern: '[^\s\\/]+'
-    HasMore:
-      title: HasMore
-      type: string
-      enum:
-      - 'Yes'
-      - 'No'
-    DistributionAssignmentTypeConfig_Conversation:
-      title: DistributionAssignmentTypeConfig_Conversation
+        personalDetails:
+          $ref: '#/components/schemas/UserPersonalDetails'
+        workingHours:
+          $ref: '#/components/schemas/WorkingHours'
+        timezone:
+          description: The user's configured scheduling timezone (IANA id); absent when synced from their
+            connected calendar. Populated by user-read only.
+          examples:
+          - America/New_York
+          type: string
+    DistributionAssignmentTypeConfig_Meeting:
+      title: DistributionAssignmentTypeConfig_Meeting
       type: object
       required:
+      - handling
+      - limits
       - type
       properties:
+        handling:
+          $ref: '#/components/schemas/MeetingHandling'
+        limits:
+          $ref: '#/components/schemas/MeetingLimit'
         type:
           type: string
-          const: Conversation
+          const: Meeting
+    DistributionUserState_Disabled:
+      title: DistributionUserState_Disabled
+      description: User has been explicitly disabled in this distribution (weight set to 0). Still on
+        the team but won't receive assignments until re-enabled.
+      type: object
+      required:
+      - userId
+      - total
+      - disabledAt
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        disabledAt:
+          type: string
+          format: date-time
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: Disabled
+    TeamRef:
+      title: TeamRef
+      type: object
+      required:
+      - id
+      - revision
+      properties:
+        id:
+          $ref: '#/components/schemas/TeamId'
+        revision:
+          type: integer
+          format: int32
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string
+    VacationBuffer:
+      title: VacationBuffer
+      type: object
+      required:
+      - daysBeforeStart
+      - daysBeforeEnd
+      - recognitionEnabled
+      - freshness
+      properties:
+        daysBeforeStart:
+          description: Days before a vacation starts to stop assigning to the user.
+          type: integer
+          format: int32
+        daysBeforeEnd:
+          description: Days before a vacation ends after which the user becomes assignable again.
+          type: integer
+          format: int32
+        recognitionEnabled:
+          description: Whether vacations are recognized at all (calendars are consulted).
+          type: boolean
+        freshness:
+          $ref: '#/components/schemas/VacationFreshness'
+    ListRequest:
+      title: ListRequest
+      type: object
+      properties:
+        workspaceIds:
+          description: Restrict results to these workspaces. Omit to search all accessible workspaces.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        page:
+          description: Zero-based page index. Defaults to 0.
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          description: Number of distributions per page.
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        name:
+          description: Filter to distributions matching this name.
+          type: string
+        assignmentType:
+          $ref: '#/components/schemas/DistributionAssignmentType'
+    PaginatedResult_User:
+      title: PaginatedResult_User
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
     DistributionAssignmentTypeConfig_Record:
       title: DistributionAssignmentTypeConfig_Record
       type: object
@@ -767,150 +1389,6 @@ components:
         type:
           type: string
           const: Record
-    DistributionState:
-      title: DistributionState
-      type: object
-      properties:
-        userStates:
-          description: Per-user state and statistics for every user in the distribution.
-          type: array
-          items:
-            $ref: '#/components/schemas/DistributionUserState'
-        lastReset:
-          description: When the distribution's counters were last reset; absent if never reset.
-          type: string
-          format: date-time
-    DistributionUserState_NoLicense:
-      title: DistributionUserState_NoLicense
-      description: User is still on the team but has lost their license, so they cannot receive assignments.
-        Re-licensing restores them.
-      type: object
-      required:
-      - userId
-      - total
-      - licenseRemovedAt
-      - statistics
-      - type
-      properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        total:
-          type: integer
-          format: int32
-        licenseRemovedAt:
-          type: string
-          format: date-time
-        statistics:
-          $ref: '#/components/schemas/UserStatistics'
-        type:
-          type: string
-          const: NoLicense
-    Workspace:
-      title: Workspace
-      type: object
-      required:
-      - id
-      - name
-      - metadata
-      properties:
-        id:
-          $ref: '#/components/schemas/WorkspaceId'
-          description: Unique identifier of the workspace.
-        name:
-          description: Human-readable workspace name.
-          type: string
-        emoji:
-          description: Optional emoji shown as the workspace's icon.
-          type: string
-        logo:
-          description: Optional URL of the workspace's logo image.
-          type: string
-        metadata:
-          $ref: '#/components/schemas/SimpleMetadata'
-    Distribution:
-      title: Distribution
-      type: object
-      required:
-      - id
-      - published
-      - state
-      - prioritization
-      properties:
-        id:
-          $ref: '#/components/schemas/DistributionId'
-        published:
-          $ref: '#/components/schemas/ConfigurationDTO'
-        state:
-          $ref: '#/components/schemas/DistributionState'
-        prioritization:
-          $ref: '#/components/schemas/Prioritization'
-    DistributedAssignmentLimitReset_Weekly:
-      title: DistributedAssignmentLimitReset_Weekly
-      type: object
-      required:
-      - timeZone
-      - dayOfWeek
-      - type
-      properties:
-        timeZone:
-          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
-          examples:
-          - America/New_York
-          type: string
-        dayOfWeek:
-          type: integer
-          format: int32
-          minimum: 1
-          maximum: 7
-        type:
-          type: string
-          const: Weekly
-    DistributedAssignmentLimitReset_HourlyRolling:
-      title: DistributedAssignmentLimitReset_HourlyRolling
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: HourlyRolling
-    WorkspaceResetPeriodicity:
-      title: WorkspaceResetPeriodicity
-      oneOf:
-      - $ref: '#/components/schemas/WorkspaceResetPeriodicity_Monthly'
-      - $ref: '#/components/schemas/WorkspaceResetPeriodicity_Never'
-      - $ref: '#/components/schemas/WorkspaceResetPeriodicity_Quarterly'
-      - $ref: '#/components/schemas/WorkspaceResetPeriodicity_Yearly'
-      discriminator:
-        propertyName: type
-        mapping:
-          Monthly: '#/components/schemas/WorkspaceResetPeriodicity_Monthly'
-          Never: '#/components/schemas/WorkspaceResetPeriodicity_Never'
-          Quarterly: '#/components/schemas/WorkspaceResetPeriodicity_Quarterly'
-          Yearly: '#/components/schemas/WorkspaceResetPeriodicity_Yearly'
-    DistributionUserState:
-      title: DistributionUserState
-      oneOf:
-      - $ref: '#/components/schemas/DistributionUserState_Active'
-      - $ref: '#/components/schemas/DistributionUserState_Capped'
-      - $ref: '#/components/schemas/DistributionUserState_Disabled'
-      - $ref: '#/components/schemas/DistributionUserState_NoLicense'
-      - $ref: '#/components/schemas/DistributionUserState_Removed'
-      discriminator:
-        propertyName: type
-        mapping:
-          Active: '#/components/schemas/DistributionUserState_Active'
-          Capped: '#/components/schemas/DistributionUserState_Capped'
-          Disabled: '#/components/schemas/DistributionUserState_Disabled'
-          NoLicense: '#/components/schemas/DistributionUserState_NoLicense'
-          Removed: '#/components/schemas/DistributionUserState_Removed'
-    DistributionAssignmentType:
-      title: DistributionAssignmentType
-      type: string
-      enum:
-      - Record
-      - Meeting
-      - Conversation
     MeetingLimitReset_Daily:
       title: MeetingLimitReset_Daily
       type: object
@@ -938,148 +1416,92 @@ components:
         type:
           type: string
           const: Daily
-    CallerRef:
-      title: CallerRef
-      description: stringified caller reference in format $type/$id
-      examples:
-      - user/17a3d4563d5a67a3d456ad635
-      type: string
-    PaginatedResult_User:
-      title: PaginatedResult_User
+    DistributedAssignmentLimitReset_Weekly:
+      title: DistributedAssignmentLimitReset_Weekly
       type: object
       required:
-      - total
-      - page
-      - pageSize
+      - timeZone
+      - dayOfWeek
+      - type
       properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/User1'
-        total:
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        dayOfWeek:
           type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    UserLicenses:
-      title: UserLicenses
+          format: int32
+          minimum: 1
+          maximum: 7
+        type:
+          type: string
+          const: Weekly
+    DistributedAssignmentLimitReset_Monthly:
+      title: DistributedAssignmentLimitReset_Monthly
       type: object
       required:
-      - chiliCalOrg
-      - handoff
+      - timeZone
+      - type
       properties:
-        distro:
-          description: Whether the user holds a Distro (lead-routing) license.
-          type: boolean
-        chiliCalOrg:
-          description: Whether the user holds a ChiliCal organization license.
-          type: boolean
-        concierge:
-          description: Whether the user holds a Concierge license.
-          type: boolean
-        conciergeLive:
-          description: Whether the user holds a Concierge Live license.
-          type: boolean
-        chat:
-          description: Whether the user holds a Chat license.
-          type: boolean
-        handoff:
-          description: Whether the user holds a Handoff license.
-          type: boolean
-        tier:
-          $ref: '#/components/schemas/Tier'
-    MeetingLimitReset:
-      title: MeetingLimitReset
-      oneOf:
-      - $ref: '#/components/schemas/MeetingLimitReset_Daily'
-      - $ref: '#/components/schemas/MeetingLimitReset_Monthly'
-      - $ref: '#/components/schemas/MeetingLimitReset_Weekly'
-      discriminator:
-        propertyName: type
-        mapping:
-          Daily: '#/components/schemas/MeetingLimitReset_Daily'
-          Monthly: '#/components/schemas/MeetingLimitReset_Monthly'
-          Weekly: '#/components/schemas/MeetingLimitReset_Weekly'
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Monthly
     ReassignmentType:
       title: ReassignmentType
       type: string
       enum:
       - SameUser
       - AnyTeamMember
-    PaginatedResult_Distribution:
-      title: PaginatedResult_Distribution
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+      properties: {}
+    SimpleMetadata:
+      title: SimpleMetadata
       type: object
       required:
-      - total
-      - page
-      - pageSize
+      - createdAt
+      - createdBy
+      - updatedAt
+      - updatedBy
+      - revision
       properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Distribution'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    ListRequest:
-      title: ListRequest
-      type: object
-      properties:
-        workspaceIds:
-          description: Restrict results to these workspaces. Omit to search all accessible workspaces.
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        page:
-          description: Zero-based page index. Defaults to 0.
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          description: Number of distributions per page.
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-        name:
-          description: Filter to distributions matching this name.
+        createdAt:
           type: string
-        assignmentType:
-          $ref: '#/components/schemas/DistributionAssignmentType'
-    RecordHandling:
-      title: RecordHandling
-      oneOf:
-      - $ref: '#/components/schemas/RecordHandling_Strict'
-      - $ref: '#/components/schemas/RecordHandling_WorkingHours'
-      discriminator:
-        propertyName: type
-        mapping:
-          Strict: '#/components/schemas/RecordHandling_Strict'
-          WorkingHours: '#/components/schemas/RecordHandling_WorkingHours'
-    DistributionUserState_Disabled:
-      title: DistributionUserState_Disabled
-      description: User has been explicitly disabled in this distribution (weight set to 0). Still on
-        the team but won't receive assignments until re-enabled.
+          format: date-time
+        createdBy:
+          $ref: '#/components/schemas/CallerRef'
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: '#/components/schemas/CallerRef'
+        revision:
+          type: integer
+          format: int32
+    HasMore:
+      title: HasMore
+      type: string
+      enum:
+      - 'Yes'
+      - 'No'
+    DistributionUserState_Removed:
+      title: DistributionUserState_Removed
+      description: User was removed from the team entirely — historical record, no assignments will go
+        to this user.
       type: object
       required:
       - userId
       - total
-      - disabledAt
+      - removedAt
       - statistics
       - type
       properties:
@@ -1088,170 +1510,44 @@ components:
         total:
           type: integer
           format: int32
-        disabledAt:
+        removedAt:
           type: string
           format: date-time
         statistics:
           $ref: '#/components/schemas/UserStatistics'
         type:
           type: string
-          const: Disabled
-    RecordHandling_Strict:
-      title: RecordHandling_Strict
+          const: Removed
+    DistributedAssignmentLimitReset_HourlyRolling:
+      title: DistributedAssignmentLimitReset_HourlyRolling
       type: object
       required:
       - type
       properties:
         type:
           type: string
-          const: Strict
-    Email:
-      title: Email
-      examples:
-      - john.doe@acme.com
-      type: string
-      pattern: .+@.+
-    HubspotUser:
-      title: HubspotUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-          description: Email of the linked HubSpot user.
-        id:
-          description: Identifier of the linked HubSpot user.
-          type: integer
-          format: int64
-    MeetingLimit_MeetingLimitSet:
-      title: MeetingLimit_MeetingLimitSet
-      type: object
-      required:
-      - resetPeriodicity
-      - type
-      properties:
-        userCaps:
-          type: array
-          uniqueItems: true
-          items:
-            $ref: '#/components/schemas/UserLimit'
-        resetPeriodicity:
-          $ref: '#/components/schemas/MeetingLimitReset'
-        type:
-          type: string
-          const: MeetingLimitSet
-    RecordHandling_WorkingHours:
-      title: RecordHandling_WorkingHours
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: WorkingHours
-    VacationFreshness:
-      title: VacationFreshness
-      description: Whether vacation state is read live (RealTime) or from cache (Cached).
-      type: string
-      enum:
-      - Cached
-      - RealTime
-    UserCalibration:
-      title: UserCalibration
+          const: HourlyRolling
+    DistributionUserState_Capped:
+      title: DistributionUserState_Capped
+      description: User has reached their assignment cap for the current period and is temporarily excluded
+        until the cap resets.
       type: object
       required:
       - userId
-      - calibration
+      - total
+      - statistics
+      - type
       properties:
         userId:
           $ref: '#/components/schemas/UserId'
-        calibration:
-          description: Manual offset added to this user's computed score to bias their position in the
-            assignment queue (signed).
+        total:
           type: integer
           format: int32
-    DistributedAssignmentLimitReset:
-      title: DistributedAssignmentLimitReset
-      oneOf:
-      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_Daily'
-      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_HourlyRolling'
-      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_Monthly'
-      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_Weekly'
-      discriminator:
-        propertyName: type
-        mapping:
-          Daily: '#/components/schemas/DistributedAssignmentLimitReset_Daily'
-          HourlyRolling: '#/components/schemas/DistributedAssignmentLimitReset_HourlyRolling'
-          Monthly: '#/components/schemas/DistributedAssignmentLimitReset_Monthly'
-          Weekly: '#/components/schemas/DistributedAssignmentLimitReset_Weekly'
-    Levels:
-      title: Levels
-      type: object
-      required:
-      - current
-      - nextAssignmentDelta
-      - total
-      properties:
-        current:
-          description: Earned score plus prolonged-reservation projection, before manual calibration.
-          type: number
-        nextAssignmentDelta:
-          description: Score increment that will be added if this user receives the next assignment. Forward-looking;
-            not included in `current` or `total`.
-          type: number
-        calibrationDelta:
-          description: Manual-calibration adjustment applied on top of `current`. Absent when no calibration
-            is in effect. When present, `total = current + calibrationDelta`.
-          type: number
-        total:
-          description: Current score with manual calibration applied.
-          type: number
-    SalesforceUser:
-      title: SalesforceUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-          description: Email of the linked Salesforce user.
-        id:
-          description: Identifier of the linked Salesforce user.
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
           type: string
-          pattern: '[^\s\\/]+'
-    WorkspaceDistributionSettings:
-      title: WorkspaceDistributionSettings
-      type: object
-      required:
-      - calibrateVacation
-      - creditBackCancelled
-      - creditBackNoShow
-      - orderIfEqualState
-      - resetPeriodicity
-      - vacationBuffer
-      properties:
-        calibrateVacation:
-          description: Whether users on vacation are calibrated out of the fairness equation so they are
-            not penalized for time off.
-          type: boolean
-        creditBackCancelled:
-          description: Whether a cancelled meeting credits the assignment back to the user (they move
-            back up the queue as if unassigned).
-          type: boolean
-        creditBackNoShow:
-          description: Whether a no-show credits the assignment back to the user, like `creditBackCancelled`.
-          type: boolean
-        orderIfEqualState:
-          $ref: '#/components/schemas/OrderIfEqualState'
-        resetPeriodicity:
-          $ref: '#/components/schemas/WorkspaceResetPeriodicity'
-          description: When the per-period assignment counters reset.
-        vacationBuffer:
-          $ref: '#/components/schemas/VacationBuffer'
-          description: Vacation-awareness configuration.
+          const: Capped
     QueryMeetingsRequest:
       title: QueryMeetingsRequest
       type: object
@@ -1319,40 +1615,30 @@ components:
           items:
             type: string
             format: uuid
-    HttpQueryResponse_A:
-      title: HttpQueryResponse_A
+    Tier:
+      title: Tier
+      type: string
+      enum:
+      - RoutingAndScheduling
+      - Experiences
+      - ChiliDataPlatform
+    MeetingLimit_MeetingLimitSet:
+      title: MeetingLimit_MeetingLimitSet
       type: object
       required:
-      - data
-      - hasMore
-      - hasMoreItems
-      properties:
-        data: {}
-        hasMore:
-          $ref: '#/components/schemas/HasMore'
-        hasMoreItems:
-          description: Whether more results exist beyond this page; drives pagination.
-          type: boolean
-    WorkspaceResetPeriodicity_Quarterly:
-      title: WorkspaceResetPeriodicity_Quarterly
-      description: Counters reset every quarter; `firstMonth` (1-3) is the first month of the quarter.
-      type: object
-      required:
-      - firstMonth
-      - timeZone
+      - resetPeriodicity
       - type
       properties:
-        firstMonth:
-          type: integer
-          format: int32
-        timeZone:
-          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
-          examples:
-          - America/New_York
-          type: string
+        userCaps:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/UserLimit'
+        resetPeriodicity:
+          $ref: '#/components/schemas/MeetingLimitReset'
         type:
           type: string
-          const: Quarterly
+          const: MeetingLimitSet
     ConfigurationDTO:
       title: ConfigurationDTO
       type: object
@@ -1392,85 +1678,9 @@ components:
         metadata:
           $ref: '#/components/schemas/SimpleMetadata'
           description: Creation/update audit metadata.
-    UserId:
-      title: UserId
-      examples:
-      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
-      type: string
-      pattern: '[^\s\\/]+'
-    MeetingLimitReset_Weekly:
-      title: MeetingLimitReset_Weekly
-      type: object
-      required:
-      - every
-      - startsOn
-      - resetDayOfWeek
-      - timezone
-      - type
-      properties:
-        every:
-          type: integer
-          format: int32
-          exclusiveMinimum: 0
-        startsOn:
-          type: string
-          format: date
-        resetDayOfWeek:
-          examples:
-          - MONDAY
-          type: string
-          enum:
-          - MONDAY
-          - TUESDAY
-          - WEDNESDAY
-          - THURSDAY
-          - FRIDAY
-          - SATURDAY
-          - SUNDAY
-        timezone:
-          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
-          examples:
-          - America/New_York
-          type: string
-        type:
-          type: string
-          const: Weekly
-    MeetingStatus:
-      title: MeetingStatus
-      type: string
-      enum:
-      - Active
-      - Canceled
-      - NoShow
-      - Completed
-    Prioritization:
-      title: Prioritization
-      type: object
-      properties:
-        queue:
-          description: Ordered list of active user IDs in the order they will receive the next assignments.
-            This is the authoritative assignment-ordering surface; level fields are informational.
-          type: array
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        onVacation:
-          description: Users currently on vacation and skipped by the queue until they return.
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        reachedCap:
-          description: Users who have reached their assignment cap for the current period and are skipped
-            until the cap resets.
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-    DistributedAssignmentLimitReset_Daily:
-      title: DistributedAssignmentLimitReset_Daily
+    WorkspaceResetPeriodicity_Daily:
+      title: WorkspaceResetPeriodicity_Daily
+      description: Counters reset at the start of every day in the given time zone.
       type: object
       required:
       - timeZone
@@ -1484,210 +1694,98 @@ components:
         type:
           type: string
           const: Daily
-    UserLimit:
-      title: UserLimit
-      type: object
-      required:
-      - userId
-      - limit
-      properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        limit:
-          description: Maximum assignments this user may receive per reset period (non-negative).
-          type: integer
-          format: int32
-          minimum: 0
-    WorkspaceId:
-      title: WorkspaceId
+    WorkspaceResetPeriodicity:
+      title: WorkspaceResetPeriodicity
+      oneOf:
+      - $ref: '#/components/schemas/WorkspaceResetPeriodicity_Daily'
+      - $ref: '#/components/schemas/WorkspaceResetPeriodicity_Monthly'
+      - $ref: '#/components/schemas/WorkspaceResetPeriodicity_Never'
+      - $ref: '#/components/schemas/WorkspaceResetPeriodicity_Quarterly'
+      - $ref: '#/components/schemas/WorkspaceResetPeriodicity_Weekly'
+      - $ref: '#/components/schemas/WorkspaceResetPeriodicity_Yearly'
+      discriminator:
+        propertyName: type
+        mapping:
+          Daily: '#/components/schemas/WorkspaceResetPeriodicity_Daily'
+          Monthly: '#/components/schemas/WorkspaceResetPeriodicity_Monthly'
+          Never: '#/components/schemas/WorkspaceResetPeriodicity_Never'
+          Quarterly: '#/components/schemas/WorkspaceResetPeriodicity_Quarterly'
+          Weekly: '#/components/schemas/WorkspaceResetPeriodicity_Weekly'
+          Yearly: '#/components/schemas/WorkspaceResetPeriodicity_Yearly'
+    UserId:
+      title: UserId
       examples:
-      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
       type: string
       pattern: '[^\s\\/]+'
-    DistributionAssignmentTypeConfig_Meeting:
-      title: DistributionAssignmentTypeConfig_Meeting
+    WorkspaceDistributionSettings:
+      title: WorkspaceDistributionSettings
       type: object
       required:
-      - handling
-      - limits
-      - type
-      properties:
-        handling:
-          $ref: '#/components/schemas/MeetingHandling'
-        limits:
-          $ref: '#/components/schemas/MeetingLimit'
-        type:
-          type: string
-          const: Meeting
-    MeetingHandling_Flexible:
-      title: MeetingHandling_Flexible
-      type: object
-      required:
-      - reassignmentType
-      - allowPickingAssignee
-      - type
-      properties:
-        reassignmentType:
-          $ref: '#/components/schemas/ReassignmentType'
-        allowPickingAssignee:
-          type: boolean
-        type:
-          type: string
-          const: Flexible
-    OrderIfEqualState:
-      title: OrderIfEqualState
-      description: Tie-break ordering when two users have an equal level. Currently always "AsConfigured"
-        upstream.
-      type: string
-      enum:
-      - AsConfigured
-      - Random
-    SimpleMetadata:
-      title: SimpleMetadata
-      type: object
-      required:
-      - createdAt
-      - createdBy
-      - updatedAt
-      - updatedBy
-      - revision
-      properties:
-        createdAt:
-          type: string
-          format: date-time
-        createdBy:
-          $ref: '#/components/schemas/CallerRef'
-        updatedAt:
-          type: string
-          format: date-time
-        updatedBy:
-          $ref: '#/components/schemas/CallerRef'
-        revision:
-          type: integer
-          format: int32
-    WorkspaceResetPeriodicity_Never:
-      title: WorkspaceResetPeriodicity_Never
-      description: Counters never reset automatically.
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: Never
-    PaginatedResult_Workspace:
-      title: PaginatedResult_Workspace
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Workspace'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    DistributedAssignmentLimit:
-      title: DistributedAssignmentLimit
-      type: object
-      required:
+      - calibrateVacation
+      - creditBackCancelled
+      - creditBackNoShow
+      - orderIfEqualState
       - resetPeriodicity
+      - vacationBuffer
       properties:
-        userCaps:
-          description: Per-user assignment caps.
-          type: array
-          uniqueItems: true
-          items:
-            $ref: '#/components/schemas/UserLimit'
+        calibrateVacation:
+          description: Whether users on vacation are calibrated out of the fairness equation so they are
+            not penalized for time off.
+          type: boolean
+        creditBackCancelled:
+          description: Whether a cancelled meeting credits the assignment back to the user (they move
+            back up the queue as if unassigned).
+          type: boolean
+        creditBackNoShow:
+          description: Whether a no-show credits the assignment back to the user, like `creditBackCancelled`.
+          type: boolean
+        orderIfEqualState:
+          $ref: '#/components/schemas/OrderIfEqualState'
         resetPeriodicity:
-          $ref: '#/components/schemas/DistributedAssignmentLimitReset'
+          $ref: '#/components/schemas/WorkspaceResetPeriodicity'
+          description: When the per-period assignment counters reset.
+        vacationBuffer:
+          $ref: '#/components/schemas/VacationBuffer'
+          description: Vacation-awareness configuration.
+    RecordHandling_WorkingHours:
+      title: RecordHandling_WorkingHours
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: WorkingHours
     TeamId:
       title: TeamId
       examples:
       - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
       type: string
       pattern: '[^\s\\/]+'
-    DistributionUserState_Active:
-      title: DistributionUserState_Active
-      description: User is active in the distribution and eligible for assignments. Carries the user's
-        current level.
+    MeetingLimitReset_Monthly:
+      title: MeetingLimitReset_Monthly
       type: object
       required:
-      - userId
-      - total
-      - level
-      - statistics
+      - every
+      - startsOn
+      - resetDay
+      - timezone
       - type
       properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        total:
+        every:
           type: integer
           format: int32
-        level:
-          $ref: '#/components/schemas/Levels'
-        statistics:
-          $ref: '#/components/schemas/UserStatistics'
-        type:
+          exclusiveMinimum: 0
+        startsOn:
           type: string
-          const: Active
-    MeetingLimit:
-      title: MeetingLimit
-      oneOf:
-      - $ref: '#/components/schemas/MeetingLimit_MeetingLimitSet'
-      - $ref: '#/components/schemas/MeetingLimit_MeetingLimitUnset'
-      discriminator:
-        propertyName: type
-        mapping:
-          MeetingLimitSet: '#/components/schemas/MeetingLimit_MeetingLimitSet'
-          MeetingLimitUnset: '#/components/schemas/MeetingLimit_MeetingLimitUnset'
-    DistributionAssignmentTypeConfig:
-      title: DistributionAssignmentTypeConfig
-      oneOf:
-      - $ref: '#/components/schemas/DistributionAssignmentTypeConfig_Conversation'
-      - $ref: '#/components/schemas/DistributionAssignmentTypeConfig_Meeting'
-      - $ref: '#/components/schemas/DistributionAssignmentTypeConfig_Record'
-      discriminator:
-        propertyName: type
-        mapping:
-          Conversation: '#/components/schemas/DistributionAssignmentTypeConfig_Conversation'
-          Meeting: '#/components/schemas/DistributionAssignmentTypeConfig_Meeting'
-          Record: '#/components/schemas/DistributionAssignmentTypeConfig_Record'
-    WorkspaceResetPeriodicity_Monthly:
-      title: WorkspaceResetPeriodicity_Monthly
-      description: Counters reset at the start of every month in the given time zone.
-      type: object
-      required:
-      - timeZone
-      - type
-      properties:
-        timeZone:
-          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
-          examples:
-          - America/New_York
-          type: string
-        type:
-          type: string
-          const: Monthly
-    DistributedAssignmentLimitReset_Monthly:
-      title: DistributedAssignmentLimitReset_Monthly
-      type: object
-      required:
-      - timeZone
-      - type
-      properties:
-        timeZone:
+          format: date
+        resetDay:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 28
+        timezone:
           description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
           examples:
           - America/New_York

@@ -97,7 +97,7 @@ reassignment):
 
 For each open meeting:
 ```
-tool: meeting-cancel
+tool: meeting-cancel-post
 args:
   meetingId: <meeting id>
 ```

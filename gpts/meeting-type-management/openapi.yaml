@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: Chili Piper — Meeting Type Management Actions
-  version: 1.287.2
+  version: 1.494.0
   description: GPT Actions for the meeting-type-management GPT — a subset of the Chili Piper Edge API.
     Authenticate with a Bearer API key (Admin Center → API Keys).
 servers:
@@ -17,11 +17,8 @@ paths:
       tags:
       - workspace
       summary: Read all workspaces
-      description: "[operation: workspace-list]\n\n\n\nREAD-ONLY\n\n\n\nLists the workspaces that partition\
-        \ the org and yields the workspaceId most other calls need to scope their work. Hierarchy: Tenant\
-        \ → Workspaces → Teams → Users. Paginated (default pageSize 200).\n\n→\n\n    [{workspaceId, name,\
-        \ settings}]\n\nsee: workspace-list-users (members), workspace-add/remove-users (manage membership),\
-        \ meeting-list/export (filter by workspaceId), concierge-logs (filter by workspaceId)"
+      description: 'READ-ONLY. Read all workspaces. List the workspaces that partition the org and their
+        workspaceIds. Params: page, pageSize.'
       operationId: workspaceList
       parameters:
       - name: page
@@ -99,27 +96,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - workspace.read
+      x-mcp-tool: workspace-list
   /v1/org/meeting-types/list:
     get:
       tags:
       - meeting-type
       summary: List meeting types
-      description: "[operation: meeting-type-list]\n\n\n\nREAD-ONLY\n\n\n\nBrowses the tenant's reusable\
-        \ team meeting types — the templates that scheduling links and routers reference. Personal meeting\
-        \ types are excluded. Omit workspaceId to fan out across every workspace; pass it to scope to\
-        \ one.\n\n→\n\n    [{id, workspaceId, name, description?, inviteTitle, inviteDescription, status,\
-        \ duration, location: {default: {type, index, host?, value?}, others: [{type, index, host?, value?}]},\
-        \ buffers: {before?, after?}, meetingLimit?: {limitBy: \"Email\"|\"Domain\", timeframe: \"Hourly\"\
-        |\"Daily\"|\"Weekly\"|\"Monthly\"|\"Yearly\", count}, sharedWith?: {type: \"Workspace\"}|{type:\
-        \ \"Teams\", teamIds}, reminders?: [{id, workspaceId, channel, trigger: {kind, offset?}, name,\
-        \ title?, body}]}]\n\n  Note: reminders are not fetched on list (the field is null) — use meeting-type-get\
-        \ to read a meeting type's reminders; null means \"not fetched\", never \"no reminders\".\n\n\
-        \  Note: meetingLimit.timeframe is approximate — the backend's reset schedule (e.g. every-2-weeks)\
-        \ is summarised to the nearest timeframe; finer reset details (every-N, anchor day) are not surfaced.\n\
-        \n  Note: sharedWith (the sharing scope: whole workspace vs specific teams) is read from the meeting\
-        \ type's admin (one-on-one) scheduling link; it is null when no such link, or more than one, is\
-        \ found — null means \"indeterminate\", not \"workspace\".\n\nsee: meeting-type-get (fetch a single\
-        \ meeting type), meeting-type-create (add one), meeting-type-update (edit one)"
+      description: 'READ-ONLY. List meeting types. Browse the tenant''s reusable team meeting types. Params:
+        workspaceId.'
       operationId: meetingTypeList
       parameters:
       - name: workspaceId
@@ -186,26 +170,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - meeting-type.read
+      x-mcp-tool: meeting-type-list
   /v1/org/meeting-types/{meetingTypeId}:
     get:
       tags:
       - meeting-type
       summary: Get meeting type
-      description: "[operation: meeting-type-get]\n\n\n\nREAD-ONLY\n\n\n\nFetches one team meeting type\
-        \ by id, including its attached reminders (unlike meeting-type-list, which leaves reminders null).\
-        \ Use it before editing to read current state, or once you already know the id instead of browsing\
-        \ the list.\n\n→\n\n    {id, workspaceId, name, description?, inviteTitle, inviteDescription,\
-        \ status, duration, location: {default: {type, index, host?, value?}, others: [{type, index, host?,\
-        \ value?}]}, buffers: {before?, after?}, meetingLimit?: {limitBy: \"Email\"|\"Domain\", timeframe:\
-        \ \"Hourly\"|\"Daily\"|\"Weekly\"|\"Monthly\"|\"Yearly\", count}, sharedWith?: {type: \"Workspace\"\
-        }|{type: \"Teams\", teamIds}, reminders: [{id, workspaceId, channel, trigger: {kind, offset?},\
-        \ name, title?, body}]}\n\n  Note: meetingLimit.timeframe is approximate — the backend's reset\
-        \ schedule (e.g. every-2-weeks) is summarised to the nearest timeframe; finer reset details (every-N,\
-        \ anchor day) are not surfaced.\n\n  Note: sharedWith (the sharing scope: whole workspace vs specific\
-        \ teams) is read from the meeting type's admin (one-on-one) scheduling link; it is null when no\
-        \ such link, or more than one, is found — null means \"indeterminate\", not \"workspace\".\n\n\
-        ⚠ personal meeting types are not manageable here and return an error\n\nsee: meeting-type-list\
-        \ (browse to find an id), meeting-type-update (edit), meeting-type-delete (remove)"
+      description: 'READ-ONLY. Get meeting type. Fetch one team meeting type by id, including its attached
+        reminders. Params: meetingTypeId (required).'
       operationId: meetingTypeGet
       parameters:
       - name: meetingTypeId
@@ -269,33 +241,13 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - meeting-type.read
+      x-mcp-tool: meeting-type-get
     put:
       tags:
       - meeting-type
       summary: Update meeting type
-      description: "[operation: meeting-type-update]\n\n\n\nMUTATING — IDEMPOTENT\n\n\n\nEdits a team\
-        \ meeting type. Every field is optional — send only what you want to change; omitted fields keep\
-        \ their current value. `description` is internal; change the guest-facing invite via inviteTitle/inviteDescription\
-        \ ({CP.*} merge tags). `location` is a full replacement of the conferencing config, not a merge.\
-        \ `meetingLimit` caps bookings per limitBy per timeframe. Prefer reading current state with meeting-type-get\
-        \ first.\n\n- status (opt): \"Active\" or \"Inactive\"\n\n- location (opt): replaces the full\
-        \ config — {default: <Location>, others: [<Location>]}; omit to leave unchanged. Each <Location>\
-        \ is one of:\n\n    {type: \"ZoomOneTimeLink\"|\"TeamsMeetingLink\"|\"GongLink\"|\"GoToMeetingLink\"\
-        |\"RingCentralLink\"|\"WebexLink\"|\"HostsDefaultConferenceDetails\"|\"HostsDefaultPhysicalLocation\"\
-        , index, host: \"Host\"|\"AssigneeIfExists\"|\"BookerIfExists\"}\n    {type: \"CalendarPlatformConference\"\
-        , index}\n    {type: \"AskTheGuest\", index}\n    {type: \"DefinedInMeetingType\", index, value?}\n\
-        \n- meetingLimit (opt): {limitBy: \"Email\"|\"Domain\", timeframe: \"Hourly\"|\"Daily\"|\"Weekly\"\
-        |\"Monthly\"|\"Yearly\", count}\n\n- sharedWith (opt): new scope — {type: \"Workspace\"} or {type:\
-        \ \"Teams\", teamIds}; applied to the admin (one-on-one) scheduling link, which must exist as\
-        \ exactly one (409 if none — set sharedWith at create time first — or more than one).\n\n  Note:\
-        \ sharedWith is applied AFTER the other changes commit — a 409 here means those are already persisted\
-        \ (re-run without sharedWith, then fix the admin link directly).\n\n→\n\n    {id, workspaceId,\
-        \ name, description?, inviteTitle, inviteDescription, status, duration, location: {default: {type,\
-        \ index, host?, value?}, others: [{type, index, host?, value?}]}, buffers: {before?, after?},\
-        \ meetingLimit?: {limitBy: \"Email\"|\"Domain\", timeframe: \"Hourly\"|\"Daily\"|\"Weekly\"|\"\
-        Monthly\"|\"Yearly\", count}, sharedWith?: {type: \"Workspace\"}|{type: \"Teams\", teamIds}, reminders:\
-        \ [{id, workspaceId, channel, trigger: {kind, offset?}, name, title?, body}]}\n\n⚠ takes effect\
-        \ immediately\n\nsee: meeting-type-get (fetch current state before editing)"
+      description: 'MUTATING — IDEMPOTENT. Update meeting type. Edit a team meeting type. Params: meetingTypeId
+        (required). Takes a JSON body.'
       operationId: meetingTypeUpdate
       parameters:
       - name: meetingTypeId
@@ -365,27 +317,13 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - meeting-type.modify
+      x-mcp-tool: meeting-type-update
     delete:
       tags:
       - meeting-type
       summary: Remove meeting type
-      description: '[operation: meeting-type-delete]
-
-
-
-
-        MUTATING — DESTRUCTIVE
-
-
-
-
-        Deletes a team meeting type by id.
-
-
-        ⚠ irreversible via API; any scheduling links or routers referencing this meeting type stop working
-
-
-        see: meeting-type-list or meeting-type-get (confirm the id before deleting)'
+      description: 'MUTATING — DESTRUCTIVE. Remove meeting type. Delete a team meeting type by id. Params:
+        meetingTypeId (required).'
       operationId: meetingTypeDelete
       parameters:
       - name: meetingTypeId
@@ -445,33 +383,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - meeting-type.remove
+      x-mcp-tool: meeting-type-delete
   /v1/org/meeting-types:
     post:
       tags:
       - meeting-type
       summary: Create meeting type
-      description: "[operation: meeting-type-create]\n\n\n\nMUTATING\n\n\n\nCreates a reusable team meeting\
-        \ type; the backend fills in product defaults for anything you omit. Only name, duration (\"30\
-        \ minutes\") and the default location are set by the create call itself — description, inviteTitle,\
-        \ inviteDescription, location alternatives, and the admin scheduling link that carries sharedWith\
-        \ are applied by FURTHER calls immediately after. `description` is internal (never shown to guests);\
-        \ to set the guest-facing calendar invite use inviteTitle/inviteDescription, both of which accept\
-        \ {CP.*} merge tags. `sharedWith` is {type: \"Workspace\"} or {type: \"Teams\", teamIds}; supplying\
-        \ it provisions the admin (one-on-one) scheduling link that carries the scope — omit it and sharing\
-        \ can only be set later by managing that link directly.\n\n  Note: creation is NOT atomic — if\
-        \ a follow-up call fails the meeting type exists without those fields, and re-creating duplicates\
-        \ it; fix with meeting-type-update instead.\n\n- location (opt): {default: <Location>, others:\
-        \ [<Location>]}; omit to keep the workspace default. Each <Location> is one of:\n\n    {type:\
-        \ \"ZoomOneTimeLink\"|\"TeamsMeetingLink\"|\"GongLink\"|\"GoToMeetingLink\"|\"RingCentralLink\"\
-        |\"WebexLink\"|\"HostsDefaultConferenceDetails\"|\"HostsDefaultPhysicalLocation\", index, host:\
-        \ \"Host\"|\"AssigneeIfExists\"|\"BookerIfExists\"}\n    {type: \"CalendarPlatformConference\"\
-        , index}\n    {type: \"AskTheGuest\", index}\n    {type: \"DefinedInMeetingType\", index, value?}\n\
-        \n→\n\n    {id, workspaceId, name, description?, inviteTitle, inviteDescription, status, duration,\
-        \ location: {default: {type, index, host?, value?}, others: [{type, index, host?, value?}]}, buffers:\
-        \ {before?, after?}, meetingLimit?: {limitBy: \"Email\"|\"Domain\", timeframe: \"Hourly\"|\"Daily\"\
-        |\"Weekly\"|\"Monthly\"|\"Yearly\", count}, sharedWith?: {type: \"Workspace\"}|{type: \"Teams\"\
-        , teamIds}, reminders: [{id, workspaceId, channel, trigger: {kind, offset?}, name, title?, body}]}\n\
-        \nsee: meeting-type-list (find a workspaceId), meeting-type-update (edit afterwards)"
+      description: MUTATING. Create meeting type. Create a reusable team meeting type with product defaults
+        filled in. Takes a JSON body.
       operationId: meetingTypeCreate
       requestBody:
         content:
@@ -534,22 +453,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - meeting-type.create
+      x-mcp-tool: meeting-type-create
   /v1/org/meeting-types/{meetingTypeId}/reminders/{reminderId}:
     put:
       tags:
       - meeting-type
       summary: Attach reminder to meeting type
-      description: "[operation: meeting-type-attach-reminder]\n\n\n\nMUTATING — IDEMPOTENT\n\n\n\nLinks\
-        \ an existing reminder to a team meeting type so it starts sending it, and returns the updated\
-        \ meeting type. The reminder must live in the same workspace (create one with meeting-type-reminder-create).\
-        \ Idempotent: re-attaching an already-attached reminder is a no-op.\n\n→\n\n    {id, workspaceId,\
-        \ name, description?, inviteTitle, inviteDescription, status, duration, location: {default: {type,\
-        \ index, host?, value?}, others: [{type, index, host?, value?}]}, buffers: {before?, after?},\
-        \ meetingLimit?: {limitBy: \"Email\"|\"Domain\", timeframe: \"Hourly\"|\"Daily\"|\"Weekly\"|\"\
-        Monthly\"|\"Yearly\", count}, sharedWith?: {type: \"Workspace\"}|{type: \"Teams\", teamIds}, reminders:\
-        \ [{id, workspaceId, channel, trigger: {kind, offset?}, name, title?, body}]}\n\n⚠ takes effect\
-        \ immediately\n\nsee: meeting-type-reminder-create (make a reminder first), meeting-type-get (confirm\
-        \ the association), meeting-type-detach-reminder (remove it)"
+      description: 'MUTATING — IDEMPOTENT. Attach reminder to meeting type. Attach an existing reminder
+        to a team meeting type. Params: meetingTypeId (required), reminderId (required).'
       operationId: meetingTypeAttachReminder
       parameters:
       - name: meetingTypeId
@@ -620,21 +531,13 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - meeting-type.modify
+      x-mcp-tool: meeting-type-attach-reminder
     delete:
       tags:
       - meeting-type
       summary: Detach reminder from meeting type
-      description: "[operation: meeting-type-detach-reminder]\n\n\n\nMUTATING — IDEMPOTENT\n\n\n\nUnlinks\
-        \ a reminder from a team meeting type (it stops sending it), and returns the updated meeting type.\
-        \ The reminder itself is NOT deleted — it stays available to re-attach or to use elsewhere; delete\
-        \ it entirely with meeting-type-reminder-delete. Idempotent: detaching a reminder that is not\
-        \ attached is a no-op.\n\n→\n\n    {id, workspaceId, name, description?, inviteTitle, inviteDescription,\
-        \ status, duration, location: {default: {type, index, host?, value?}, others: [{type, index, host?,\
-        \ value?}]}, buffers: {before?, after?}, meetingLimit?: {limitBy: \"Email\"|\"Domain\", timeframe:\
-        \ \"Hourly\"|\"Daily\"|\"Weekly\"|\"Monthly\"|\"Yearly\", count}, sharedWith?: {type: \"Workspace\"\
-        }|{type: \"Teams\", teamIds}, reminders: [{id, workspaceId, channel, trigger: {kind, offset?},\
-        \ name, title?, body}]}\n\n⚠ takes effect immediately\n\nsee: meeting-type-get (confirm), meeting-type-attach-reminder\
-        \ (re-attach), meeting-type-reminder-delete (delete the reminder entirely)"
+      description: 'MUTATING — IDEMPOTENT. Detach reminder from meeting type. Detach a reminder from a
+        team meeting type. Params: meetingTypeId (required), reminderId (required).'
       operationId: meetingTypeDetachReminder
       parameters:
       - name: meetingTypeId
@@ -705,19 +608,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - meeting-type.modify
+      x-mcp-tool: meeting-type-detach-reminder
   /v1/org/meeting-type-reminders/list:
     get:
       tags:
       - meeting-type-reminder
       summary: List meeting type reminders
-      description: "[operation: meeting-type-reminder-list]\n\n\n\nREAD-ONLY\n\n\n\nBrowses the tenant's\
-        \ reminders — workspace-scoped Email/Sms notifications that meeting types attach to fire before,\
-        \ after, or on booking. Omit workspaceId to fan out across every workspace; pass it to scope to\
-        \ one.\n\n→\n\n    [{id, workspaceId, channel: \"Email\"|\"Sms\", trigger: {kind: \"BeforeMeeting\"\
-        |\"BeforeMeetingNoResponse\"|\"MeetingBooked\"|\"AfterMeeting\", offset?}, name, title?, body}]\n\
-        \n  Note: reminders are lean here — advanced send-restrictions and email/sms behaviours are managed\
-        \ by the backend and not exposed.\n\nsee: meeting-type-reminder-create (add one), meeting-type-reminder-update\
-        \ (edit one), meeting-type-reminder-delete (remove one)"
+      description: 'READ-ONLY. List meeting type reminders. Browse the tenant''s meeting-type reminders
+        (Email/SMS notifications). Params: workspaceId.'
       operationId: meetingTypeReminderList
       parameters:
       - name: workspaceId
@@ -784,20 +682,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - meeting-type.read
+      x-mcp-tool: meeting-type-reminder-list
   /v1/org/meeting-type-reminders:
     post:
       tags:
       - meeting-type-reminder
       summary: Create meeting type reminder
-      description: "[operation: meeting-type-reminder-create]\n\n\n\nMUTATING\n\n\n\nCreates a reminder\
-        \ in a workspace; attach it to a meeting type afterwards with meeting-type-attach-reminder. The\
-        \ backend fills in defaults for advanced send behaviours. `trigger` is {kind, offset?}: offset\
-        \ (e.g. \"1 hour\") is required for the timed kinds \"BeforeMeeting\"/\"BeforeMeetingNoResponse\"\
-        /\"AfterMeeting\" and must be omitted for \"MeetingBooked\". `title` is the email subject (Email\
-        \ only; ignored for Sms).\n\n→\n\n    {id, workspaceId, channel: \"Email\"|\"Sms\", trigger: {kind,\
-        \ offset?}, name, title?, body}\n\n  Note: reminders are lean — advanced send-restrictions and\
-        \ email/sms behaviours are backend-defaulted and not settable here.\n\nsee: meeting-type-reminder-list\
-        \ (find a workspaceId), meeting-type-reminder-update (edit afterwards)"
+      description: MUTATING. Create meeting type reminder. Create a reminder in a workspace to later attach
+        to meeting types. Takes a JSON body.
       operationId: meetingTypeReminderCreate
       requestBody:
         content:
@@ -860,19 +752,15 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - meeting-type.create
+      x-mcp-tool: meeting-type-reminder-create
   /v1/org/meeting-type-reminders/{reminderId}:
     put:
       tags:
       - meeting-type-reminder
       summary: Update meeting type reminder
-      description: "[operation: meeting-type-reminder-update]\n\n\n\nMUTATING — IDEMPOTENT\n\n\n\nEdits\
-        \ a reminder in place — attached meeting types pick up the change automatically. Send only the\
-        \ fields you want to change; the channel is fixed and cannot switch between Email and Sms. `trigger`\
-        \ is {kind, offset?} (offset required for the timed kinds, omitted for \"MeetingBooked\").\n\n\
-        →\n\n    {id, workspaceId, channel: \"Email\"|\"Sms\", trigger: {kind, offset?}, name, title?,\
-        \ body}\n\n  Note: advanced send-restrictions and email/sms behaviours are preserved unchanged.\n\
-        \n⚠ takes effect immediately\n\nsee: meeting-type-reminder-list (find the reminderId and workspaceId\
-        \ before editing)"
+      description: 'MUTATING — IDEMPOTENT. Update meeting type reminder. Edit a reminder in place; attached
+        meeting types pick up the change. Params: reminderId (required), workspaceId (required). Takes
+        a JSON body.'
       operationId: meetingTypeReminderUpdate
       parameters:
       - name: reminderId
@@ -950,16 +838,13 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - meeting-type.modify
+      x-mcp-tool: meeting-type-reminder-update
     delete:
       tags:
       - meeting-type-reminder
       summary: Remove meeting type reminder
-      description: "[operation: meeting-type-reminder-delete]\n\n\n\nMUTATING — DESTRUCTIVE\n\n\n\nDeletes\
-        \ a reminder entirely. To stop one meeting type sending it while keeping the reminder, use meeting-type-detach-reminder\
-        \ instead.\n\n→\n\n    {}\n\n  Note: an unknown reminder id (or one in another workspace) returns\
-        \ a typed 404, not a silent success — the id is verified in the workspace before deletion.\n\n\
-        ⚠ irreversible via API; any meeting types referencing this reminder stop sending it\n\nsee: meeting-type-reminder-list\
-        \ (confirm the reminderId and workspaceId before deleting)"
+      description: 'MUTATING — DESTRUCTIVE. Remove meeting type reminder. Delete a reminder entirely.
+        Params: reminderId (required), workspaceId (required).'
       operationId: meetingTypeReminderDelete
       parameters:
       - name: reminderId
@@ -1027,6 +912,380 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - meeting-type.remove
+      x-mcp-tool: meeting-type-reminder-delete
+  /v1/org/personal-meeting-types:
+    get:
+      tags:
+      - personal-meeting-type
+      summary: List personal meeting types
+      description: 'READ-ONLY. List personal meeting types. Browse ALL personal meeting types across the
+        tenant (every user''s booking pages). Params: workspaceId, page, pageSize.'
+      operationId: personalMeetingTypeList
+      parameters:
+      - name: workspaceId
+        in: query
+        description: 'Optional: scope the list to a single personal workspace.'
+        required: false
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      - name: page
+        in: query
+        description: Page number. First page has index 0.
+        required: false
+        schema:
+          default: 0
+          type: integer
+          format: int64
+          minimum: 0
+      - name: pageSize
+        in: query
+        description: Number of items per page.
+        required: false
+        schema:
+          default: 10
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResult_PersonalMeetingType'
+        '400':
+          description: 'Invalid value for: query parameter workspaceId, Invalid value for: query parameter
+            page, Invalid value for: query parameter pageSize'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - meeting-type.read
+      x-mcp-tool: personal-meeting-type-list
+    post:
+      tags:
+      - personal-meeting-type
+      summary: Create personal meeting type
+      description: MUTATING. Create personal meeting type. Create a personal meeting type in a user's
+        personal workspace. Takes a JSON body.
+      operationId: personalMeetingTypeCreate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonalMeetingTypeCreate'
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalMeetingType'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - meeting-type.create
+      x-mcp-tool: personal-meeting-type-create
+  /v1/org/personal-meeting-types/{meetingTypeId}:
+    get:
+      tags:
+      - personal-meeting-type
+      summary: Get personal meeting type
+      description: 'READ-ONLY. Get personal meeting type. Fetch one personal meeting type by id, including
+        its attached reminders. Params: meetingTypeId (required).'
+      operationId: personalMeetingTypeGet
+      parameters:
+      - name: meetingTypeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalMeetingType'
+        '400':
+          description: 'Invalid value for: path parameter meetingTypeId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - meeting-type.read
+      x-mcp-tool: personal-meeting-type-get
+    put:
+      tags:
+      - personal-meeting-type
+      summary: Update personal meeting type
+      description: 'MUTATING — IDEMPOTENT. Update personal meeting type. Edit a personal meeting type
+        (e.g. change its location). Params: meetingTypeId (required). Takes a JSON body.'
+      operationId: personalMeetingTypeUpdate
+      parameters:
+      - name: meetingTypeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonalMeetingTypeUpdate'
+        required: true
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalMeetingType'
+        '400':
+          description: 'Invalid value for: path parameter meetingTypeId, Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - meeting-type.modify
+      x-mcp-tool: personal-meeting-type-update
+    delete:
+      tags:
+      - personal-meeting-type
+      summary: Remove personal meeting type
+      description: 'MUTATING — DESTRUCTIVE. Remove personal meeting type. Delete a personal meeting type
+        by id. Params: meetingTypeId (required).'
+      operationId: personalMeetingTypeDelete
+      parameters:
+      - name: meetingTypeId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+        '400':
+          description: 'Invalid value for: path parameter meetingTypeId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - meeting-type.remove
+      x-mcp-tool: personal-meeting-type-delete
 components:
   securitySchemes:
     apiKeyAuth:
@@ -1037,12 +1296,291 @@ components:
       name: Authorization
       in: header
   schemas:
+    MeetingLocation_GoToMeetingLink:
+      title: MeetingLocation_GoToMeetingLink
+      type: object
+      required:
+      - index
+      - host
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        host:
+          $ref: '#/components/schemas/MeetingLocationHost'
+        type:
+          type: string
+          const: GoToMeetingLink
+    MeetingTypeUpdate:
+      title: MeetingTypeUpdate
+      type: object
+      properties:
+        name:
+          description: New internal name; omit to keep the current value.
+          type: string
+        description:
+          description: New internal description; omit to keep the current value.
+          type: string
+        inviteTitle:
+          description: New calendar-invite subject; omit to keep the current value.
+          type: string
+        inviteDescription:
+          description: New calendar-invite body; omit to keep the current value.
+          type: string
+        duration:
+          description: New meeting length; omit to keep the current value.
+          type: string
+        status:
+          $ref: '#/components/schemas/MeetingTypeStatus'
+        location:
+          $ref: '#/components/schemas/MeetingLocations'
+        buffers:
+          $ref: '#/components/schemas/MeetingBuffers'
+        meetingLimit:
+          $ref: '#/components/schemas/MeetingBookingLimit'
+        sharedWith:
+          $ref: '#/components/schemas/SharedWith'
+    ReminderSmsSendFrom:
+      title: ReminderSmsSendFrom
+      type: string
+      enum:
+      - AnyNumber
+      - LocalAreaNumber
+    MeetingLocation_DefinedInMeetingType:
+      title: MeetingLocation_DefinedInMeetingType
+      type: object
+      required:
+      - index
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        value:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          const: DefinedInMeetingType
+    MeetingLocation_HostsDefaultPhysicalLocation:
+      title: MeetingLocation_HostsDefaultPhysicalLocation
+      type: object
+      required:
+      - index
+      - host
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        host:
+          $ref: '#/components/schemas/MeetingLocationHost'
+        type:
+          type: string
+          const: HostsDefaultPhysicalLocation
+    MeetingTypeId:
+      title: MeetingTypeId
+      examples:
+      - 4a8f2b3c-7d1e-4f9b-8a2c-3d5e6f789012
+      type: string
+      format: uuid
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string
+    MeetingLocations:
+      title: MeetingLocations
+      type: object
+      required:
+      - default
+      properties:
+        default:
+          $ref: '#/components/schemas/MeetingLocation'
+        others:
+          description: Additional selectable meeting locations offered alongside the default.
+          type: array
+          items:
+            $ref: '#/components/schemas/MeetingLocation'
+    Workspace:
+      title: Workspace
+      type: object
+      required:
+      - id
+      - name
+      - metadata
+      properties:
+        id:
+          $ref: '#/components/schemas/WorkspaceId'
+          description: Unique identifier of the workspace.
+        name:
+          description: Human-readable workspace name.
+          type: string
+        emoji:
+          description: Optional emoji shown as the workspace's icon.
+          type: string
+        logo:
+          description: Optional URL of the workspace's logo image.
+          type: string
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
     MeetingBookingLimitBy:
       title: MeetingBookingLimitBy
       type: string
       enum:
       - Email
       - Domain
+    MeetingBookingLimitTimeframe:
+      title: MeetingBookingLimitTimeframe
+      type: string
+      enum:
+      - Hourly
+      - Daily
+      - Weekly
+      - Monthly
+      - Yearly
+    ReminderSendFrom:
+      title: ReminderSendFrom
+      type: string
+      enum:
+      - SendFromHost
+      - SendFromBooker
+      - SendFromNoReply
+    MeetingLocation_AskTheGuest:
+      title: MeetingLocation_AskTheGuest
+      type: object
+      required:
+      - index
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        type:
+          type: string
+          const: AskTheGuest
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
+    PersonalMeetingTypeCreate:
+      title: PersonalMeetingTypeCreate
+      type: object
+      required:
+      - ownerUserId
+      - name
+      - duration
+      properties:
+        ownerUserId:
+          $ref: '#/components/schemas/UserId'
+          description: The user in whose personal workspace the meeting type is created.
+        name:
+          description: Internal meeting-type name.
+          type: string
+        duration:
+          description: Meeting length.
+          type: string
+        description:
+          description: Internal description; a product default is used when omitted.
+          type: string
+        inviteTitle:
+          description: Calendar-invite subject; defaults to the name when omitted.
+          type: string
+        inviteDescription:
+          description: Calendar-invite body; supports {!CP.Object.Field} merge tags.
+          type: string
+        location:
+          $ref: '#/components/schemas/MeetingLocations'
+        syncToCrm:
+          description: Whether bookings are synced to the CRM; defaults off when omitted.
+          type: boolean
+        idempotencyKey:
+          description: 'Caller-generated UUID that makes create idempotent: a retry with the same key
+            returns the already-created meeting type instead of duplicating it; reusing it with a different
+            payload fails with 409.'
+          type: string
+          format: uuid
+    MeetingBuffers:
+      title: MeetingBuffers
+      type: object
+      properties:
+        before:
+          description: Buffer reserved before the meeting to prevent back-to-back bookings.
+          type: string
+        after:
+          description: Buffer reserved after the meeting to prevent back-to-back bookings.
+          type: string
+    MeetingTypeStatus:
+      title: MeetingTypeStatus
+      type: string
+      enum:
+      - Active
+      - Inactive
+    MeetingLocation_WebexLink:
+      title: MeetingLocation_WebexLink
+      type: object
+      required:
+      - index
+      - host
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        host:
+          $ref: '#/components/schemas/MeetingLocationHost'
+        type:
+          type: string
+          const: WebexLink
+    MeetingLocationHost:
+      title: MeetingLocationHost
+      type: string
+      enum:
+      - Host
+      - AssigneeIfExists
+      - BookerIfExists
+    PersonalMeetingTypeUpdate:
+      title: PersonalMeetingTypeUpdate
+      type: object
+      properties:
+        name:
+          description: New internal name; omit to keep the current value.
+          type: string
+        description:
+          description: New internal description; omit to keep the current value.
+          type: string
+        inviteTitle:
+          description: New calendar-invite subject; omit to keep the current value.
+          type: string
+        inviteDescription:
+          description: New calendar-invite body; omit to keep the current value.
+          type: string
+        duration:
+          description: New meeting length; omit to keep the current value.
+          type: string
+        status:
+          $ref: '#/components/schemas/MeetingTypeStatus'
+        location:
+          $ref: '#/components/schemas/MeetingLocations'
+        buffers:
+          $ref: '#/components/schemas/MeetingBuffers'
+        meetingLimit:
+          $ref: '#/components/schemas/MeetingBookingLimit'
+        syncToCrm:
+          description: Enable/disable CRM sync; omit to keep the current value.
+          type: boolean
+    ReminderTriggerKind:
+      title: ReminderTriggerKind
+      type: string
+      enum:
+      - BeforeMeeting
+      - BeforeMeetingNoResponse
+      - MeetingBooked
+      - AfterMeeting
     MeetingLocation:
       title: MeetingLocation
       oneOf:
@@ -1071,55 +1609,77 @@ components:
           TeamsMeetingLink: '#/components/schemas/MeetingLocation_TeamsMeetingLink'
           WebexLink: '#/components/schemas/MeetingLocation_WebexLink'
           ZoomOneTimeLink: '#/components/schemas/MeetingLocation_ZoomOneTimeLink'
-    MeetingLocation_HostsDefaultConferenceDetails:
-      title: MeetingLocation_HostsDefaultConferenceDetails
+    ReminderCreate:
+      title: ReminderCreate
       type: object
       required:
-      - index
-      - host
-      - type
-      properties:
-        index:
-          type: integer
-          format: int32
-        host:
-          $ref: '#/components/schemas/MeetingLocationHost'
-        type:
-          type: string
-          const: HostsDefaultConferenceDetails
-    Workspace:
-      title: Workspace
-      type: object
-      required:
-      - id
+      - workspaceId
+      - channel
+      - trigger
       - name
-      - metadata
+      - body
       properties:
-        id:
+        workspaceId:
           $ref: '#/components/schemas/WorkspaceId'
+          description: Workspace to create the reminder in.
+        channel:
+          $ref: '#/components/schemas/ReminderChannel'
+        trigger:
+          $ref: '#/components/schemas/ReminderTrigger'
         name:
+          description: Internal reminder name; not shown to recipients.
           type: string
-        emoji:
+        title:
+          description: Optional subject line (used by the email channel).
           type: string
-        logo:
+        body:
+          description: Reminder message content delivered to the recipient.
           type: string
-        metadata:
-          $ref: '#/components/schemas/SimpleMetadata'
-    MeetingBookingLimit:
-      title: MeetingBookingLimit
+        sendTo:
+          $ref: '#/components/schemas/ReminderSendTo'
+        sendFrom:
+          $ref: '#/components/schemas/ReminderSendFrom'
+        smsSendFrom:
+          $ref: '#/components/schemas/ReminderSmsSendFrom'
+    ReminderUpdate:
+      title: ReminderUpdate
+      type: object
+      properties:
+        name:
+          description: New internal reminder name; omit to keep the current value.
+          type: string
+        trigger:
+          $ref: '#/components/schemas/ReminderTrigger'
+        title:
+          description: New subject line; omit to keep the current value.
+          type: string
+        body:
+          description: New message content; omit to keep the current value.
+          type: string
+        sendTo:
+          $ref: '#/components/schemas/ReminderSendTo'
+        sendFrom:
+          $ref: '#/components/schemas/ReminderSendFrom'
+        smsSendFrom:
+          $ref: '#/components/schemas/ReminderSmsSendFrom'
+    ReminderSendTo:
+      title: ReminderSendTo
+      type: string
+      enum:
+      - SendToAllGuests
+      - SendToMainGuestOnly
+    ReminderTrigger:
+      title: ReminderTrigger
       type: object
       required:
-      - limitBy
-      - timeframe
-      - count
+      - kind
       properties:
-        limitBy:
-          $ref: '#/components/schemas/MeetingBookingLimitBy'
-        timeframe:
-          $ref: '#/components/schemas/MeetingBookingLimitTimeframe'
-        count:
-          type: integer
-          format: int32
+        kind:
+          $ref: '#/components/schemas/ReminderTriggerKind'
+        offset:
+          description: Lead time before (or lag after) the meeting for timed kinds; absent for the MeetingBooked
+            kind.
+          type: string
     PaginatedResult_Workspace:
       title: PaginatedResult_Workspace
       type: object
@@ -1143,28 +1703,22 @@ components:
           type: integer
           format: int64
           exclusiveMinimum: 0
-    ReminderCreate:
-      title: ReminderCreate
+    MeetingLocation_HostsDefaultConferenceDetails:
+      title: MeetingLocation_HostsDefaultConferenceDetails
       type: object
       required:
-      - workspaceId
-      - channel
-      - trigger
-      - name
-      - body
+      - index
+      - host
+      - type
       properties:
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-        channel:
-          $ref: '#/components/schemas/ReminderChannel'
-        trigger:
-          $ref: '#/components/schemas/ReminderTrigger'
-        name:
+        index:
+          type: integer
+          format: int32
+        host:
+          $ref: '#/components/schemas/MeetingLocationHost'
+        type:
           type: string
-        title:
-          type: string
-        body:
-          type: string
+          const: HostsDefaultConferenceDetails
     MeetingLocation_RingCentralLink:
       title: MeetingLocation_RingCentralLink
       type: object
@@ -1181,158 +1735,12 @@ components:
         type:
           type: string
           const: RingCentralLink
-    ReminderUpdate:
-      title: ReminderUpdate
-      type: object
-      properties:
-        name:
-          type: string
-        trigger:
-          $ref: '#/components/schemas/ReminderTrigger'
-        title:
-          type: string
-        body:
-          type: string
-    Map_String:
-      title: Map_String
-      type: object
-      additionalProperties:
-        type: string
-    MeetingLocation_ZoomOneTimeLink:
-      title: MeetingLocation_ZoomOneTimeLink
-      type: object
-      required:
-      - index
-      - host
-      - type
-      properties:
-        index:
-          type: integer
-          format: int32
-        host:
-          $ref: '#/components/schemas/MeetingLocationHost'
-        type:
-          type: string
-          const: ZoomOneTimeLink
-    MeetingBookingLimitTimeframe:
-      title: MeetingBookingLimitTimeframe
-      type: string
-      enum:
-      - Hourly
-      - Daily
-      - Weekly
-      - Monthly
-      - Yearly
-    MeetingLocationHost:
-      title: MeetingLocationHost
-      type: string
-      enum:
-      - Host
-      - AssigneeIfExists
-      - BookerIfExists
-    MeetingLocation_WebexLink:
-      title: MeetingLocation_WebexLink
-      type: object
-      required:
-      - index
-      - host
-      - type
-      properties:
-        index:
-          type: integer
-          format: int32
-        host:
-          $ref: '#/components/schemas/MeetingLocationHost'
-        type:
-          type: string
-          const: WebexLink
-    MeetingTypeStatus:
-      title: MeetingTypeStatus
-      type: string
-      enum:
-      - Active
-      - Inactive
-    MeetingLocation_CalendarPlatformConference:
-      title: MeetingLocation_CalendarPlatformConference
-      type: object
-      required:
-      - index
-      - type
-      properties:
-        index:
-          type: integer
-          format: int32
-        type:
-          type: string
-          const: CalendarPlatformConference
-    MeetingLocation_TeamsMeetingLink:
-      title: MeetingLocation_TeamsMeetingLink
-      type: object
-      required:
-      - index
-      - host
-      - type
-      properties:
-        index:
-          type: integer
-          format: int32
-        host:
-          $ref: '#/components/schemas/MeetingLocationHost'
-        type:
-          type: string
-          const: TeamsMeetingLink
-    WorkspaceId:
-      title: WorkspaceId
+    UserId:
+      title: UserId
       examples:
-      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
       type: string
       pattern: '[^\s\\/]+'
-    MeetingTypeId:
-      title: MeetingTypeId
-      examples:
-      - 4a8f2b3c-7d1e-4f9b-8a2c-3d5e6f789012
-      type: string
-      format: uuid
-    ReminderTrigger:
-      title: ReminderTrigger
-      type: object
-      required:
-      - kind
-      properties:
-        kind:
-          $ref: '#/components/schemas/ReminderTriggerKind'
-        offset:
-          type: string
-    MeetingLocation_GongLink:
-      title: MeetingLocation_GongLink
-      type: object
-      required:
-      - index
-      - host
-      - type
-      properties:
-        index:
-          type: integer
-          format: int32
-        host:
-          $ref: '#/components/schemas/MeetingLocationHost'
-        type:
-          type: string
-          const: GongLink
-    ReminderTriggerKind:
-      title: ReminderTriggerKind
-      type: string
-      enum:
-      - BeforeMeeting
-      - BeforeMeetingNoResponse
-      - MeetingBooked
-      - AfterMeeting
-    CallerRef:
-      title: CallerRef
-      description: stringified caller reference in format $type/$id
-      examples:
-      - user/17a3d4563d5a67a3d456ad635
-      type: string
     MeetingType:
       title: MeetingType
       type: object
@@ -1349,19 +1757,29 @@ components:
       properties:
         id:
           $ref: '#/components/schemas/MeetingTypeId'
+          description: Unique meeting-type identifier.
         workspaceId:
           $ref: '#/components/schemas/WorkspaceId'
+          description: Workspace the meeting type belongs to.
         name:
+          description: Internal meeting-type name; not shown to guests on the invite.
           type: string
         description:
+          description: Internal description; not shown to guests (see inviteDescription).
           type: string
         inviteTitle:
+          description: Calendar-invite subject shown to the guest; supports {!CP.Object.Field} merge tags.
           type: string
         inviteDescription:
+          description: Calendar-invite body shown to the guest; supports {!CP.Object.Field} merge tags.
           type: string
         status:
           $ref: '#/components/schemas/MeetingTypeStatus'
+        isActive:
+          description: Convenience flag; true iff status is Active.
+          type: boolean
         duration:
+          description: Meeting length.
           type: string
         location:
           $ref: '#/components/schemas/MeetingLocations'
@@ -1372,49 +1790,83 @@ components:
         sharedWith:
           $ref: '#/components/schemas/SharedWith'
         reminders:
+          description: Reminders attached to the meeting type; null on the list path (ids only, not fetched).
           type: array
           items:
             $ref: '#/components/schemas/Reminder'
-    MeetingTypeUpdate:
-      title: MeetingTypeUpdate
+    MeetingTypeCreate:
+      title: MeetingTypeCreate
       type: object
+      required:
+      - workspaceId
+      - name
+      - duration
       properties:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+          description: Workspace to create the meeting type in.
         name:
-          type: string
-        description:
-          type: string
-        inviteTitle:
-          type: string
-        inviteDescription:
+          description: Internal meeting-type name.
           type: string
         duration:
+          description: Meeting length.
           type: string
-        status:
-          $ref: '#/components/schemas/MeetingTypeStatus'
+        description:
+          description: Internal description; a product default is used when omitted.
+          type: string
+        inviteTitle:
+          description: Calendar-invite subject; defaults to the name when omitted.
+          type: string
+        inviteDescription:
+          description: Calendar-invite body; supports {!CP.Object.Field} merge tags.
+          type: string
         location:
           $ref: '#/components/schemas/MeetingLocations'
-        buffers:
-          $ref: '#/components/schemas/MeetingBuffers'
-        meetingLimit:
-          $ref: '#/components/schemas/MeetingBookingLimit'
         sharedWith:
           $ref: '#/components/schemas/SharedWith'
-    SharedWith:
-      title: SharedWith
-      oneOf:
-      - $ref: '#/components/schemas/SharedWith_Teams'
-      - $ref: '#/components/schemas/SharedWith_Workspace'
-      discriminator:
-        propertyName: type
-        mapping:
-          Teams: '#/components/schemas/SharedWith_Teams'
-          Workspace: '#/components/schemas/SharedWith_Workspace'
-    ReminderChannel:
-      title: ReminderChannel
-      type: string
-      enum:
-      - Email
-      - Sms
+        idempotencyKey:
+          description: 'Caller-generated UUID that makes create idempotent: a retry with the same key
+            returns the already-created meeting type instead of duplicating it; reusing it with a different
+            payload fails with 409.'
+          type: string
+          format: uuid
+    SharedWith_Teams:
+      title: SharedWith_Teams
+      type: object
+      required:
+      - type
+      properties:
+        teamIds:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        type:
+          type: string
+          const: Teams
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+      properties: {}
+    MeetingLocation_GongLink:
+      title: MeetingLocation_GongLink
+      type: object
+      required:
+      - index
+      - host
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        host:
+          $ref: '#/components/schemas/MeetingLocationHost'
+        type:
+          type: string
+          const: GongLink
     SimpleMetadata:
       title: SimpleMetadata
       type: object
@@ -1438,6 +1890,48 @@ components:
         revision:
           type: integer
           format: int32
+    MeetingLocation_ZoomOneTimeLink:
+      title: MeetingLocation_ZoomOneTimeLink
+      type: object
+      required:
+      - index
+      - host
+      - type
+      properties:
+        index:
+          type: integer
+          format: int32
+        host:
+          $ref: '#/components/schemas/MeetingLocationHost'
+        type:
+          type: string
+          const: ZoomOneTimeLink
+    MeetingBookingLimit:
+      title: MeetingBookingLimit
+      type: object
+      required:
+      - limitBy
+      - timeframe
+      - count
+      properties:
+        limitBy:
+          $ref: '#/components/schemas/MeetingBookingLimitBy'
+        timeframe:
+          $ref: '#/components/schemas/MeetingBookingLimitTimeframe'
+        count:
+          description: Maximum bookings a single person (per the limitBy scope) may make within each timeframe
+            window.
+          type: integer
+          format: int32
+    SharedWith_Workspace:
+      title: SharedWith_Workspace
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Workspace
     Reminder:
       title: Reminder
       type: object
@@ -1450,49 +1944,72 @@ components:
       - body
       properties:
         id:
+          description: Server-assigned reminder identifier.
           type: string
           pattern: '[^\s\\/]+'
         workspaceId:
           $ref: '#/components/schemas/WorkspaceId'
+          description: Workspace the reminder lives in; required to update or delete it.
         channel:
           $ref: '#/components/schemas/ReminderChannel'
         trigger:
           $ref: '#/components/schemas/ReminderTrigger'
         name:
+          description: Internal reminder name; not shown to recipients.
           type: string
         title:
+          description: Optional subject line (used by the email channel).
           type: string
         body:
+          description: Reminder message content delivered to the recipient.
           type: string
-    SharedWith_Teams:
-      title: SharedWith_Teams
+        sendTo:
+          $ref: '#/components/schemas/ReminderSendTo'
+        sendFrom:
+          $ref: '#/components/schemas/ReminderSendFrom'
+        smsSendFrom:
+          $ref: '#/components/schemas/ReminderSmsSendFrom'
+    ReminderChannel:
+      title: ReminderChannel
+      type: string
+      enum:
+      - Email
+      - Sms
+    PaginatedResult_PersonalMeetingType:
+      title: PaginatedResult_PersonalMeetingType
       type: object
       required:
-      - type
+      - total
+      - page
+      - pageSize
       properties:
-        teamIds:
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        type:
-          type: string
-          const: Teams
-    MeetingLocations:
-      title: MeetingLocations
-      type: object
-      required:
-      - default
-      properties:
-        default:
-          $ref: '#/components/schemas/MeetingLocation'
-        others:
+        results:
           type: array
           items:
-            $ref: '#/components/schemas/MeetingLocation'
-    MeetingLocation_GoToMeetingLink:
-      title: MeetingLocation_GoToMeetingLink
+            $ref: '#/components/schemas/PersonalMeetingType'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    SharedWith:
+      title: SharedWith
+      oneOf:
+      - $ref: '#/components/schemas/SharedWith_Teams'
+      - $ref: '#/components/schemas/SharedWith_Workspace'
+      discriminator:
+        propertyName: type
+        mapping:
+          Teams: '#/components/schemas/SharedWith_Teams'
+          Workspace: '#/components/schemas/SharedWith_Workspace'
+    MeetingLocation_TeamsMeetingLink:
+      title: MeetingLocation_TeamsMeetingLink
       type: object
       required:
       - index
@@ -1506,90 +2023,76 @@ components:
           $ref: '#/components/schemas/MeetingLocationHost'
         type:
           type: string
-          const: GoToMeetingLink
-    MeetingLocation_HostsDefaultPhysicalLocation:
-      title: MeetingLocation_HostsDefaultPhysicalLocation
+          const: TeamsMeetingLink
+    PersonalMeetingType:
+      title: PersonalMeetingType
       type: object
       required:
-      - index
-      - host
-      - type
-      properties:
-        index:
-          type: integer
-          format: int32
-        host:
-          $ref: '#/components/schemas/MeetingLocationHost'
-        type:
-          type: string
-          const: HostsDefaultPhysicalLocation
-    MeetingLocation_AskTheGuest:
-      title: MeetingLocation_AskTheGuest
-      type: object
-      required:
-      - index
-      - type
-      properties:
-        index:
-          type: integer
-          format: int32
-        type:
-          type: string
-          const: AskTheGuest
-    MeetingLocation_DefinedInMeetingType:
-      title: MeetingLocation_DefinedInMeetingType
-      type: object
-      required:
-      - index
-      - type
-      properties:
-        index:
-          type: integer
-          format: int32
-        value:
-          type: string
-          minLength: 1
-        type:
-          type: string
-          const: DefinedInMeetingType
-    SharedWith_Workspace:
-      title: SharedWith_Workspace
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: Workspace
-    MeetingTypeCreate:
-      title: MeetingTypeCreate
-      type: object
-      required:
+      - id
       - workspaceId
       - name
+      - slug
+      - inviteTitle
+      - inviteDescription
+      - status
       - duration
+      - location
+      - buffers
+      - syncToCrm
       properties:
+        id:
+          $ref: '#/components/schemas/MeetingTypeId'
+          description: Unique meeting-type identifier.
         workspaceId:
           $ref: '#/components/schemas/WorkspaceId'
+          description: The owner's personal workspace the meeting type belongs to.
         name:
+          description: Internal meeting-type name; not shown to guests on the invite.
           type: string
-        duration:
+        slug:
+          description: URL slug of the personal booking page.
           type: string
         description:
+          description: Internal description; not shown to guests (see inviteDescription).
           type: string
         inviteTitle:
+          description: Calendar-invite subject shown to the guest; supports {!CP.Object.Field} merge tags.
           type: string
         inviteDescription:
+          description: Calendar-invite body shown to the guest; supports {!CP.Object.Field} merge tags.
+          type: string
+        status:
+          $ref: '#/components/schemas/MeetingTypeStatus'
+        isActive:
+          description: Convenience flag; true iff status is Active.
+          type: boolean
+        duration:
+          description: Meeting length.
           type: string
         location:
           $ref: '#/components/schemas/MeetingLocations'
-        sharedWith:
-          $ref: '#/components/schemas/SharedWith'
-    MeetingBuffers:
-      title: MeetingBuffers
+        buffers:
+          $ref: '#/components/schemas/MeetingBuffers'
+        meetingLimit:
+          $ref: '#/components/schemas/MeetingBookingLimit'
+        syncToCrm:
+          description: Whether bookings on this personal meeting type are synced to the CRM.
+          type: boolean
+        reminders:
+          description: Reminders attached to the meeting type; null on the list path (ids only, not fetched).
+          type: array
+          items:
+            $ref: '#/components/schemas/Reminder'
+    MeetingLocation_CalendarPlatformConference:
+      title: MeetingLocation_CalendarPlatformConference
       type: object
+      required:
+      - index
+      - type
       properties:
-        before:
+        index:
+          type: integer
+          format: int32
+        type:
           type: string
-        after:
-          type: string
+          const: CalendarPlatformConference

@@ -1,7 +1,7 @@
 ---
 name: user-details
 description: Pulls a full profile for any Chili Piper user — teams, workspaces, meeting types, scheduling links, and recent meeting activity — for onboarding audits, offboarding checks, and rep-level troubleshooting
-version: 0.1.7
+version: 0.1.8
 references:
   - api-reference
   - output-format
