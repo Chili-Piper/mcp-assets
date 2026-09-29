@@ -122,7 +122,7 @@ Every skill carries a QA maturity level (tracked in [`../docs/QA.md`](../docs/QA
 
 | Skill | What it does | Maturity |
 |-------|-------------|:--------:|
-| [chiliforms-configuration](chiliforms-configuration/SKILL.md) | Builds a ChiliForms embed (a web form generated from a Concierge router) for customers without their own form, as a ready-to-paste snippet with troubleshooting. Existing forms are pointed to the Concierge snippet | `draft` |
+| [chiliforms-configuration](chiliforms-configuration/SKILL.md) | Builds a ChiliForms embed (a web form generated from a Concierge router) for customers without their own form, as a ready-to-paste snippet with troubleshooting. Existing forms are pointed to the Concierge snippet | `tested` |
 
 > ⚠️ `user-copy`, `user-offboarding`, and the configuration-management skills modify Chili Piper data. All default to `dry_run: true` and require explicit human confirmation before any write.
 

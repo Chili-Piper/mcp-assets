@@ -99,36 +99,41 @@ can be derived from the other. Field paths are in `references/api-reference.md` 
 
 ### Step 2 — Resolve and read the router
 
-`concierge-list-routers` (narrow by `workspace` via `workspace-list` if given), then match
-by ID, `slug`, or case-insensitive name substring. List and ask on multiple matches. Then
-call `concierge-router-get`. Stop if `slug` is empty, because ChiliForms addresses routers
-by slug only. Record which trigger views are present and non-empty (`form`, `routerLink`,
-`thirdPartyForm`, `inAppButton`) → `references/api-reference.md` § Trigger views.
+`concierge-list-routers` (pass `workspaceId` via `workspace-list` if given, since the
+whole-org response is large), then match by ID, `slug`, or case-insensitive name substring.
+List and ask on multiple matches. Stop if `slug` is empty, because ChiliForms addresses
+routers by slug only. Take the trigger inventory from that list entry's
+`router.formMapping.get[]`, the **published** config ChiliForms serves. **Don't** use
+`concierge-router-get`'s trigger views for this, because they can show unpublished draft
+state. Call `concierge-router-get` only for `localizations` / `branding.language` →
+`references/api-reference.md` § Trigger inventory.
 
 ### Step 3 — Confirm the router can generate
 
 Generate (and describe) need a field set with labels and required flags, which only a
-**Chili webform** (`form.fields`) or a **router link** (`routerLink.fields`) carries:
+**Chili webform** (`ProcessedChiliFormTrigger`) or a **router link**
+(`ProcessedRouterLinkTrigger`) with a non-empty `mapping` carries:
 
-| Router has | Result |
-|------------|--------|
-| `form.fields` or `routerLink.fields` | **generate** works (webform first, then router link) |
-| only `thirdPartyForm` | Can't generate. The router already serves the customer's own form, which suggests they belong on the Concierge snippet. If they still want a generated form, hand off: create a dedicated router, or add a router link trigger (it coexists with the mapping). **Never convert the existing mapping to a webform**, because `form` and `thirdPartyForm` are mutually exclusive and converting breaks the form the router already serves |
-| only `inAppButton`, or nothing | Can't generate. Hand off: add a Chili webform or router link |
+| Published triggers | Result |
+|--------------------|--------|
+| ChiliForm or RouterLink | **generate** works (webform first, then router link) |
+| only ThirdPartyForm | Can't generate. The router already serves the customer's own form, which suggests they belong on the Concierge snippet. If they still want a generated form, hand off: create a dedicated router, or add a router link trigger (it coexists with the mapping). **Never convert the existing mapping to a webform**, because `form` and `thirdPartyForm` are mutually exclusive and converting breaks the form the router already serves |
+| only InAppButton, or nothing | Can't generate. Hand off: add a Chili webform or router link |
 
-Rules and edge cases → `references/api-reference.md` § Trigger views. For an explicit
-attach request, the router needs `thirdPartyForm.fields` instead.
+Also check `router.acceptsRouting`: when it's `false`, warn that the form renders but won't
+route. Rules and edge cases → `references/api-reference.md` § Trigger inventory. For an
+explicit attach request, the router needs a ThirdPartyForm trigger instead.
 
 ### Step 4 — Build the field report
 
-Call `data-field-list` once and join it to the trigger's fields by `reference`. For each
+Call `data-field-list` once (results under `items`) and join it to the trigger's `mapping[].dataField` by `reference`. For each
 field, list its label, control type (from `dataType.type`), required flag, any `hidden`
 value it's pinned to, and any `smartParameters` that prefill it from the URL. Flag
 references missing from the catalogue (they render as plain text inputs) and choice fields
 with no values. Type → control map → `references/embed-reference.md` § Field types.
 
 **Explicit attach requests only:** instead, match every control `name` in `form_html` to
-`thirdPartyForm.fields[].formFieldName` (the match is exact and case-sensitive), and report
+the ThirdPartyForm trigger's `mapping[].name` (the match is exact and case-sensitive), and report
 mapped, unmapped, and mapping-without-control entries → `references/embed-reference.md`
 § Attach mode (explicit request only).
 
@@ -157,10 +162,10 @@ Before presenting output, verify each item:
 - [ ] `domain` and `tenantId` both came from `tenant-get`, not guessed or taken from the customer's website domain.
 - [ ] `router` in the snippet is the router's `slug` from `concierge-router-get`, not its display name.
 - [ ] A customer with their own form was pointed to the Concierge snippet, not given a ChiliForms `attach` config (unless they explicitly asked for attach).
-- [ ] The field set comes from a non-empty `form` or `routerLink` view (Step 3 table), and no handoff proposes converting an existing third-party mapping.
+- [ ] The field set comes from a non-empty ChiliForm or RouterLink entry in the list tool's published `formMapping` (Step 3 table), not from `concierge-router-get`, and no handoff proposes converting an existing third-party mapping.
 - [ ] The Concierge snippet (`concierge.js`) is included **before** `chiliforms.js`.
 - [ ] Every `overrides` key is a data field reference that appears in the field report.
-- [ ] *(explicit attach only)* Every `thirdPartyForm` entry was checked against `form_html`, the email field is matched, and the form `id` in the snippet exists in the markup.
+- [ ] *(explicit attach only)* Every ThirdPartyForm mapping entry was checked against `form_html`, the email field is matched, and the form `id` in the snippet exists in the markup.
 - [ ] `locale`, if set, is a key in the router's `localizations` (or explicitly flagged as falling back to default labels).
 - [ ] No API key, token or guest data appears anywhere in the snippet.
 

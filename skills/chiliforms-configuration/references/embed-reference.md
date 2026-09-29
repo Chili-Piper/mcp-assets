@@ -128,7 +128,7 @@ migrate a legacy `chiliforms-fire.js` integration. Otherwise use § Customer alr
 
 
 - A `<form id="...">` in the page, and a submit button (`button[type=submit]` or `input[type=submit]`). ChiliForms intercepts `submit` and calls `preventDefault()`, so the form's own `action` doesn't run.
-- Each control's `name` must equal a `thirdPartyForm.fields[].formFieldName` to be routed on. Controls with no mapping entry are still submitted, but Concierge can't route on them.
+- Each control's `name` must equal a ThirdPartyForm trigger `mapping[].name` (`concierge-list-routers` → `formMapping`) to be routed on. Controls with no mapping entry are still submitted, but Concierge can't route on them.
 - The email mapping must be present **and** matched by a control.
 - **Reserved names:** a control whose `name` is also an HTML form property (e.g. `id`, `name`, `action`, `method`, `target`, `elements`, `submit`, `reset`, `length`, `title`, `hidden`, `lang`, `dir`) shadows that property and can break submission. Rename the control. `overrides.exclude` doesn't fix this.
 - If the router config can't load, the form still submits with native browser validation. It degrades to the legacy behaviour and doesn't break the page.

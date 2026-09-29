@@ -36,7 +36,7 @@ _Last updated: 2026-07-02. Backfilled the missing `distro-debugger` row (shipped
 | distribution-analysis | 0.1.0 | ✅ | ✅ built | ✅ pass | `verified` | distribution-list-put array (weights/userStates/handling) + meeting attribution confirmed |
 | distro-debugger | 0.3.1 | ✅ | ⏳ pending | ⏳ pending | `draft` | Shipped in #35 without a QA log entry — static review + live run needed to promote |
 | chat-conversation-inspector | 0.1.0 | ✅ | ⏳ pending | ⏳ pending | `draft` | New (issue #41) — field names taken from the live Edge spec 2026-07-02; needs a real read-only call + live run |
-| chiliforms-configuration | 0.1.0 | ✅ | ✅ author | ⏳ pending | `draft` | New. tenant-get / concierge-router-get trigger views / data-field-list field names taken from the live Edge spec v1.495.0 (2026-09-29); ChiliForms runtime contract checked against Chili-Piper/frontend apps/chiliforms 2.1.0 (live on fire.chilipiper.com). Needs a real read-only MCP call + live run |
+| chiliforms-configuration | 0.1.0 | ✅ | ✅ fixed | ✅ pass | `tested` | Static review + read-only run on an internal test tenant 2026-09-29 (see log). Fixed: triggers now read from `concierge-list-routers` `formMapping` (published), not `concierge-router-get` (can show draft). Generated snippets rendered in a browser for a webform router and a router-link router. Submit-to-calendar step not yet run, so not yet `verified` |
 | user-copy | 0.1.3 | ⚠️ writes | ✅ fixed | n/a | `tested` | `.id` joins corrected; dry-run/approval gates present ✅ (write skill — not live-run) |
 | user-offboarding | 0.1.4 | ⚠️ writes | ✅ fixed | n/a | `tested` | `team-list-put` `id`; `distribution-list-put` `workspaceIds[]` + weights/userStates; approval/destructive gates present ✅ (write skill — not live-run) |
 | meeting-type-management | 0.1.0 | ⚠️ writes | ⏳ pending | n/a | `draft` | New (issue #34) — schema from live Edge spec 2026-07-02; dry-run/approval gates present; needs static review via real read-only calls |
@@ -52,6 +52,25 @@ _Last updated: 2026-07-02. Backfilled the missing `distro-debugger` row (shipped
 > `tenant-meetings` was **not** added — `org-meeting` already covers tenant/org meeting volume via the public MCP, and the earlier internal version was internal-only.
 
 ## Verification log
+
+**2026-09-29: chiliforms-configuration, static review + read-only run (internal test tenant).** Called
+`tenant-get`, `concierge-list-routers`, `concierge-router-get` and `data-field-list` against the live MCP,
+then pasted the snippets the skill would produce into a localhost page and loaded ChiliForms 2.1.0 from
+`fire.chilipiper.com`. Findings, all fixed in the skill and GPT:
+- **Correctness bug:** `concierge-router-get`'s trigger views don't always match what ChiliForms serves. On a
+  webform router it returned an empty `form` plus a 2-field `thirdPartyForm`, while the published guest config,
+  the list tool's `router.formMapping`, and the rendered form all had a 3-field ChiliForm. The skill would have
+  wrongly declared the router un-generatable. It now takes the trigger inventory from `concierge-list-routers`
+  → `router.formMapping.get[]` and uses `router-get` only for localizations/branding.
+- `tenant-get` returns top-level `type` (spec: `tenantType`). `tenantData.subdomain` can be a shared host
+  (`calendar`), which is a registered subdomain and renders fine, so it's used as-is.
+- `data-field-list` wraps results in `{items: [...]}` (spec: bare array).
+- The whole-org `concierge-list-routers` response is ~350 KB (69 routers), so the skill now passes `workspaceId` when known.
+- Render checks passed: a router-link router (7 fields) and a webform router (3 fields) rendered with the labels,
+  required flags, control types and dropdown choices the field report predicted. URL prefill worked via
+  `smartParameters` aliases, including a `+` in the email. Empty submit showed the router's required-field
+  messages. No `ChiliForms:` errors.
+- Not yet run: a real submission opening the booking calendar (it writes a routing log in the tenant).
 
 **2026-05-29 — read-only live run (connected test tenant), 9/9 PASS.** Window 2026-05-22→05-28. Exercised each skill's core MCP calls; all corrected response shapes held. Highlights:
 - `meeting-export-v2-put` CSV header confirmed; the new columns are **`Meeting ID`** and **`Booked At`** (DISTRO-4483) — title-case with spaces, not `meetingId`/`bookedAt`. Skills updated to the exact header names.
