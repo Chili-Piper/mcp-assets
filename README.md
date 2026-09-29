@@ -38,6 +38,7 @@ Every skill is built on **[progressive disclosure](docs/methodology.md)** (Anthr
 | [availability-inspector](skills/availability-inspector/) | Diagnose why a rep or team shows no available slots | ✅ |
 | [concierge-debugger](skills/concierge-debugger/) | Trace why a specific lead didn't book | ✅ |
 | [concierge-router-builder](skills/concierge-router-builder/) | Build a complete Concierge web-form router through a guided discovery and confirmation workflow | ⚠️ writes |
+| [onboarding-chili-piper](skills/onboarding-chili-piper/) | Guided self-serve onboarding: reads the account, interviews the customer, agrees a plan, then builds the routing and scheduling baseline across products | ⚠️ writes |
 | [distro-debugger](skills/distro-debugger/) | Debug why a CRM record was (or wasn't) routed through a distribution — rule stage by rule stage | ✅ |
 | [chat-conversation-inspector](skills/chat-conversation-inspector/) | Inspect Chat AI conversation logs — routing outcomes, transcripts, abandonment analysis | ✅ |
 | [org-meeting](skills/org-meeting/) | Org-wide meeting volume and health snapshot | ✅ |

@@ -5,6 +5,13 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Added
+- **`onboarding-chili-piper` skill (new, writes) + `/onboard` command.** Guided self-serve
+  onboarding for a new customer: reads the account (tier, CRM, users, workspace structure),
+  runs a short interview, confirms an Onboarding Plan, then builds shared assets (teams,
+  meeting types and reminders, data fields, rules, distributions) sized for every motion,
+  and stands up each product in turn (Concierge, Chat, Handoff, Distro, ChiliCal),
+  dispatching to the configuration skills where installed. Every write sits behind the
+  plan checkpoint and the client's approval prompt. No paired GPT (listed in `NO_GPT`).
 - **Cursor plugin (`.cursor-plugin/plugin.json` + root `mcp.json`).** Makes this repo
   installable as a first-party [Cursor](https://cursor.com) plugin (also surfaced in the
   Grok bot plugin list), reusing the same `skills/` and `commands/` as the Claude plugin.

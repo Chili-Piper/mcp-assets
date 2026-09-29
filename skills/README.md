@@ -116,6 +116,7 @@ Every skill carries a QA maturity level (tracked in [`../docs/QA.md`](../docs/QA
 | [concierge-router-configuration](concierge-router-configuration/SKILL.md) | Manages Concierge web-form routers — routing, forms, branding; always-live writes (writes/destructive) | `draft` |
 | [scheduling-link-management](scheduling-link-management/SKILL.md) | Manages scheduling links across all four admin types (writes/destructive) | `draft` |
 | [concierge-router-builder](concierge-router-builder/SKILL.md) | Guided end-to-end build of a new Concierge web-form router — teams, meeting types, rules, distributions, and the live router (writes/multi-object) | `draft` |
+| [onboarding-chili-piper](onboarding-chili-piper/SKILL.md) | Guided self-serve onboarding, account baseline, interview, confirmed plan, then shared assets and each product built in turn; dispatches to the skills above (writes/multi-object) | `draft` |
 
 > ⚠️ `user-copy`, `user-offboarding`, and the configuration-management skills modify Chili Piper data. All default to `dry_run: true` and require explicit human confirmation before any write.
 
