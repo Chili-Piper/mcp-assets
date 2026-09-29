@@ -9,8 +9,11 @@ that blocks it, then how to test it. Keep examples synthetic.
 
 ### ChiliForms setup | `<router name>` (`<slug>`) | `<generate|describe>` mode
 
-**Why this router works:** one sentence tied to the trigger inventory, e.g. *"This router has a Chili
-webform with 5 fields, so ChiliForms can build the form for you."*
+**Why this router works:** one sentence tied to the trigger inventory, e.g. *"This router has a Router
+Link with 5 fields, so ChiliForms can build the form for you."*
+
+**Booking opens as:** *modal* (a ThirdPartyForm mapping covers every field) or *full page* (only
+the Router Link covers them), with one line on how to get a modal if the customer wants one.
 
 **Snippet**: paste where the form should appear. Generate mode: put the host element where
 the form should render.
@@ -58,8 +61,12 @@ If the page already loads `concierge.js`, say so and tell the customer not to ad
 **Blocking gaps**: omit the section when there are none. Each one names the fix and who
 applies it:
 
-> ⛔ **This router can't generate a form.** It has no Chili webform or router link. Add a
-> Chili webform → `/configure-concierge-router <workspace> update <router>`. If the router
+> ⛔ **This router can't generate a form.** It has no Chili webform or Router Link. Add a
+> Router Link → `/configure-concierge-router <workspace> update <router>`.
+
+> ⛔ **This form couldn't be submitted.** The router has a Chili webform, but no Router Link or
+> third-party mapping that Concierge can route it through. Add a Router Link with the same fields
+> (`PersonEmail`, `PersonFirstName`, …) → `/configure-concierge-router`. If the router
 > already serves a form through a third-party mapping, use a dedicated router instead,
 > because converting it would break that form.
 
@@ -74,8 +81,8 @@ published-vs-draft note if the router was edited recently.
 **Test it**
 
 1. Put the snippet on a staging page. Temporarily add `debug: true` to the config.
-2. Open the browser console. Expect `ChiliForms:` log lines and no errors, and `ChiliPiper.ChiliFormVersion` should read `2.x`.
-3. Submit with a test email and confirm the booking calendar opens.
+2. Open the browser console. Expect `ChiliForms:` log lines and no errors, and `ChiliPiper.ChiliFormVersion` should read `2.1.1` or later.
+3. Submit with a test email and confirm the booking calendar opens the predicted way (modal or full page).
 4. Remove `debug: true` before publishing. If anything fails, paste the console lines back here.
 
 **Human decision point**

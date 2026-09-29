@@ -1,6 +1,6 @@
 # Embed reference: ChiliForms runtime
 
-The public contract of `chiliforms.js` (ChiliForms 2.1.0). Source: `Chili-Piper/frontend`
+The public contract of `chiliforms.js` (ChiliForms 2.1.1). Source: `Chili-Piper/frontend`
 `apps/chiliforms`.
 
 ## Contents
@@ -51,7 +51,7 @@ with a `ChiliForms:` prefix and passed to `onError`.
 | `enhance` | boolean | `false` | Attach: apply router required flags, placeholders and email/tel/number input types to existing controls |
 | `recaptcha` | string | — | reCAPTCHA **v2** site key. The page must load `https://www.google.com/recaptcha/api.js` itself |
 | `post` | string (URL) | — | Also POST the lead there as `multipart/form-data`, fire-and-forget |
-| `options` | object | — | Merged into the `ChiliPiper.submit` call: `lead` (extra/pinned values, which win over form values), `trigger`, and any other Concierge options (e.g. `onSuccess`) |
+| `options` | object | — | Merged into the `ChiliPiper.submit` call: `lead` (extra/pinned values, which win over form values), `trigger` (pins the submit trigger, see Generate mode behaviour), and any other Concierge options (e.g. `onSuccess`) |
 | `debug` | boolean | `false` | Log every API call and the resolved schema |
 | `onReady(schema, form)` / `onSubmit()` / `onSubmitted(lead)` / `onError(err)` | functions | — | Lifecycle callbacks |
 
@@ -99,7 +99,7 @@ legacy scripts used, so existing CSS keeps working.
 ## Generate mode behaviour
 
 - Controls are named by data field reference (e.g. `PersonEmail`), which is what the lead is keyed by.
-- It submits to Concierge as a `ThirdPartyForm` whatever trigger the fields came from, so the booking calendar opens as a **modal** over the page. `options.trigger` overrides this, e.g. `'RouterLink'` opens the full-page booking instead.
+- It submits under the first trigger whose mapping covers every field: a ThirdPartyForm mapping opens the booking calendar as a **modal**, and failing that a RouterLink opens **full-page** booking. If neither covers every field it refuses to render. `options.trigger` pins the choice, and a trigger that doesn't cover the fields fails at submit. Rules are in `api-reference.md` § Submit trigger.
 - Values in `options.lead` are applied to matching controls and always win at submit.
 - An inactive router (not accepting routing) still renders, but submissions won't route. A console warning says so.
 

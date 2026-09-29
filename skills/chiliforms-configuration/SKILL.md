@@ -35,7 +35,7 @@ outputs:
   - name: field_report
     description: What the form will collect (label, type, required, hidden value, URL prefill aliases), plus any blocking gaps
   - name: handoffs
-    description: Router changes the embed needs but this skill does not make (no Chili webform or router link, unknown data field), each routed to concierge-router-configuration
+    description: Router changes the embed needs but this skill does not make (no Router Link or trigger that can submit the form, unknown data field), each routed to concierge-router-configuration
 tools_required: [chili-piper-mcp]
 human_decision_point: "Present the snippet, field report and any blocking gaps. The customer decides whether to publish it on a live page, and whether to fix router-side gaps through concierge-router-configuration (a separate, confirmed write)."
 writes_to: "Nothing, read-only. Router changes are handed off to concierge-router-configuration."
@@ -116,13 +116,21 @@ Generate (and describe) need a field set with labels and required flags, which o
 
 | Published triggers | Result |
 |--------------------|--------|
-| ChiliForm or RouterLink | **generate** works (webform first, then router link) |
+| ChiliForm or RouterLink | The form can be **built** (webform first, then router link). Now check it can be **submitted** (below) |
 | only ThirdPartyForm | Can't generate. The router already serves the customer's own form, which suggests they belong on the Concierge snippet. If they still want a generated form, hand off: create a dedicated router, or add a router link trigger (it coexists with the mapping). **Never convert the existing mapping to a webform**, because `form` and `thirdPartyForm` are mutually exclusive and converting breaks the form the router already serves |
-| only InAppButton, or nothing | Can't generate. Hand off: add a Chili webform or router link |
+| only InAppButton, or nothing | Can't generate. Hand off: add a Router Link (a webform alone can't submit a generated form) |
 
-Also check `router.acceptsRouting`: when it's `false`, warn that the form renders but won't
-route. Rules and edge cases → `references/api-reference.md` § Trigger inventory. For an
-explicit attach request, the router needs a ThirdPartyForm trigger instead.
+**Then predict how it submits.** Concierge turns the lead into data fields through the
+trigger it's submitted under, so ChiliForms picks the first one whose mapping covers
+**every** field in the form:
+- A **ThirdPartyForm** mapping covering them means the booking calendar opens as a **modal**.
+- Otherwise a **RouterLink** covering them means it opens **full-page**.
+- If neither covers them, ChiliForms **refuses to render**. This is typical of a webform-only router. Hand off: add a Router Link with the same fields.
+
+State the predicted booking mode in the output. Coverage rules → `references/api-reference.md`
+§ Submit trigger. Also check `router.acceptsRouting`: when it's `false`, warn that the form
+renders but won't route. For an explicit attach request, the router needs a ThirdPartyForm
+trigger instead.
 
 ### Step 4 — Build the field report
 
@@ -151,8 +159,8 @@ collect can't be added through overrides. That's a router change (handoff).
 ### Step 6 — Output
 
 Produce the snippet, the field report, blocking gaps and test steps, in that order. Exact
-layout → `references/output-format.md`. Any router-side gap (no Chili webform or router
-link, a field that should be added or made required for every channel, unknown data field)
+layout → `references/output-format.md`. Any router-side gap (no Router Link or trigger that
+can submit the form, a field that should be added or made required for every channel, unknown data field)
 becomes a handoff to `concierge-router-configuration` with the exact change it needs.
 
 ## Preflight audit
@@ -163,6 +171,7 @@ Before presenting output, verify each item:
 - [ ] `router` in the snippet is the router's `slug` from `concierge-router-get`, not its display name.
 - [ ] A customer with their own form was pointed to the Concierge snippet, not given a ChiliForms `attach` config (unless they explicitly asked for attach).
 - [ ] The field set comes from a non-empty ChiliForm or RouterLink entry in the list tool's published `formMapping` (Step 3 table), not from `concierge-router-get`, and no handoff proposes converting an existing third-party mapping.
+- [ ] A submit trigger covers every field (Step 3), and the output states whether booking opens as a modal or full-page. If none covers them, there's a handoff instead of a snippet.
 - [ ] The Concierge snippet (`concierge.js`) is included **before** `chiliforms.js`.
 - [ ] Every `overrides` key is a data field reference that appears in the field report.
 - [ ] *(explicit attach only)* Every ThirdPartyForm mapping entry was checked against `form_html`, the email field is matched, and the form `id` in the snippet exists in the markup.

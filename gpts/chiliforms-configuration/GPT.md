@@ -59,7 +59,8 @@ mapping of their field names, which the Concierge Router Configuration GPT can a
 
 1. **Tenant:** `tenantGet` → `domain` + `tenantId`. Put both in the snippet.
 2. **Router:** find it in `conciergeListRouters` by ID, slug, or name substring (ask on multiple matches). Stop if `slug` is empty, because ChiliForms addresses routers by slug. Read the triggers from that entry's `router.formMapping`, and warn if `acceptsRouting` is `false`.
-3. **Can it generate?** Only a ChiliForm or RouterLink trigger with a non-empty `mapping` carries labels and required flags, and ChiliForms tries them in that order. If the router has only a ThirdPartyForm trigger, it already serves a customer-owned form, so point them to the Concierge snippet. If they still want a generated form, suggest a dedicated router or adding a router link. **Never** convert the mapping to a webform, because `form` and `thirdPartyForm` are mutually exclusive and converting breaks their existing form. If the router has only `inAppButton` or nothing, hand off: add a Chili webform.
+3. **Can it generate?** Only a ChiliForm or RouterLink trigger with a non-empty `mapping` carries labels and required flags, and ChiliForms tries them in that order. If the router has only a ThirdPartyForm trigger, it already serves a customer-owned form, so point them to the Concierge snippet. If they still want a generated form, suggest a dedicated router or adding a router link. **Never** convert the mapping to a webform, because `form` and `thirdPartyForm` are mutually exclusive and converting breaks their existing form. If the router has only `inAppButton` or nothing, hand off: add a Router Link.
+3b. **Can it submit?** Concierge routes a generated form only through a trigger whose mapping covers **every** field (matched case-insensitively against the form's data field references). A ThirdPartyForm mapping whose `name` or `dataFieldRef` covers every field means booking opens as a **modal**. Otherwise a RouterLink whose `dataField`s cover them means **full-page** booking. If neither covers them, ChiliForms 2.1.1+ refuses to render, which is typical of a webform-only router, so hand off: add a Router Link with the same fields. A ChiliForm trigger is never a submit trigger. `overrides.exclude` removes a field from the check. State the predicted booking mode in the output, and don't pin `options.trigger` unless asked, because a non-covering trigger fails with `NonEmptyMap … 'fields'`.
 4. **Field report:** join the trigger's `mapping[].dataField` to `dataFieldList` `items` by `reference`. List label, control type, required, the pinned `hidden` value, and prefill aliases. Flag references missing from the catalogue (they render as text inputs) and choice fields with no values.
 5. **Options:** relabel/require/hide/exclude/choices go in `overrides`, keyed by data field reference, never invented. A field the router doesn't collect is a router change. Language goes in `locale`, which must exist in `localizations`. Captcha goes in `recaptcha`: a v2 site key, and the page must load Google's `api.js`. Also available: `selector`, `submitLabel`, `injectStyles`, `options` (merged into `ChiliPiper.submit`: `lead`, `onSuccess`), `post` (lead mirror URL), `onReady` / `onSubmitted` / `onError`, `prefillFromQuery`, and `multiValueSeparator` (default `;`).
 6. **Output:** in order, the snippet, the field table, blocking gaps with the exact router fix, warnings, then test steps.
@@ -73,19 +74,21 @@ Snippet shape: `concierge.js` **before** `chiliforms.js`, then
 ```
 
 Test steps: add `debug: true` on a staging page and check the console for `ChiliForms:`
-lines. `ChiliPiper.ChiliFormVersion` should read `2.x`. Submit with a test email and confirm
-the calendar opens as a modal. Remove `debug` before publishing.
+lines. `ChiliPiper.ChiliFormVersion` should read `2.1.1` or later. Submit with a test email and
+confirm the calendar opens the predicted way (modal or full page). Remove `debug` before publishing.
 
 ## Troubleshooting
 
 - *No tenant registered for the subdomain*: wrong `domain`. Use `tenantData.subdomain`.
 - *Not a valid router slug* / HTTP 404: the display name was used, or the router was renamed. Re-read `slug`.
-- *No usable trigger (looked for ChiliForm, RouterLink)*: the router has no Chili webform or router link, so hand off.
+- *No usable trigger (looked for ChiliForm, RouterLink)*: the router has no Chili webform or router link, so hand off: add a Router Link.
+- *No ThirdPartyForm or RouterLink trigger covering every field*: no trigger can submit the form (typical of webform-only routers). Hand off: add a Router Link with the listed fields.
+- *`NonEmptyMap … 'fields'` on submit*: `options.trigger` is pinned to a trigger that maps none of the fields, or the page runs ChiliForms older than 2.1.1.
 - *Selector matched nothing*: the form was appended to `<body>`. Fix `selector`.
 - *`ChiliPiper.submit` is unavailable*: `concierge.js` is missing or blocked. Check consent managers (categorise both scripts as functional) and CSP (`script-src fire.chilipiper.com`, `frame-src calendar.chilipiper.com` and `*.chilipiper.com`).
 - *grecaptcha never became ready*: Google's `api.js` is missing, and the form submits without a captcha until it's added.
 - Stale fields: ChiliForms serves the **published** router, so publish the draft in Concierge.
-- Calendar opens full-page instead of as a modal: remove `options.trigger`.
+- Calendar opens full-page instead of as a modal: no ThirdPartyForm mapping covers every field, so it was submitted as RouterLink (expected). For a modal, hand off a covering ThirdPartyForm mapping (only on a router without a Chili webform) or `exclude` uncovered fields. Also check `options.trigger` isn't pinned to `'RouterLink'`.
 
 ## Checkpoint
 

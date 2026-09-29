@@ -3,7 +3,7 @@
 Field names were verified against the live public Edge API spec (v1.495.0) **and real
 read-only calls on a test tenant** (2026-09-29).
 ChiliForms runtime behaviour was verified against `Chili-Piper/frontend` `apps/chiliforms`
-(ChiliForms 2.1.0, as served from `fire.chilipiper.com/chiliforms/cjs/chiliforms.js`). The
+(ChiliForms 2.1.1, frontend#18596, served from `fire.chilipiper.com/chiliforms/cjs/chiliforms.js`). The
 tools' own text descriptions are unreliable, so treat this file as the source of truth for this skill.
 
 ## Tools
@@ -70,6 +70,24 @@ Rules the skill relies on:
 - `hidden` is a **prefilled value**, not a flag. A field with `hidden: "X"` renders as `<input type="hidden" value="X">`.
 - `trigger` forces a specific trigger (e.g. `'RouterLink'` when a router has both a webform and a link with different field sets). If the router doesn't have that trigger, nothing renders.
 - `concierge-router-get` → `localizations` is `{"<lang-tag>": {"<key>": "<text>"}}` (absent or `null` when unset). Its keys are the locales worth offering, and `branding.language` is the router's default.
+
+## Submit trigger
+
+A generated form is **built** from one trigger (ChiliForm or RouterLink) but **submitted**
+under whichever trigger's mapping lets Concierge turn every field into a data field. That's
+what the booking app routes on (ChiliForms 2.1.1+). The form's field names are data field
+references, and every field left after `overrides.exclude` has to be covered, hidden ones included:
+
+| Order | Trigger | Covers a field when (case-insensitive) | Booking opens |
+|:----:|---------|----------------------------------------|---------------|
+| 1 | ThirdPartyForm | some `mapping[].name` **or** `mapping[].dataFieldRef` equals the field's reference | **modal** over the page |
+| 2 | RouterLink | some `mapping[].dataField` equals the field's reference | **full-page** booking |
+| — | neither covers every field | ChiliForms **refuses to render** (`no ThirdPartyForm or RouterLink trigger covering every field`) | — |
+
+- A **ChiliForm** trigger is never a submit trigger, because Concierge maps nothing through it. A webform-only router therefore can't take a generated form. Hand off: add a Router Link with the same fields (it coexists with the webform).
+- A form built **from** a RouterLink is always covered by that same RouterLink, so it at least opens full-page. For a modal, the router also needs a ThirdPartyForm mapping that covers the same data fields, which is only possible on a router without a Chili webform.
+- Excluding a field with `overrides.exclude` removes it from the coverage check. Offer that when a single stray field is all that blocks the modal.
+- `options.trigger` pins the submit trigger and skips the check. A pinned trigger that doesn't cover the fields sends an empty `fields` map, which Concierge rejects (`NonEmptyMap … 'fields'`). Only pin one when asked, and verify its coverage first.
 
 ## Data fields
 

@@ -14,6 +14,8 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
   for control types and URL-prefill aliases. It returns a ready-to-paste snippet with test
   steps. Customers who already have a form are pointed to the standard Concierge snippet
   (`ChiliPiper.deploy`), and ChiliForms' `attach` mode is used only on explicit request.
+  It also predicts how the form will submit (ChiliForms 2.1.1+, Chili-Piper/frontend#18596): as a modal via a covering
+  ThirdPartyForm mapping, full-page via a Router Link, or refused for webform-only routers, with a handoff.
   Includes a troubleshooting reference keyed on ChiliForms' own console messages.
   Router-side gaps are handed off to `concierge-router-configuration`, since this skill
   never writes.

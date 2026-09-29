@@ -2,8 +2,8 @@
 
 Every ChiliForms console message starts with `ChiliForms:`. Ask the customer to reload with
 `debug: true` added to the config and paste the console lines. Then match them below. Check
-`ChiliPiper.ChiliFormVersion` in the console to confirm which script is live (2.x means the
-new one).
+`ChiliPiper.ChiliFormVersion` in the console to confirm which script is live. 2.x means the
+new one, and generated forms need **2.1.1 or later** to route on every router.
 
 ## Nothing renders
 
@@ -14,10 +14,11 @@ new one).
 | `tenantId "…" was given without a domain` | Only `tenantId` supplied | Add `domain`, which `create()` requires |
 | `"…" is not a valid router slug` | Display name used instead of slug | Use `slug` from `concierge-router-get` |
 | `…/router/<slug> failed with HTTP 404` | Slug wrong, or router renamed (a rename re-derives the slug) | Re-read the slug |
-| `router has no usable trigger (looked for ChiliForm, RouterLink)` | Router has no Chili webform or router link with fields | Hand off: add a Chili webform or router link. If the customer has their own form, they want the Concierge snippet instead |
+| `router has no usable trigger (looked for ChiliForm, RouterLink)` | Router has no Chili webform or router link with fields | Hand off: add a Router Link. If the customer has their own form, they want the Concierge snippet instead |
 | `resolved to the ThirdPartyForm trigger … Nothing is rendered` | `trigger: 'ThirdPartyForm'` forced in generate mode | Remove `trigger` |
 | `router has no "X" trigger configured` | `trigger` option names a kind the router lacks | Remove `trigger` or pick one the router has |
 | `exposes no fields for the … trigger` | Trigger exists but is empty | Hand off: add fields to that trigger |
+| `no ThirdPartyForm or RouterLink trigger covering every field (…)` | No trigger Concierge can route the form through, typical of a webform-only router | Hand off: add a Router Link with the listed fields. A lone extra field can also be dropped with `overrides.exclude` |
 | `no <form> found with id "…"` | `formId` doesn't match, or the script ran before the form existed | Fix the id. For forms injected later (CMS/form builders), call `create()` after the form is in the DOM, e.g. in the builder's ready callback |
 | `selector "…" matched nothing` | Host element missing | The form falls back to `<body>`. Fix the selector |
 | Nothing at all, no `ChiliForms:` lines | Script blocked or never loaded | § Blocked scripts |
@@ -31,6 +32,7 @@ new one).
 | `reCAPTCHA must be completed…` | Guest skipped the captcha | Expected behaviour |
 | `grecaptcha never became ready` | `recaptcha` set but Google's `api.js` not on the page | Add `<script src="https://www.google.com/recaptcha/api.js" async defer>`. Until then the form submits **without** a captcha |
 | `these control names shadow a form property: …` | A control is named `id`, `action`, `name`, … | Rename the control (see embed-reference § Attach mode (explicit request only)) |
+| `Invalid value for: body (NonEmptyMap … at 'fields')` in the network response | Submitted under a trigger that maps none of the fields. Either `options.trigger` is pinned wrong, or the page runs ChiliForms older than 2.1.1 | Remove `options.trigger` (or pin a covering trigger), and check `ChiliFormVersion` |
 | `ignoring "post" option` | `post` isn't a valid absolute URL | Use a full `https://` URL |
 
 ## Renders, but fields are wrong
@@ -44,8 +46,11 @@ new one).
 
 ## Calendar opens full-page instead of as a modal
 
-Generate mode submits as `ThirdPartyForm`, which opens the modal. If `options.trigger` is set
-(e.g. `'RouterLink'`), Concierge opens the full-page booking instead. Remove it.
+The form was submitted as `RouterLink` because no ThirdPartyForm mapping covers every field
+(`api-reference.md` § Submit trigger). That's expected on routers without one. For a
+modal, hand off a ThirdPartyForm mapping covering the same data fields (only possible on a
+router without a Chili webform), or `exclude` the fields it doesn't cover. Also check that
+`options.trigger` isn't pinned to `'RouterLink'`.
 
 ## Blocked scripts
 
