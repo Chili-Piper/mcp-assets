@@ -22,7 +22,7 @@ the Chili Piper MCP tools this skill uses.
 | `team-remove-users` | Remove a user from a team |
 | `team-create` | Create a new team in a workspace → `{id, workspaceId, name, members, metadata}` — accepts `workspaceId` (req), `name` (req), `members` (opt, initial user IDs) |
 | `team-delete` | Permanently delete a team → `{id, workspaceId, name, members, metadata}` — the deleted record; requires `team.remove` permission; fails if active distributions still reference the team; use only when retiring the team itself, not just removing a member |
-| `meeting-cancel` | Cancel a meeting (triggers rebook flow if configured) |
+| `meeting-cancel-post` | Cancel a meeting (triggers rebook flow if configured) |
 | `distribution-list-put` | Distributions — input takes `workspaceIds` (array) + optional `name`, `assignmentType`. Returns `{results: [...], total, page, pageSize}`; iterate `results` to reach each distribution. Members in `published.weights[]` (`{userId, weight}`) and `state.userStates[]` (`{userId, type: "Active"\|"Capped"\|"Disabled"\|"Removed"\|"NoLicense", statistics: {assigned, cancelled, noShow, reassignedToThis, reassignedFromThis}}`). For flagging only — distribution membership cannot be modified via MCP. (CEH-11548, 2026-09-01) |
 
 ---
@@ -63,7 +63,7 @@ the Chili Piper MCP tools this skill uses.
 >   that workspace.
 > - **`team-remove-users`** — removes the user from the team; may change live routing/distribution
 >   eligibility.
-> - **`meeting-cancel`** — cannot be undone and directly affects external guests; may trigger a
+> - **`meeting-cancel-post`** — cannot be undone and directly affects external guests; may trigger a
 >   rebook notification (see below).
 > - **`team-delete`** — irreversible; deletes the team for everyone (fails if an active
 >   distribution still references it).
@@ -83,7 +83,7 @@ args:
 ```
 
 ```
-tool: meeting-cancel
+tool: meeting-cancel-post
 args:
   meetingId: <meeting id>
 ```
@@ -104,7 +104,7 @@ references the team.
 
 The MCP has **no direct "reassign meeting" endpoint**. Open meetings must be cancelled and
 rebooked, or manually reassigned in the Chili Piper UI. This skill flags them and
-optionally cancels them (via `meeting-cancel`) to trigger a rebook flow.
+optionally cancels them (via `meeting-cancel-post`) to trigger a rebook flow.
 
 ## Distribution membership gotcha
 

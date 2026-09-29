@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: Chili Piper — User Copy Actions
-  version: 1.243.0
+  version: 1.494.0
   description: GPT Actions for the user-copy GPT — a subset of the Chili Piper Edge API. Authenticate
     with a Bearer API key (Admin Center → API Keys).
 servers:
@@ -17,32 +17,8 @@ paths:
       tags:
       - user
       summary: Finds user
-      description: '[operation: user-find]
-
-
-
-
-        READ-ONLY
-
-
-
-
-        Searches users by free-text query matched against email and name (partial matches supported).
-        Paginated.
-
-
-        - query (req): partial email or name
-
-
-        - page (opt), pageSize (opt, default 200)
-
-
-        → paginated list of users, each with: {id, name, email, isSuperAdmin, licenses, workspaces, salesforce
-        (opt), hubspot (opt), slug (opt), managedWorkspaces, managedTeams}
-
-
-        see: user-read (full profile), user-find-by-ids (batch by ID), user-find-by-filter (advanced multi-field
-        filtering)'
+      description: 'READ-ONLY. Finds user. Resolve an email or name to a userId. Params: query (required),
+        page, pageSize.'
       operationId: userFind
       parameters:
       - name: query
@@ -127,16 +103,85 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - user.read
+      x-mcp-tool: user-find
+  /v1/org/user/read/{userId}:
+    get:
+      tags:
+      - user
+      summary: Reads user information
+      description: 'READ-ONLY. Reads user information. Fetch the full profile for one user by userId.
+        Params: userId (required).'
+      operationId: userRead
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '[^\s\\/]+'
+      responses:
+        '200':
+          description: ''
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: 'Invalid value for: path parameter userId'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - user.read
+      x-mcp-tool: user-read
   /v1/org/workspace:
     get:
       tags:
       - workspace
       summary: Read all workspaces
-      description: "[operation: workspace-list]\n\n\n\nREAD-ONLY\n\n\n\nReturns all workspaces in the\
-        \ org. Hierarchy: Tenant → Workspaces → Teams → Users.\n\n- page (opt), pageSize (opt, default\
-        \ 200)\n\n→\n\n    [{workspaceId, name, settings}]\n\nsee: workspace-list-users (members), workspace-add/remove-users\
-        \ (manage membership), meeting-list/export (filter by workspaceId), concierge-logs (filter by\
-        \ workspaceId)"
+      description: 'READ-ONLY. Read all workspaces. List the workspaces that partition the org and their
+        workspaceIds. Params: page, pageSize.'
       operationId: workspaceList
       parameters:
       - name: page
@@ -214,16 +259,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - workspace.read
+      x-mcp-tool: workspace-list
   /v1/org/workspace/users:
     get:
       tags:
       - workspace
       summary: Read all users (or in a workspace)
-      description: "[operation: workspace-list-users]\n\n\n\nREAD-ONLY\n\n\n\nReturns users in a workspace,\
-        \ or all org users if no workspaceId given.\n\n- workspaceId (opt): use workspace-list; omit for\
-        \ org-wide listing\n\n- page (opt), pageSize (opt, default 200)\n\n→\n\n    {results: [{userId,\
-        \ email, name, roles, licenses, workspaceMemberships}]}\n\nsee: workspace-add/remove-users (manage\
-        \ membership), user-find-by-filter (advanced multi-field filtering)"
+      description: 'READ-ONLY. Read all users (or in a workspace). List a workspace''s members; omit workspaceId
+        to list all org users. Params: workspaceId, page, pageSize.'
       operationId: workspaceListUsers
       parameters:
       - name: workspaceId
@@ -308,18 +351,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - workspace.read
+      x-mcp-tool: workspace-list-users
   /v2/org/team:
     put:
       tags:
       - team
       summary: Read all teams (PUT)
-      description: "[operation: team-list-put]\n\n\n\nREAD-ONLY\n\n\n\nReturns all teams in the org. Accepts\
-        \ filter params in request body to avoid query-string length limits.\n\n- body.workspaceIds (opt):\
-        \ filter by workspace\n\n- body.name (opt): filter by team name (substring match)\n\n- body.member\
-        \ (opt): filter to teams containing all specified user IDs; use user-find to resolve emails to\
-        \ IDs\n\n- body.page (opt), body.pageSize (opt, default 200)\n\n→\n\n    {results: [{teamId, name,\
-        \ members}]}\n\nsee: team-list (GET equivalent), user-find (resolve email → userId for member\
-        \ filter)"
+      description: READ-ONLY. Read all teams (PUT). List teams and resolve the teamId other calls reference.
+        Takes a JSON body.
       operationId: teamListPut
       requestBody:
         content:
@@ -382,15 +421,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - team.read
+      x-mcp-tool: team-list-put
   /v1/org/workspace/users/add:
     post:
       tags:
       - workspace
       summary: Add users to a workspace
-      description: "[operation: workspace-add-users]\n\n\n\nMUTATING — IDEMPOTENT\n\n\n\nAdds users to\
-        \ a workspace. Already-members are silently skipped.\n\n- workspaceId (req): use workspace-list\n\
-        \n- userIds (req): non-empty list; use user-find\n\n→\n\n    {}\n\nsee: workspace-list (find workspaceId),\
-        \ user-find (resolve userIds), workspace-list-users (verify after)"
+      description: MUTATING — IDEMPOTENT. Add users to a workspace. Grant users access to a workspace.
+        Takes a JSON body.
       operationId: workspaceAddUsers
       requestBody:
         content:
@@ -449,15 +487,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - workspace.modify
+      x-mcp-tool: workspace-add-users
   /v1/org/team/users/add:
     post:
       tags:
       - team
       summary: Add users to a team
-      description: "[operation: team-add-users]\n\n\n\nMUTATING — IDEMPOTENT\n\n\n\nAdds users to a team.\
-        \ Already-members are silently skipped.\n\n- teamId (req): use team-list\n\n- userIds (req): non-empty\
-        \ list; use user-find\n\n→\n\n    {id, workspaceId, name, members, metadata} — updated team record\n\
-        \nsee: team-list (find teamId and verify after), user-find (resolve userIds)"
+      description: MUTATING — IDEMPOTENT. Add users to a team. Add users to a team so they become routing
+        targets. Takes a JSON body.
       operationId: teamAddUsers
       requestBody:
         content:
@@ -520,16 +557,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - team.modify
+      x-mcp-tool: team-add-users
   /v2/org/team/create:
     post:
       tags:
       - team
       summary: Create team
-      description: "[operation: team-create]\n\n\n\nMUTATING\n\n\n\nCreates a new team in the given workspace.\n\
-        \n- workspaceId (req): workspace to create the team in; use workspace-list\n\n- name (req): team\
-        \ name\n\n- members (opt): initial member user IDs; use user-find to resolve emails to IDs\n\n\
-        →\n\n    {id, workspaceId, name, members, metadata}\n\nsee: team-list (verify after), user-find\
-        \ (resolve userIds), workspace-list (resolve workspaceId), team-add-users (add more members later)"
+      description: MUTATING. Create team. Create a team inside a workspace as a routing target. Takes
+        a JSON body.
       operationId: teamCreate
       requestBody:
         content:
@@ -592,17 +627,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - team.create
+      x-mcp-tool: team-create
   /v1/org/user/licenses:
     post:
       tags:
       - user
       summary: Updates licenses for users
-      description: "[operation: user-update-licenses]\n\n\n\nMUTATING — IDEMPOTENT\n\n\n\nBulk-updates\
-        \ CP product licenses for one or more users. Unlisted users are unaffected.\n\n- update (req):\
-        \ [{userId, licenseType}]; valid types: Distro, ChiliCalOrg, Concierge, ConciergeLive, Chat, Handoff;\
-        \ use user-find for userIds\n\n→\n\n    {}\n\n⚠ downgrade takes effect immediately (disables gated\
-        \ features); fails if org lacks sufficient seats\n\nsee: user-find/find-by-ids (resolve userIds\
-        \ and verify after)"
+      description: MUTATING — IDEMPOTENT. Updates licenses for users. Bulk-assign or revoke CP product
+        licenses for users. Takes a JSON body.
       operationId: userUpdateLicenses
       requestBody:
         content:
@@ -661,6 +693,7 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - licenses.modify
+      x-mcp-tool: user-update-licenses
 components:
   securitySchemes:
     apiKeyAuth:
@@ -671,121 +704,6 @@ components:
       name: Authorization
       in: header
   schemas:
-    CreateTeamRequest:
-      title: CreateTeamRequest
-      type: object
-      required:
-      - workspaceId
-      - name
-      properties:
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-        name:
-          type: string
-        members:
-          type: array
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-    Team:
-      title: Team
-      type: object
-      required:
-      - id
-      - workspaceId
-      - name
-      - metadata
-      properties:
-        id:
-          $ref: '#/components/schemas/TeamId'
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-        name:
-          type: string
-        members:
-          type: array
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        metadata: {}
-    TeamId:
-      title: TeamId
-      examples:
-      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
-      type: string
-      pattern: '[^\s\\/]+'
-    Map_Refined_String_Refinement_V:
-      title: Map_Refined_String_Refinement_V
-      type: object
-      additionalProperties:
-        $ref: '#/components/schemas/AvailabilityFailure'
-    SalesforceUser:
-      title: SalesforceUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-        id:
-          type: string
-          pattern: '[^\s\\/]+'
-    FindAllRequest:
-      title: FindAllRequest
-      type: object
-      properties:
-        workspaceIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-        name:
-          type: string
-        member:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-    AddUsersToWorkspaceRequest:
-      title: AddUsersToWorkspaceRequest
-      type: object
-      required:
-      - workspaceId
-      - userIds
-      properties:
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-        userIds:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/UserId'
-    UpdateLicensesRequest:
-      title: UpdateLicensesRequest
-      type: object
-      required:
-      - update
-      properties:
-        update:
-          $ref: '#/components/schemas/Map_Refined_String_Refinement_V'
-    Tier:
-      title: Tier
-      type: string
-      enum:
-      - RoutingAndScheduling
-      - Experiences
-      - ChiliDataPlatform
     User:
       title: User
       type: object
@@ -803,15 +721,19 @@ components:
           minLength: 1
         email:
           $ref: '#/components/schemas/Email'
+          description: User's email address.
         isSuperAdmin:
+          description: Whether the user is a super administrator of the tenant.
           type: boolean
         managedWorkspaces:
+          description: Workspaces the user administers.
           type: array
           uniqueItems: true
           items:
             type: string
             pattern: '[^\s\\/]+'
         managedTeams:
+          description: Teams the user administers.
           type: array
           uniqueItems: true
           items:
@@ -824,38 +746,174 @@ components:
         hubspot:
           $ref: '#/components/schemas/HubspotUser'
         slug:
+          description: User's personal booking-page slug; absent if they have none.
           type: string
           pattern: '[-0-9a-z_]+'
         workspaces:
+          description: All workspaces the user is a member of.
           type: array
           uniqueItems: true
           items:
             type: string
             pattern: '[^\s\\/]+'
         personalWorkspaceId:
+          description: The user's personal workspace, when they have one.
           type: string
           pattern: '[^\s\\/]+'
-    UserLicenses:
-      title: UserLicenses
+        personalDetails:
+          $ref: '#/components/schemas/UserPersonalDetails'
+        workingHours:
+          $ref: '#/components/schemas/WorkingHours'
+        timezone:
+          description: The user's configured scheduling timezone (IANA id); absent when synced from their
+            connected calendar. Populated by user-read only.
+          examples:
+          - America/New_York
+          type: string
+    AvailabilityFailure:
+      title: AvailabilityFailure
+      description: 'Per-user reason the availability engine could not compute slots for that user (returned
+        in the `failures` map, keyed by userId). Values:
+
+        - NoTimezone: the user has no timezone configured. Set the user''s timezone and retry.
+
+        - ExternalCalendarIntegrationFailure: the user''s external calendar (Google/Microsoft) free/busy
+        could not be read for the requested window. This is most often NOT a broken calendar connection
+        — it usually means the requested time window reaches beyond the calendar provider''s free/busy
+        horizon (providers only return free/busy a limited distance into the future). Narrow the request
+        to a shorter, nearer time interval and retry. Only if the failure persists for a near-term window
+        is the calendar connection itself the problem (reconnect the calendar).
+
+        - Other: an unspecified failure while computing this user''s availability; retry, and if it persists
+        contact support.'
+      oneOf:
+      - $ref: '#/components/schemas/AvailabilityFailure_ExternalCalendarIntegrationFailure'
+      - $ref: '#/components/schemas/AvailabilityFailure_NoTimezone'
+      - $ref: '#/components/schemas/AvailabilityFailure_Other'
+      discriminator:
+        propertyName: type
+        mapping:
+          ExternalCalendarIntegrationFailure: '#/components/schemas/AvailabilityFailure_ExternalCalendarIntegrationFailure'
+          NoTimezone: '#/components/schemas/AvailabilityFailure_NoTimezone'
+          Other: '#/components/schemas/AvailabilityFailure_Other'
+    HubspotUser:
+      title: HubspotUser
       type: object
       required:
-      - chiliCalOrg
-      - handoff
+      - email
+      - id
       properties:
-        distro:
-          type: boolean
-        chiliCalOrg:
-          type: boolean
-        concierge:
-          type: boolean
-        conciergeLive:
-          type: boolean
-        chat:
-          type: boolean
-        handoff:
-          type: boolean
-        tier:
-          $ref: '#/components/schemas/Tier'
+        email:
+          $ref: '#/components/schemas/Email'
+          description: Email of the linked HubSpot user.
+        id:
+          description: Identifier of the linked HubSpot user.
+          type: integer
+          format: int64
+    AddUsersToTeamRequest:
+      title: AddUsersToTeamRequest
+      type: object
+      required:
+      - teamId
+      - userIds
+      properties:
+        teamId:
+          $ref: '#/components/schemas/TeamId'
+          description: Team to add the users to.
+        userIds:
+          description: User ids to add to the team.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/UserId'
+    Tier:
+      title: Tier
+      type: string
+      enum:
+      - RoutingAndScheduling
+      - Experiences
+      - ChiliDataPlatform
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string
+    WorkInterval:
+      title: WorkInterval
+      type: object
+      required:
+      - start
+      - end
+      properties:
+        start:
+          description: Start of the working interval as a local time (HH:mm), in the schedule timezone.
+          type: string
+        end:
+          description: End of the working interval as a local time (HH:mm); must be after start.
+          type: string
+    Workspace:
+      title: Workspace
+      type: object
+      required:
+      - id
+      - name
+      - metadata
+      properties:
+        id:
+          $ref: '#/components/schemas/WorkspaceId'
+          description: Unique identifier of the workspace.
+        name:
+          description: Human-readable workspace name.
+          type: string
+        emoji:
+          description: Optional emoji shown as the workspace's icon.
+          type: string
+        logo:
+          description: Optional URL of the workspace's logo image.
+          type: string
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+    Map_Refined_String_Refinement_V:
+      title: Map_Refined_String_Refinement_V
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/AvailabilityFailure'
+      properties: {}
+    UpdateLicensesRequest:
+      title: UpdateLicensesRequest
+      type: object
+      required:
+      - update
+      properties:
+        update:
+          $ref: '#/components/schemas/Map_Refined_String_Refinement_V'
+          description: Map of user id to the full set of licenses to assign that user, replacing their
+            current licenses.
+    AvailabilityFailure_NoTimezone:
+      title: AvailabilityFailure_NoTimezone
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: NoTimezone
+    AvailabilityFailure_ExternalCalendarIntegrationFailure:
+      title: AvailabilityFailure_ExternalCalendarIntegrationFailure
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: ExternalCalendarIntegrationFailure
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
     PaginatedResult_User:
       title: PaginatedResult_User
       type: object
@@ -879,14 +937,41 @@ components:
           type: integer
           format: int64
           exclusiveMinimum: 0
-    Email:
-      title: Email
-      examples:
-      - john.doe@acme.com
-      type: string
-      pattern: .+@.+
-    Other:
-      title: Other
+    UserPersonalDetails:
+      title: UserPersonalDetails
+      type: object
+      required:
+      - email
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: The user's email address.
+        firstName:
+          description: The user's first name.
+          type: string
+        lastName:
+          description: The user's last name.
+          type: string
+        jobTitle:
+          description: The user's job title.
+          type: string
+        conferenceDetails:
+          description: Free-text conferencing details shown on the user's meetings.
+          type: string
+        location:
+          description: The user's location.
+          type: string
+        phoneNumber:
+          description: The user's phone number.
+          type: string
+        imageUrl:
+          description: URL of the user's profile picture.
+          type: string
+        customCompanyLogoUrl:
+          description: URL of a custom company logo shown on the user's booking pages.
+          type: string
+    AvailabilityFailure_Other:
+      title: AvailabilityFailure_Other
       type: object
       required:
       - type
@@ -894,55 +979,109 @@ components:
         type:
           type: string
           const: Other
-    HubspotUser:
-      title: HubspotUser
+    UserLicenses:
+      title: UserLicenses
       type: object
       required:
-      - email
-      - id
+      - chiliCalOrg
+      - handoff
       properties:
-        email:
-          $ref: '#/components/schemas/Email'
-        id:
-          type: integer
-          format: int64
-    AddUsersToTeamRequest:
-      title: AddUsersToTeamRequest
+        distro:
+          description: Whether the user holds a Distro (lead-routing) license.
+          type: boolean
+        chiliCalOrg:
+          description: Whether the user holds a ChiliCal organization license.
+          type: boolean
+        concierge:
+          description: Whether the user holds a Concierge license.
+          type: boolean
+        conciergeLive:
+          description: Whether the user holds a Concierge Live license.
+          type: boolean
+        chat:
+          description: Whether the user holds a Chat license.
+          type: boolean
+        handoff:
+          description: Whether the user holds a Handoff license.
+          type: boolean
+        tier:
+          $ref: '#/components/schemas/Tier'
+    WorkingHours:
+      title: WorkingHours
       type: object
-      required:
-      - teamId
-      - userIds
       properties:
-        teamId:
-          $ref: '#/components/schemas/TeamId'
-        userIds:
+        monday:
+          description: Working intervals on Monday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        tuesday:
+          description: Working intervals on Tuesday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        wednesday:
+          description: Working intervals on Wednesday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        thursday:
+          description: Working intervals on Thursday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        friday:
+          description: Working intervals on Friday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        saturday:
+          description: Working intervals on Saturday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        sunday:
+          description: Working intervals on Sunday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+    FindAllRequest:
+      title: FindAllRequest
+      type: object
+      properties:
+        workspaceIds:
+          description: Restrict results to teams in these workspaces. Omit for all.
           type: array
           minItems: 1
           items:
-            $ref: '#/components/schemas/UserId'
-    PaginatedResult_Team:
-      title: PaginatedResult_Team
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Team'
-        total:
-          type: integer
-          format: int64
+            type: string
+            pattern: '[^\s\\/]+'
         page:
+          description: Zero-based page index. Defaults to 0.
           type: integer
           format: int64
           minimum: 0
         pageSize:
+          description: Number of teams per page.
           type: integer
           format: int64
           exclusiveMinimum: 0
+        name:
+          description: Free-text term matched against team name.
+          type: string
+        member:
+          description: Restrict results to teams containing any of these user ids.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
     PaginatedResult_Workspace:
       title: PaginatedResult_Workspace
       type: object
@@ -966,6 +1105,33 @@ components:
           type: integer
           format: int64
           exclusiveMinimum: 0
+    SalesforceUser:
+      title: SalesforceUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: Email of the linked Salesforce user.
+        id:
+          description: Identifier of the linked Salesforce user.
+          type: string
+          pattern: '[^\s\\/]+'
+        name:
+          description: Display name of the linked Salesforce user, when known.
+          type: string
+          minLength: 1
+        active:
+          description: Whether the linked Salesforce user is active, when known.
+          type: boolean
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+      properties: {}
     SimpleMetadata:
       title: SimpleMetadata
       type: object
@@ -989,74 +1155,98 @@ components:
         revision:
           type: integer
           format: int32
-    ExternalCalendarIntegrationFailure:
-      title: ExternalCalendarIntegrationFailure
+    CreateTeamRequest:
+      title: CreateTeamRequest
       type: object
       required:
-      - type
+      - workspaceId
+      - name
       properties:
-        type:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+          description: Workspace to create the team in.
+        name:
+          description: The new team's display name.
           type: string
-          const: ExternalCalendarIntegrationFailure
-    CallerRef:
-      title: CallerRef
-      description: stringified caller reference in format $type/$id
-      examples:
-      - user/17a3d4563d5a67a3d456ad635
-      type: string
-    UserId:
-      title: UserId
-      examples:
-      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
-      type: string
-      pattern: '[^\s\\/]+'
-    NoTimezone:
-      title: NoTimezone
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: NoTimezone
-    AvailabilityFailure:
-      title: AvailabilityFailure
-      oneOf:
-      - $ref: '#/components/schemas/ExternalCalendarIntegrationFailure'
-      - $ref: '#/components/schemas/NoTimezone'
-      - $ref: '#/components/schemas/Other'
-      discriminator:
-        propertyName: type
-        mapping:
-          ExternalCalendarIntegrationFailure: '#/components/schemas/ExternalCalendarIntegrationFailure'
-          NoTimezone: '#/components/schemas/NoTimezone'
-          Other: '#/components/schemas/Other'
-    Map_String:
-      title: Map_String
-      type: object
-      additionalProperties:
-        type: string
-    Workspace:
-      title: Workspace
+        members:
+          description: User ids to add as initial members. Omit to create an empty team.
+          type: array
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+    Team:
+      title: Team
       type: object
       required:
       - id
+      - workspaceId
       - name
       - metadata
       properties:
         id:
+          $ref: '#/components/schemas/TeamId'
+          description: Unique identifier of the team.
+        workspaceId:
           $ref: '#/components/schemas/WorkspaceId'
+          description: Workspace the team belongs to.
         name:
+          description: The team's display name.
           type: string
-        emoji:
-          type: string
-        logo:
-          type: string
-        metadata:
-          $ref: '#/components/schemas/SimpleMetadata'
-    WorkspaceId:
-      title: WorkspaceId
+        members:
+          description: User ids of the team's members.
+          type: array
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        metadata: {}
+    AddUsersToWorkspaceRequest:
+      title: AddUsersToWorkspaceRequest
+      type: object
+      required:
+      - workspaceId
+      - userIds
+      properties:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+          description: Workspace to add the users to.
+        userIds:
+          description: User ids to add to the workspace.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/UserId'
+    TeamId:
+      title: TeamId
       examples:
-      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
       type: string
       pattern: '[^\s\\/]+'
+    PaginatedResult_Team:
+      title: PaginatedResult_Team
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Team'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    Email:
+      title: Email
+      examples:
+      - john.doe@acme.com
+      type: string
+      pattern: .+@.+

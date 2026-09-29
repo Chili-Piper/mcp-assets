@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: Chili Piper — User Details Actions
-  version: 1.230.0
+  version: 1.494.0
   description: GPT Actions for the user-details GPT — a subset of the Chili Piper Edge API. Authenticate
     with a Bearer API key (Admin Center → API Keys).
 servers:
@@ -17,32 +17,8 @@ paths:
       tags:
       - user
       summary: Finds user
-      description: '[operation: user-find]
-
-
-
-
-        READ-ONLY
-
-
-
-
-        Searches users by free-text query matched against email and name (partial matches supported).
-        Paginated.
-
-
-        - query (req): partial email or name
-
-
-        - page (opt), pageSize (opt, default 200)
-
-
-        → paginated list of users, each with: {id, name, email, isSuperAdmin, licenses, workspaces, salesforce
-        (opt), hubspot (opt), slug (opt), managedWorkspaces, managedTeams}
-
-
-        see: user-read (full profile), user-find-by-ids (batch by ID), user-find-by-filter (advanced multi-field
-        filtering)'
+      description: 'READ-ONLY. Finds user. Resolve an email or name to a userId. Params: query (required),
+        page, pageSize.'
       operationId: userFind
       parameters:
       - name: query
@@ -127,18 +103,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - user.read
+      x-mcp-tool: user-find
   /v1/org/user/read/{userId}:
     get:
       tags:
       - user
       summary: Reads user information
-      description: "[operation: user-read]\n\n\n\nREAD-ONLY\n\n\n\nFetches full profile for a single user\
-        \ by userId.\n\n- userId (req): UUID\n\n→\n\n    {id, name, email, isSuperAdmin, licenses, workspaces\
-        \ (set of workspaceIds), salesforce: {email, id} (opt), hubspot: {email, id} (opt), slug (opt),\
-        \ managedWorkspaces, managedTeams}\n\n  Note: top-level field is id (not userId); workspaces (not\
-        \ workspaceMemberships); salesforce is an object {email, id} (not a string salesforceId)\n\nsee:\
-        \ user-find (look up userId by email/name), user-find-by-ids (batch fetch), user-update-licenses/workspace-add-users/team-add-users\
-        \ (act on user)"
+      description: 'READ-ONLY. Reads user information. Fetch the full profile for one user by userId.
+        Params: userId (required).'
       operationId: userRead
       parameters:
       - name: userId
@@ -202,16 +174,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - user.read
+      x-mcp-tool: user-read
   /v1/org/workspace:
     get:
       tags:
       - workspace
       summary: Read all workspaces
-      description: "[operation: workspace-list]\n\n\n\nREAD-ONLY\n\n\n\nReturns all workspaces in the\
-        \ org. Hierarchy: Tenant → Workspaces → Teams → Users.\n\n- page (opt), pageSize (opt, default\
-        \ 200)\n\n→\n\n    [{workspaceId, name, settings}]\n\nsee: workspace-list-users (members), workspace-add/remove-users\
-        \ (manage membership), meeting-list/export (filter by workspaceId), concierge-logs (filter by\
-        \ workspaceId)"
+      description: 'READ-ONLY. Read all workspaces. List the workspaces that partition the org and their
+        workspaceIds. Params: page, pageSize.'
       operationId: workspaceList
       parameters:
       - name: page
@@ -289,18 +259,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - workspace.read
+      x-mcp-tool: workspace-list
   /v2/org/team:
     put:
       tags:
       - team
       summary: Read all teams (PUT)
-      description: "[operation: team-list-put]\n\n\n\nREAD-ONLY\n\n\n\nReturns all teams in the org. Accepts\
-        \ filter params in request body to avoid query-string length limits.\n\n- body.workspaceIds (opt):\
-        \ filter by workspace\n\n- body.name (opt): filter by team name (substring match)\n\n- body.member\
-        \ (opt): filter to teams containing all specified user IDs; use user-find to resolve emails to\
-        \ IDs\n\n- body.page (opt), body.pageSize (opt, default 200)\n\n→\n\n    {results: [{teamId, name,\
-        \ members}]}\n\nsee: team-list (GET equivalent), user-find (resolve email → userId for member\
-        \ filter)"
+      description: READ-ONLY. Read all teams (PUT). List teams and resolve the teamId other calls reference.
+        Takes a JSON body.
       operationId: teamListPut
       requestBody:
         content:
@@ -363,16 +329,15 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - team.read
-  /v1/org/schedulingLinks/list-personal/{userId}:
+      x-mcp-tool: team-list-put
+  /v1/org/schedulingLinks/list-personal-v2/{userId}:
     get:
       tags:
       - schedulingLinks
-      summary: Scheduling Links - personal
-      description: "[operation: scheduling-link-list-personal]\n\n\n\nREAD-ONLY\n\n\n\nReturns all personal\
-        \ scheduling links for a user.\n\n- userId (req): use user-find\n\n→\n\n    [{slug (EdgeLinkSlug),\
-        \ meetingTypeId (MeetingTypeId), meetingTypeName, bookingUrl (SchedulingLink)}]\n\nsee: user-find\
-        \ (resolve userId), scheduling-link-list-round-robin (team/distribution-backed links)"
-      operationId: schedulingLinkListPersonal
+      summary: Scheduling Links - personal (v2)
+      description: 'READ-ONLY. Scheduling Links - personal (v2). List a user''s own personal scheduling
+        links. Params: userId (required).'
+      operationId: schedulingLinkListPersonalV2
       parameters:
       - name: userId
         in: path
@@ -403,9 +368,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PersonalSchedulingLinkDetail'
+                $ref: '#/components/schemas/PersonalSchedulingLinkDetails'
         '400':
           description: 'Invalid value for: path parameter userId'
           content:
@@ -437,18 +400,14 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - user.read
+      x-mcp-tool: scheduling-link-list-personal-v2
   /v1/org/schedulingLinks/list-round-robin:
     post:
       tags:
       - schedulingLinks
       summary: Scheduling Links - round robin
-      description: "[operation: scheduling-link-list-round-robin]\n\n\n\nREAD-ONLY\n\n\n\nReturns round-robin\
-        \ scheduling links (booking URLs backed by a distribution). All filters optional — omit all for\
-        \ org-wide results.\n\n- filterWorkspaceIds (opt): use workspace-list\n\n- filterLinkSlugs (opt)\n\
-        \n- filterMeetingTypeId (opt)\n\n- filterDistributionIds (opt): use distribution-list\n\n→\n\n\
-        \    {links: [{workspaceId, distributionId, linkId, name, slug, meetingTypeIds, members, assignments,\
-        \ bookingUrl}]}\n\nsee: distribution-list (find distributionIds), workspace-list (find workspaceIds),\
-        \ scheduling-link-list-personal (per-user links)"
+      description: READ-ONLY. Scheduling Links - round robin. List round-robin scheduling links (distribution-backed
+        booking URLs). Takes a JSON body.
       operationId: schedulingLinkListRoundRobin
       requestBody:
         content:
@@ -511,22 +470,224 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - scheduling-links.read
+      x-mcp-tool: scheduling-link-list-round-robin
+  /v1/org/schedulingLinks/list-admin-one-on-one:
+    post:
+      tags:
+      - schedulingLinks
+      summary: Scheduling Links - admin (one-on-one)
+      description: READ-ONLY. Scheduling Links - admin (one-on-one). List admin one-on-one scheduling
+        links (single fixed host). Takes a JSON body.
+      operationId: schedulingLinkListAdminOneOnOne
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminSchedulingLinksRequest'
+        required: true
+      responses:
+        '200':
+          description: List of admin (one-on-one) scheduling links.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSchedulingLinkDetails'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - scheduling-links.read
+      x-mcp-tool: scheduling-link-list-admin-one-on-one
+  /v1/org/schedulingLinks/list-group:
+    post:
+      tags:
+      - schedulingLinks
+      summary: Scheduling Links - group
+      description: READ-ONLY. Scheduling Links - group. List group scheduling links (a fixed set of multiple
+        attendees). Takes a JSON body.
+      operationId: schedulingLinkListGroup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupSchedulingLinksRequest'
+        required: true
+      responses:
+        '200':
+          description: List of group scheduling links.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupSchedulingLinkDetails'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - scheduling-links.read
+      x-mcp-tool: scheduling-link-list-group
+  /v1/org/schedulingLinks/list-ownership:
+    post:
+      tags:
+      - schedulingLinks
+      summary: Scheduling Links - ownership
+      description: READ-ONLY. Scheduling Links - ownership. List ownership scheduling links (routes to
+        the guest's CRM owner). Takes a JSON body.
+      operationId: schedulingLinkListOwnership
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OwnershipSchedulingLinksRequest'
+        required: true
+      responses:
+        '200':
+          description: List of ownership scheduling links.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+            X-Robots-Tag:
+              required: true
+              schema:
+                type: string
+            Pragma:
+              required: true
+              schema:
+                type: string
+            Expires:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnershipSchedulingLinkDetails'
+        '400':
+          description: 'Invalid value for: body'
+          content:
+            text/plain:
+              schema:
+                type: string
+        default:
+          description: ''
+          headers:
+            Location:
+              required: false
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - errorCode
+                - errorMessage
+                properties:
+                  errorCode:
+                    type: string
+                  errorMessage:
+                    type: string
+                  arguments:
+                    $ref: '#/components/schemas/Map_String'
+      security:
+      - apiKeyAuth: []
+      X-Chili-Required-Permissions:
+      - scheduling-links.read
+      x-mcp-tool: scheduling-link-list-ownership
   /v3/org/meetings/meetings/export:
     put:
       tags:
       - meetings
       summary: Export Meetings streaming (PUT)
-      description: "[operation: meeting-export-v2-put]\n\n\n\nREAD-ONLY\n\n\n\nExports meetings in a time\
-        \ range as CSV via v2 streaming endpoint. Accepts filter params in request body. Max window: 7\
-        \ days.\n\n- body.start, body.end (req): ISO-8601; max 7-day span\n\n- body.workspaceIds (opt):\
-        \ filter by workspace\n\n- body.assigneeIds (opt): filter by assignee user IDs (array of userId\
-        \ strings); use user-find to resolve email → userId\n\n- body.hostIds (opt): filter by host user\
-        \ IDs (array of userId strings); use user-find to resolve email → userId\n\n- body.bookerIds (opt):\
-        \ filter by booker user IDs (array of userId strings); use user-find to resolve email → userId\n\
-        \n- body.meetingTypeIds (opt): filter by meeting type IDs (array of meetingTypeId strings)\n\n\
-        - body.status (opt): filter by meeting status; array of \"Active\"|\"Canceled\"|\"NoShow\"|\"\
-        Completed\"\n\n→\n\n    {filename: \"meetings-export-....csv\", data: \"<CSV content>\"}\n\nsee:\
-        \ meeting-export-v2 (GET equivalent), meeting-list (JSON output), user-find (resolve email → userId)"
+      description: READ-ONLY. Export Meetings streaming (PUT). Export meetings in a time range as streaming
+        CSV (preferred export). Takes a JSON body.
       operationId: meetingExportV2Put
       requestBody:
         content:
@@ -597,6 +758,7 @@ paths:
       - apiKeyAuth: []
       X-Chili-Required-Permissions:
       - meeting.read
+      x-mcp-tool: meeting-export-v2-put
 components:
   securitySchemes:
     apiKeyAuth:
@@ -607,33 +769,207 @@ components:
       name: Authorization
       in: header
   schemas:
-    RoundRobinSchedulingLinkId:
-      title: RoundRobinSchedulingLinkId
-      examples:
-      - b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d0e
-      type: string
-      pattern: '[^\s\\/]+'
-    Team:
-      title: Team
+    RoundRobinSchedulingLinksRequest:
+      title: RoundRobinSchedulingLinksRequest
       type: object
-      required:
-      - id
-      - workspaceId
-      - name
-      - metadata
       properties:
-        id:
-          $ref: '#/components/schemas/TeamId'
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-        name:
-          type: string
-        members:
+        filterWorkspaceIds:
+          description: Restrict to links in these workspaces; omit for all accessible workspaces.
           type: array
+          minItems: 1
           items:
             type: string
             pattern: '[^\s\\/]+'
-        metadata: {}
+        filterLinkSlugs:
+          description: Restrict to links with these slugs.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[-0-9a-z_]+'
+        filterMeetingTypeId:
+          description: Restrict to links offering any of these meeting types.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+        filterDistributionIds:
+          description: Restrict to links backed by any of these distributions.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+    PersonalSchedulingLinkDetail:
+      title: PersonalSchedulingLinkDetail
+      type: object
+      required:
+      - slug
+      - meetingTypeId
+      - meetingTypeName
+      - bookingUrl
+      properties:
+        slug:
+          description: URL slug of the link.
+          type: string
+          pattern: '[-0-9a-z_]+'
+        meetingTypeId:
+          $ref: '#/components/schemas/MeetingTypeId'
+        meetingTypeName:
+          description: Name of the meeting type booked through this link.
+          type: string
+        bookingUrl:
+          description: Public URL a guest uses to book this link.
+          examples:
+          - https://example.com
+          type: string
+    User:
+      title: User
+      type: object
+      required:
+      - id
+      - name
+      - email
+      - isSuperAdmin
+      - licenses
+      properties:
+        id:
+          $ref: '#/components/schemas/UserId'
+        name:
+          type: string
+          minLength: 1
+        email:
+          $ref: '#/components/schemas/Email'
+          description: User's email address.
+        isSuperAdmin:
+          description: Whether the user is a super administrator of the tenant.
+          type: boolean
+        managedWorkspaces:
+          description: Workspaces the user administers.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        managedTeams:
+          description: Teams the user administers.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        licenses:
+          $ref: '#/components/schemas/UserLicenses'
+        salesforce:
+          $ref: '#/components/schemas/SalesforceUser'
+        hubspot:
+          $ref: '#/components/schemas/HubspotUser'
+        slug:
+          description: User's personal booking-page slug; absent if they have none.
+          type: string
+          pattern: '[-0-9a-z_]+'
+        workspaces:
+          description: All workspaces the user is a member of.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        personalWorkspaceId:
+          description: The user's personal workspace, when they have one.
+          type: string
+          pattern: '[^\s\\/]+'
+        personalDetails:
+          $ref: '#/components/schemas/UserPersonalDetails'
+        workingHours:
+          $ref: '#/components/schemas/WorkingHours'
+        timezone:
+          description: The user's configured scheduling timezone (IANA id); absent when synced from their
+            connected calendar. Populated by user-read only.
+          examples:
+          - America/New_York
+          type: string
+    AdminSchedulingLinkDetails:
+      title: AdminSchedulingLinkDetails
+      type: object
+      properties:
+        links:
+          description: The admin (one-on-one) scheduling links.
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminSchedulingLinkDetail'
+    HubspotUser:
+      title: HubspotUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: Email of the linked HubSpot user.
+        id:
+          description: Identifier of the linked HubSpot user.
+          type: integer
+          format: int64
+    OwnershipSettings:
+      title: OwnershipSettings
+      oneOf:
+      - $ref: '#/components/schemas/OwnershipSettings_WithMixedRouting'
+      - $ref: '#/components/schemas/OwnershipSettings_WithSimpleRule'
+      discriminator:
+        propertyName: type
+        mapping:
+          WithMixedRouting: '#/components/schemas/OwnershipSettings_WithMixedRouting'
+          WithSimpleRule: '#/components/schemas/OwnershipSettings_WithSimpleRule'
+    Tier:
+      title: Tier
+      type: string
+      enum:
+      - RoutingAndScheduling
+      - Experiences
+      - ChiliDataPlatform
+    MeetingTypeId:
+      title: MeetingTypeId
+      examples:
+      - 4a8f2b3c-7d1e-4f9b-8a2c-3d5e6f789012
+      type: string
+      format: uuid
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string
+    OwnershipHost_AssigneeFromSimpleRule:
+      title: OwnershipHost_AssigneeFromSimpleRule
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: AssigneeFromSimpleRule
+    WorkInterval:
+      title: WorkInterval
+      type: object
+      required:
+      - start
+      - end
+      properties:
+        start:
+          description: Start of the working interval as a local time (HH:mm), in the schedule timezone.
+          type: string
+        end:
+          description: End of the working interval as a local time (HH:mm); must be after start.
+          type: string
+    OwnershipSchedulingLinkId:
+      title: OwnershipSchedulingLinkId
+      examples:
+      - d1e2f3a4-b5c6-4d7e-ae8f-9b0c1d2e3f4a
+      type: string
+      pattern: '[^\s\\/]+'
     Workspace:
       title: Workspace
       type: object
@@ -644,26 +980,554 @@ components:
       properties:
         id:
           $ref: '#/components/schemas/WorkspaceId'
+          description: Unique identifier of the workspace.
         name:
+          description: Human-readable workspace name.
           type: string
         emoji:
+          description: Optional emoji shown as the workspace's icon.
           type: string
         logo:
+          description: Optional URL of the workspace's logo image.
           type: string
         metadata:
           $ref: '#/components/schemas/SimpleMetadata'
-    HubspotUser:
-      title: HubspotUser
+    GroupSchedulingLinksRequest:
+      title: GroupSchedulingLinksRequest
+      type: object
+      properties:
+        filterWorkspaceIds:
+          description: Restrict to links in these workspaces; omit for all accessible workspaces.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        filterLinkSlugs:
+          description: Restrict to links with these slugs.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[-0-9a-z_]+'
+        filterMeetingTypeId:
+          description: Restrict to links offering any of these meeting types.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+    RoutingStrategy_DistributionBasedRouting:
+      title: RoutingStrategy_DistributionBasedRouting
+      type: object
+      required:
+      - distributionId
+      - required
+      - type
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        required:
+          type: boolean
+        type:
+          type: string
+          const: DistributionBasedRouting
+    SimpleRule_SalesforceSimpleRule:
+      title: SimpleRule_SalesforceSimpleRule
+      type: object
+      required:
+      - ownershipObject
+      - teamId
+      - type
+      properties:
+        ownershipObject:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/SalesforceObjectOwner'
+        teamId:
+          $ref: '#/components/schemas/TeamId'
+        type:
+          type: string
+          const: SalesforceSimpleRule
+    SimpleRule:
+      title: SimpleRule
+      oneOf:
+      - $ref: '#/components/schemas/SimpleRule_HubspotSimpleRule'
+      - $ref: '#/components/schemas/SimpleRule_SalesforceSimpleRule'
+      discriminator:
+        propertyName: type
+        mapping:
+          HubspotSimpleRule: '#/components/schemas/SimpleRule_HubspotSimpleRule'
+          SalesforceSimpleRule: '#/components/schemas/SimpleRule_SalesforceSimpleRule'
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
+    LinkPageConfig:
+      title: LinkPageConfig
+      type: object
+      properties:
+        title:
+          description: Custom heading shown on the link's public booking page; falls back to the meeting
+            type name when absent.
+          type: string
+    RoundRobinSchedulingLinkDetail:
+      title: RoundRobinSchedulingLinkDetail
+      type: object
+      required:
+      - workspaceId
+      - linkId
+      - name
+      - slug
+      - assignments
+      - bookingUrl
+      properties:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        distributionId:
+          deprecated: true
+          type: string
+          pattern: '[^\s\\/]+'
+        linkId:
+          $ref: '#/components/schemas/RoundRobinSchedulingLinkId'
+        name:
+          type: string
+          minLength: 1
+        slug:
+          description: URL slug of the link.
+          type: string
+          pattern: '[-0-9a-z_]+'
+        meetingTypeIds:
+          description: Meeting types offered on this link.
+          type: array
+          items:
+            type: string
+            format: uuid
+        members:
+          deprecated: true
+          type: array
+          items:
+            $ref: '#/components/schemas/SchedulingLinkMemberDetail'
+        assignments:
+          description: Distributions assigned to this link, with per-distribution attendance and resolved
+            members.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DistributionAssignment'
+        bookingUrl:
+          description: Public URL a guest uses to book this link.
+          examples:
+          - https://example.com
+          type: string
+    SalesforceObjectOwner:
+      title: SalesforceObjectOwner
+      type: string
+      enum:
+      - Lead
+      - Contact
+      - Account
+    RuleId:
+      title: RuleId
+      examples:
+      - 3b4c5d6e-7f8a-4b9c-9d0e-1f2a3b4c5d6e
+      type: string
+      pattern: '[^\s\\/]+'
+    AdminSchedulingLinkDetail:
+      title: AdminSchedulingLinkDetail
+      type: object
+      required:
+      - workspaceId
+      - linkId
+      - name
+      - slug
+      - bookingUrl
+      properties:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        linkId:
+          $ref: '#/components/schemas/AdminSchedulingLinkId'
+        name:
+          type: string
+          minLength: 1
+        slug:
+          description: URL slug of the link.
+          type: string
+          pattern: '[-0-9a-z_]+'
+        meetingTypeIds:
+          description: Meeting types offered on this link.
+          type: array
+          items:
+            type: string
+            format: uuid
+        bookingUrl:
+          description: Public URL a guest uses to book this link.
+          examples:
+          - https://example.com
+          type: string
+    PersonalSchedulingLinkDetails:
+      title: PersonalSchedulingLinkDetails
+      type: object
+      properties:
+        links:
+          description: The user's personal scheduling links.
+          type: array
+          items:
+            $ref: '#/components/schemas/PersonalSchedulingLinkDetail'
+    PaginatedResult_User:
+      title: PaginatedResult_User
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    BookerInvitation:
+      title: BookerInvitation
+      oneOf:
+      - $ref: '#/components/schemas/BookerInvitation_DoNotInvite'
+      - $ref: '#/components/schemas/BookerInvitation_Invite'
+      discriminator:
+        propertyName: type
+        mapping:
+          DoNotInvite: '#/components/schemas/BookerInvitation_DoNotInvite'
+          Invite: '#/components/schemas/BookerInvitation_Invite'
+    UserPersonalDetails:
+      title: UserPersonalDetails
       type: object
       required:
       - email
-      - id
       properties:
         email:
           $ref: '#/components/schemas/Email'
+          description: The user's email address.
+        firstName:
+          description: The user's first name.
+          type: string
+        lastName:
+          description: The user's last name.
+          type: string
+        jobTitle:
+          description: The user's job title.
+          type: string
+        conferenceDetails:
+          description: Free-text conferencing details shown on the user's meetings.
+          type: string
+        location:
+          description: The user's location.
+          type: string
+        phoneNumber:
+          description: The user's phone number.
+          type: string
+        imageUrl:
+          description: URL of the user's profile picture.
+          type: string
+        customCompanyLogoUrl:
+          description: URL of a custom company logo shown on the user's booking pages.
+          type: string
+    HubspotObjectOwner:
+      title: HubspotObjectOwner
+      type: string
+      enum:
+      - Contact
+      - Company
+    BookerInvitation_Invite:
+      title: BookerInvitation_Invite
+      type: object
+      required:
+      - autoDeclineOnBookersBehalf
+      - required
+      - type
+      properties:
+        autoDeclineOnBookersBehalf:
+          type: boolean
+        required:
+          type: boolean
+        type:
+          type: string
+          const: Invite
+    OwnershipHost:
+      title: OwnershipHost
+      oneOf:
+      - $ref: '#/components/schemas/OwnershipHost_AssigneeFromDistribution'
+      - $ref: '#/components/schemas/OwnershipHost_AssigneeFromOwnershipRule'
+      - $ref: '#/components/schemas/OwnershipHost_AssigneeFromSimpleRule'
+      - $ref: '#/components/schemas/OwnershipHost_BookerIfExists'
+      discriminator:
+        propertyName: type
+        mapping:
+          AssigneeFromDistribution: '#/components/schemas/OwnershipHost_AssigneeFromDistribution'
+          AssigneeFromOwnershipRule: '#/components/schemas/OwnershipHost_AssigneeFromOwnershipRule'
+          AssigneeFromSimpleRule: '#/components/schemas/OwnershipHost_AssigneeFromSimpleRule'
+          BookerIfExists: '#/components/schemas/OwnershipHost_BookerIfExists'
+    UserLicenses:
+      title: UserLicenses
+      type: object
+      required:
+      - chiliCalOrg
+      - handoff
+      properties:
+        distro:
+          description: Whether the user holds a Distro (lead-routing) license.
+          type: boolean
+        chiliCalOrg:
+          description: Whether the user holds a ChiliCal organization license.
+          type: boolean
+        concierge:
+          description: Whether the user holds a Concierge license.
+          type: boolean
+        conciergeLive:
+          description: Whether the user holds a Concierge Live license.
+          type: boolean
+        chat:
+          description: Whether the user holds a Chat license.
+          type: boolean
+        handoff:
+          description: Whether the user holds a Handoff license.
+          type: boolean
+        tier:
+          $ref: '#/components/schemas/Tier'
+    SchedulingLinkMemberDetail:
+      title: SchedulingLinkMemberDetail
+      type: object
+      required:
+      - id
+      properties:
+        email:
+          description: Member's email address; absent if not available.
+          type: string
+          pattern: .+@.+
         id:
+          $ref: '#/components/schemas/UserId'
+        name:
+          type: string
+          minLength: 1
+        slug:
+          description: Member's personal booking-page slug; absent if they have none.
+          type: string
+          pattern: '[-0-9a-z_]+'
+    OwnershipSettings_WithSimpleRule:
+      title: OwnershipSettings_WithSimpleRule
+      type: object
+      required:
+      - rule
+      - scheduleWithTeamMember
+      - required
+      - type
+      properties:
+        rule:
+          $ref: '#/components/schemas/SimpleRule'
+        scheduleWithTeamMember:
+          $ref: '#/components/schemas/ScheduleWithTeamMember'
+        required:
+          type: boolean
+        type:
+          type: string
+          const: WithSimpleRule
+    RoutingStrategy:
+      title: RoutingStrategy
+      oneOf:
+      - $ref: '#/components/schemas/RoutingStrategy_DistributionBasedRouting'
+      - $ref: '#/components/schemas/RoutingStrategy_RuleBasedRouting'
+      discriminator:
+        propertyName: type
+        mapping:
+          DistributionBasedRouting: '#/components/schemas/RoutingStrategy_DistributionBasedRouting'
+          RuleBasedRouting: '#/components/schemas/RoutingStrategy_RuleBasedRouting'
+    MeetingStatus:
+      title: MeetingStatus
+      type: string
+      enum:
+      - Active
+      - Canceled
+      - NoShow
+      - Completed
+    BookerInvitation_DoNotInvite:
+      title: BookerInvitation_DoNotInvite
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: DoNotInvite
+    OwnershipHost_AssigneeFromDistribution:
+      title: OwnershipHost_AssigneeFromDistribution
+      type: object
+      required:
+      - distributionId
+      - type
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        type:
+          type: string
+          const: AssigneeFromDistribution
+    WorkingHours:
+      title: WorkingHours
+      type: object
+      properties:
+        monday:
+          description: Working intervals on Monday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        tuesday:
+          description: Working intervals on Tuesday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        wednesday:
+          description: Working intervals on Wednesday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        thursday:
+          description: Working intervals on Thursday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        friday:
+          description: Working intervals on Friday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        saturday:
+          description: Working intervals on Saturday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        sunday:
+          description: Working intervals on Sunday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+    DistributionId:
+      title: DistributionId
+      examples:
+      - 7f8a1b2c-3d4e-4f5a-8b9c-0d1e2f3a4b5c
+      type: string
+      pattern: '[^\s\\/]+'
+    GroupSchedulingLinkId:
+      title: GroupSchedulingLinkId
+      examples:
+      - c9d0e1f2-a3b4-4c5d-9e6f-7a8b9c0d1e2f
+      type: string
+      pattern: '[^\s\\/]+'
+    DistributionAssignment:
+      title: DistributionAssignment
+      type: object
+      required:
+      - distributionId
+      - required
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+          description: Distribution whose members are the eligible assignees for this link.
+        required:
+          description: Whether members drawn from this distribution attend as required or optional.
+          type: boolean
+        members:
+          description: Members of the distribution resolved at read time; output only, ignored on writes.
+          type: array
+          items:
+            $ref: '#/components/schemas/SchedulingLinkMemberDetail'
+    RoundRobinSchedulingLinkDetails:
+      title: RoundRobinSchedulingLinkDetails
+      type: object
+      properties:
+        links:
+          description: The round-robin scheduling links.
+          type: array
+          items:
+            $ref: '#/components/schemas/RoundRobinSchedulingLinkDetail'
+    FindAllRequest:
+      title: FindAllRequest
+      type: object
+      properties:
+        workspaceIds:
+          description: Restrict results to teams in these workspaces. Omit for all.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        page:
+          description: Zero-based page index. Defaults to 0.
           type: integer
           format: int64
+          minimum: 0
+        pageSize:
+          description: Number of teams per page.
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        name:
+          description: Free-text term matched against team name.
+          type: string
+        member:
+          description: Restrict results to teams containing any of these user ids.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+    OwnershipSchedulingLinksRequest:
+      title: OwnershipSchedulingLinksRequest
+      type: object
+      properties:
+        filterWorkspaceIds:
+          description: Restrict to links in these workspaces; omit for all accessible workspaces.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        filterLinkSlugs:
+          description: Restrict to links with these slugs.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[-0-9a-z_]+'
+        filterMeetingTypeId:
+          description: Restrict to links offering any of these meeting types.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+        filterDistributionIds:
+          description: Restrict to links backed by any of these distributions.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
     PaginatedResult_Workspace:
       title: PaginatedResult_Workspace
       type: object
@@ -687,21 +1551,36 @@ components:
           type: integer
           format: int64
           exclusiveMinimum: 0
-    DistributionAssignment:
-      title: DistributionAssignment
+    RoundRobinSchedulingLinkId:
+      title: RoundRobinSchedulingLinkId
+      examples:
+      - b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d0e
+      type: string
+      pattern: '[^\s\\/]+'
+    OwnershipHost_BookerIfExists:
+      title: OwnershipHost_BookerIfExists
       type: object
       required:
-      - distributionId
-      - required
+      - type
       properties:
-        distributionId:
-          $ref: '#/components/schemas/DistributionId'
-        required:
-          type: boolean
-        members:
-          type: array
-          items:
-            $ref: '#/components/schemas/SchedulingLinkMemberDetail'
+        type:
+          type: string
+          const: BookerIfExists
+    DistributionHost_BookerIfExists:
+      title: DistributionHost_BookerIfExists
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: BookerIfExists
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+      properties: {}
     SalesforceUser:
       title: SalesforceUser
       type: object
@@ -711,21 +1590,312 @@ components:
       properties:
         email:
           $ref: '#/components/schemas/Email'
+          description: Email of the linked Salesforce user.
         id:
+          description: Identifier of the linked Salesforce user.
           type: string
           pattern: '[^\s\\/]+'
-    MeetingStatus:
-      title: MeetingStatus
+        name:
+          description: Display name of the linked Salesforce user, when known.
+          type: string
+          minLength: 1
+        active:
+          description: Whether the linked Salesforce user is active, when known.
+          type: boolean
+    ExportMeetingsRequest:
+      title: ExportMeetingsRequest
+      type: object
+      required:
+      - start
+      - end
+      properties:
+        workspaceIds:
+          description: Restrict the export to meetings in these workspaces. Omit to export across all
+            accessible workspaces.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        start:
+          description: Start of the export window, inclusive. ISO-8601 instant. The window (start..end)
+            must be at most 7 days wide.
+          type: string
+          format: date-time
+        end:
+          description: End of the export window, exclusive. ISO-8601 instant. Must be after start and
+            no more than 7 days after it.
+          type: string
+          format: date-time
+        assigneeIds:
+          description: Filter to meetings assigned to any of these user ids.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        hostIds:
+          description: Filter to meetings hosted by any of these user ids.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        bookerIds:
+          description: Filter to meetings booked by any of these user ids.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        meetingTypeIds:
+          description: Filter to meetings created from any of these meeting types.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+        status:
+          description: Filter by meeting status. One or more of Active, Canceled, NoShow, Completed. Omit
+            to include all statuses.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/MeetingStatus'
+    AlwaysInvitedUser:
+      title: AlwaysInvitedUser
+      type: object
+      required:
+      - userId
+      - optional
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+          description: User added to the invite on every meeting booked through this link.
+        optional:
+          description: If true the user attends as an optional guest; if false they are a required attendee.
+          type: boolean
+    OwnershipHost_AssigneeFromOwnershipRule:
+      title: OwnershipHost_AssigneeFromOwnershipRule
+      type: object
+      required:
+      - ruleId
+      - type
+      properties:
+        ruleId:
+          $ref: '#/components/schemas/RuleId'
+        type:
+          type: string
+          const: AssigneeFromOwnershipRule
+    SimpleMetadata:
+      title: SimpleMetadata
+      type: object
+      required:
+      - createdAt
+      - createdBy
+      - updatedAt
+      - updatedBy
+      - revision
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: '#/components/schemas/CallerRef'
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: '#/components/schemas/CallerRef'
+        revision:
+          type: integer
+          format: int32
+    SharedWith_Teams:
+      title: SharedWith_Teams
+      type: object
+      required:
+      - type
+      properties:
+        teamIds:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        type:
+          type: string
+          const: Teams
+    GroupSchedulingLinkDetail:
+      title: GroupSchedulingLinkDetail
+      type: object
+      required:
+      - workspaceId
+      - linkId
+      - name
+      - slug
+      - bookingUrl
+      properties:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        linkId:
+          $ref: '#/components/schemas/GroupSchedulingLinkId'
+        name:
+          type: string
+          minLength: 1
+        slug:
+          description: URL slug of the link.
+          type: string
+          pattern: '[-0-9a-z_]+'
+        meetingTypeIds:
+          description: Meeting types offered on this link.
+          type: array
+          items:
+            type: string
+            format: uuid
+        bookingUrl:
+          description: Public URL a guest uses to book this link.
+          examples:
+          - https://example.com
+          type: string
+    OwnershipSettings_WithMixedRouting:
+      title: OwnershipSettings_WithMixedRouting
+      type: object
+      required:
+      - strategies
+      - type
+      properties:
+        strategies:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/RoutingStrategy'
+        type:
+          type: string
+          const: WithMixedRouting
+    DistributionInvitation:
+      title: DistributionInvitation
+      type: object
+      required:
+      - assignments
+      - host
+      - bookerInvitation
+      properties:
+        assignments:
+          description: Distributions that supply the meeting's assignees, with per-distribution attendance.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DistributionAssignment'
+        host:
+          $ref: '#/components/schemas/DistributionHost'
+        bookerInvitation:
+          $ref: '#/components/schemas/BookerInvitation'
+        alwaysInvitedUsers:
+          description: Users invited to every meeting booked through this link, in addition to the routed
+            assignees.
+          type: array
+          items:
+            $ref: '#/components/schemas/AlwaysInvitedUser'
+    AdminSchedulingLinksRequest:
+      title: AdminSchedulingLinksRequest
+      type: object
+      properties:
+        filterWorkspaceIds:
+          description: Restrict to links in these workspaces; omit for all accessible workspaces.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        filterLinkSlugs:
+          description: Restrict to links with these slugs.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[-0-9a-z_]+'
+        filterMeetingTypeId:
+          description: Restrict to links offering any of these meeting types.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+    Team:
+      title: Team
+      type: object
+      required:
+      - id
+      - workspaceId
+      - name
+      - metadata
+      properties:
+        id:
+          $ref: '#/components/schemas/TeamId'
+          description: Unique identifier of the team.
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+          description: Workspace the team belongs to.
+        name:
+          description: The team's display name.
+          type: string
+        members:
+          description: User ids of the team's members.
+          type: array
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        metadata: {}
+    OwnershipSchedulingLinkDetails:
+      title: OwnershipSchedulingLinkDetails
+      type: object
+      properties:
+        links:
+          description: The ownership scheduling links.
+          type: array
+          items:
+            $ref: '#/components/schemas/OwnershipSchedulingLinkDetail'
+    DistributionHost:
+      title: DistributionHost
+      oneOf:
+      - $ref: '#/components/schemas/DistributionHost_AssigneeFromDistribution'
+      - $ref: '#/components/schemas/DistributionHost_BookerIfExists'
+      discriminator:
+        propertyName: type
+        mapping:
+          AssigneeFromDistribution: '#/components/schemas/DistributionHost_AssigneeFromDistribution'
+          BookerIfExists: '#/components/schemas/DistributionHost_BookerIfExists'
+    ScheduleWithTeamMember:
+      title: ScheduleWithTeamMember
       type: string
       enum:
-      - Active
-      - Canceled
-      - NoShow
-      - Completed
-    WorkspaceId:
-      title: WorkspaceId
+      - OwnerOnly
+      - AllowWithAny
+    SharedWith_Workspace:
+      title: SharedWith_Workspace
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Workspace
+    DistributionHost_AssigneeFromDistribution:
+      title: DistributionHost_AssigneeFromDistribution
+      type: object
+      required:
+      - distributionId
+      - type
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        type:
+          type: string
+          const: AssigneeFromDistribution
+    TeamId:
+      title: TeamId
       examples:
-      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
       type: string
       pattern: '[^\s\\/]+'
     PaginatedResult_Team:
@@ -751,353 +1921,136 @@ components:
           type: integer
           format: int64
           exclusiveMinimum: 0
-    MeetingTypeId:
-      title: MeetingTypeId
-      examples:
-      - 4a8f2b3c-7d1e-4f9b-8a2c-3d5e6f789012
-      type: string
-      format: uuid
-    RoundRobinSchedulingLinkDetail:
-      title: RoundRobinSchedulingLinkDetail
-      type: object
-      required:
-      - workspaceId
-      - linkId
-      - name
-      - slug
-      - assignments
-      - bookingUrl
-      properties:
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-        distributionId:
-          deprecated: true
-          type: string
-          pattern: '[^\s\\/]+'
-        linkId:
-          $ref: '#/components/schemas/RoundRobinSchedulingLinkId'
-        name:
-          type: string
-          minLength: 1
-        slug:
-          type: string
-          pattern: '[-0-9a-z_]+'
-        meetingTypeIds:
-          type: array
-          items:
-            type: string
-            format: uuid
-        members:
-          deprecated: true
-          type: array
-          items:
-            $ref: '#/components/schemas/SchedulingLinkMemberDetail'
-        assignments:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/DistributionAssignment'
-        bookingUrl:
-          examples:
-          - https://example.com
-          type: string
-    RoundRobinSchedulingLinkDetails:
-      title: RoundRobinSchedulingLinkDetails
-      type: object
-      properties:
-        links:
-          type: array
-          items:
-            $ref: '#/components/schemas/RoundRobinSchedulingLinkDetail'
-    DistributionId:
-      title: DistributionId
-      examples:
-      - 7f8a1b2c-3d4e-4f5a-8b9c-0d1e2f3a4b5c
-      type: string
-      pattern: '[^\s\\/]+'
-    TeamId:
-      title: TeamId
-      examples:
-      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
-      type: string
-      pattern: '[^\s\\/]+'
-    CallerRef:
-      title: CallerRef
-      description: stringified caller reference in format $type/$id
-      examples:
-      - user/17a3d4563d5a67a3d456ad635
-      type: string
-    UserId:
-      title: UserId
-      examples:
-      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
-      type: string
-      pattern: '[^\s\\/]+'
-    ExportMeetingsRequest:
-      title: ExportMeetingsRequest
-      type: object
-      required:
-      - start
-      - end
-      properties:
-        workspaceIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        start:
-          type: string
-          format: date-time
-        end:
-          type: string
-          format: date-time
-        assigneeIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        hostIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        bookerIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        meetingTypeIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            format: uuid
-        status:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/MeetingStatus'
-    Map_String:
-      title: Map_String
-      type: object
-      additionalProperties:
-        type: string
-    PaginatedResult_User:
-      title: PaginatedResult_User
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    SchedulingLinkMemberDetail:
-      title: SchedulingLinkMemberDetail
-      type: object
-      required:
-      - id
-      properties:
-        email:
-          type: string
-          pattern: .+@.+
-        id:
-          $ref: '#/components/schemas/UserId'
-        name:
-          type: string
-          minLength: 1
-        slug:
-          type: string
-          pattern: '[-0-9a-z_]+'
-    SimpleMetadata:
-      title: SimpleMetadata
-      type: object
-      required:
-      - createdAt
-      - createdBy
-      - updatedAt
-      - updatedBy
-      - revision
-      properties:
-        createdAt:
-          type: string
-          format: date-time
-        createdBy:
-          $ref: '#/components/schemas/CallerRef'
-        updatedAt:
-          type: string
-          format: date-time
-        updatedBy:
-          $ref: '#/components/schemas/CallerRef'
-        revision:
-          type: integer
-          format: int32
-    PersonalSchedulingLinkDetail:
-      title: PersonalSchedulingLinkDetail
-      type: object
-      required:
-      - slug
-      - meetingTypeId
-      - meetingTypeName
-      - bookingUrl
-      properties:
-        slug:
-          type: string
-          pattern: '[-0-9a-z_]+'
-        meetingTypeId:
-          $ref: '#/components/schemas/MeetingTypeId'
-        meetingTypeName:
-          type: string
-        bookingUrl:
-          examples:
-          - https://example.com
-          type: string
-    User:
-      title: User
-      type: object
-      required:
-      - id
-      - name
-      - email
-      - isSuperAdmin
-      - licenses
-      properties:
-        id:
-          $ref: '#/components/schemas/UserId'
-        name:
-          type: string
-          minLength: 1
-        email:
-          $ref: '#/components/schemas/Email'
-        isSuperAdmin:
-          type: boolean
-        managedWorkspaces:
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        managedTeams:
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        licenses:
-          $ref: '#/components/schemas/UserLicenses'
-        salesforce:
-          $ref: '#/components/schemas/SalesforceUser'
-        hubspot:
-          $ref: '#/components/schemas/HubspotUser'
-        slug:
-          type: string
-          pattern: '[-0-9a-z_]+'
-        workspaces:
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        personalWorkspaceId:
-          type: string
-          pattern: '[^\s\\/]+'
-    RoundRobinSchedulingLinksRequest:
-      title: RoundRobinSchedulingLinksRequest
-      type: object
-      properties:
-        filterWorkspaceIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        filterLinkSlugs:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[-0-9a-z_]+'
-        filterMeetingTypeId:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            format: uuid
-        filterDistributionIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-    UserLicenses:
-      title: UserLicenses
-      type: object
-      required:
-      - distro
-      - chiliCalOrg
-      - concierge
-      - conciergeLive
-      - chat
-      - handoff
-      properties:
-        distro:
-          type: boolean
-        chiliCalOrg:
-          type: boolean
-        concierge:
-          type: boolean
-        conciergeLive:
-          type: boolean
-        chat:
-          type: boolean
-        handoff:
-          type: boolean
-    FindAllRequest:
-      title: FindAllRequest
-      type: object
-      properties:
-        workspaceIds:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-        name:
-          type: string
-        member:
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
     Email:
       title: Email
       examples:
       - john.doe@acme.com
       type: string
       pattern: .+@.+
+    SimpleRule_HubspotSimpleRule:
+      title: SimpleRule_HubspotSimpleRule
+      type: object
+      required:
+      - ownershipObject
+      - teamId
+      - type
+      properties:
+        ownershipObject:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/HubspotObjectOwner'
+        teamId:
+          $ref: '#/components/schemas/TeamId'
+        type:
+          type: string
+          const: HubspotSimpleRule
+    SharedWith:
+      title: SharedWith
+      oneOf:
+      - $ref: '#/components/schemas/SharedWith_Teams'
+      - $ref: '#/components/schemas/SharedWith_Workspace'
+      discriminator:
+        propertyName: type
+        mapping:
+          Teams: '#/components/schemas/SharedWith_Teams'
+          Workspace: '#/components/schemas/SharedWith_Workspace'
+    AdminSchedulingLinkId:
+      title: AdminSchedulingLinkId
+      examples:
+      - a5b6c7d8-e9f0-4a1b-9c2d-3e4f5a6b7c8d
+      type: string
+      pattern: '[^\s\\/]+'
+    RoutingStrategy_RuleBasedRouting:
+      title: RoutingStrategy_RuleBasedRouting
+      type: object
+      required:
+      - ruleId
+      - scheduleWithTeamMember
+      - required
+      - type
+      properties:
+        ruleId:
+          $ref: '#/components/schemas/RuleId'
+        scheduleWithTeamMember:
+          $ref: '#/components/schemas/ScheduleWithTeamMember'
+        required:
+          type: boolean
+        type:
+          type: string
+          const: RuleBasedRouting
+    OwnershipSchedulingLinkDetail:
+      title: OwnershipSchedulingLinkDetail
+      type: object
+      required:
+      - workspaceId
+      - linkId
+      - name
+      - slug
+      - ownership
+      - distribution
+      - pageConfig
+      - sharedWith
+      - bookingUrl
+      properties:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        linkId:
+          $ref: '#/components/schemas/OwnershipSchedulingLinkId'
+        name:
+          type: string
+          minLength: 1
+        slug:
+          description: URL slug of the link.
+          type: string
+          pattern: '[-0-9a-z_]+'
+        meetingTypeIds:
+          description: Meeting types offered on this link.
+          type: array
+          items:
+            type: string
+            format: uuid
+        ownership:
+          $ref: '#/components/schemas/OwnershipInvitation'
+          description: Ownership-based routing configuration.
+        distribution:
+          $ref: '#/components/schemas/DistributionInvitation'
+        pageConfig:
+          $ref: '#/components/schemas/LinkPageConfig'
+          description: Custom settings for the public booking page.
+        sharedWith:
+          $ref: '#/components/schemas/SharedWith'
+        bookingUrl:
+          description: Public URL a guest uses to book this link.
+          examples:
+          - https://example.com
+          type: string
+    GroupSchedulingLinkDetails:
+      title: GroupSchedulingLinkDetails
+      type: object
+      properties:
+        links:
+          description: The group scheduling links.
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupSchedulingLinkDetail'
+    OwnershipInvitation:
+      title: OwnershipInvitation
+      type: object
+      required:
+      - ownershipSettings
+      - host
+      - bookerInvitation
+      properties:
+        ownershipSettings:
+          $ref: '#/components/schemas/OwnershipSettings'
+        host:
+          $ref: '#/components/schemas/OwnershipHost'
+        bookerInvitation:
+          $ref: '#/components/schemas/BookerInvitation'
+        alwaysInvitedUsers:
+          description: Users invited to every meeting booked through this link, in addition to the routed
+            owner.
+          type: array
+          items:
+            $ref: '#/components/schemas/AlwaysInvitedUser'

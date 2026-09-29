@@ -1,7 +1,7 @@
 ---
 name: Distro Router Configuration
 description: Creates, updates, activates/deactivates, and deletes Chili Piper Distro (lead-routing) routers — full lifecycle with dry-run diffs, async status polling, overlay-aware updates, and delete safety gates. Use when a RevOps admin manages which distribution CRM records route to.
-version: 0.2.2
+version: 0.2.3
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "List all Distro routers in the Inbound workspace and their statuses"
@@ -49,7 +49,7 @@ Active —deactivate→ Deactivating (async, poll!) → Inactive —delete→ go
 
 | Action | Notes |
 |--------|-------|
-| `listWorkspaces` | Workspace items use `id` |
+| `workspaceList` | Workspace items use `id` |
 | `distroListRouters` | `{routers: [{id, name, status, trigger}]}` |
 | `distroRouterGet` | Full view: `{id, workspaceId, name, description?, status, routing}` |
 | `distroRouterCreate` | `{workspaceId, name, routing}` → **Inactive**; `routing.routes` is optional (defaults to empty — catch-all-only routers need not send `"routes": []`, CEH-11715) |

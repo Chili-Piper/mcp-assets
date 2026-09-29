@@ -1,7 +1,7 @@
 ---
 name: distro-debugger
 description: Debugs why a CRM record was routed (or not routed) through a Chili Piper distribution — accepts a log ID, Salesforce record ID, or contact/lead name, explains each rule stage, and recommends a targeted fix
-version: 0.3.2
+version: 0.3.3
 references:
   - api-reference
   - debug-procedure

@@ -1,0 +1,774 @@
+# Generated from the Chili Piper Edge API OpenAPI spec by
+# .github/scripts/generate_gpt_openapi.py — do not edit by hand.
+edgeVersion: 1.494.0
+operations:
+  asset-change-history-list:
+    operationId: assetChangeHistoryList
+    method: get
+    path: /v1/org/asset-change-history
+  assignment-table-csv-download:
+    operationId: assignmentTableCsvDownload
+    method: get
+    path: /v1/org/assignment-tables/{assignmentTableId}/csv
+  assignment-table-csv-upload:
+    operationId: assignmentTableCsvUpload
+    method: put
+    path: /v1/org/assignment-tables/{assignmentTableId}/csv
+  assignment-table-definition-create:
+    operationId: assignmentTableDefinitionCreate
+    method: post
+    path: /v1/org/assignment-table-definitions/{assignmentTableId}
+  assignment-table-definition-delete:
+    operationId: assignmentTableDefinitionDelete
+    method: delete
+    path: /v1/org/assignment-table-definitions/{assignmentTableId}
+  assignment-table-definition-get:
+    operationId: assignmentTableDefinitionGet
+    method: get
+    path: /v1/org/assignment-table-definitions/{assignmentTableId}
+  assignment-table-definition-list:
+    operationId: assignmentTableDefinitionList
+    method: get
+    path: /v1/org/assignment-table-definitions/list
+  assignment-table-definition-patch-column:
+    operationId: assignmentTableDefinitionPatchColumn
+    method: patch
+    path: /v1/org/assignment-table-definitions/{assignmentTableId}/column/{columnKey}
+  assignment-table-definition-replace:
+    operationId: assignmentTableDefinitionReplace
+    method: put
+    path: /v1/org/assignment-table-definitions/{assignmentTableId}
+  assignment-table-delete:
+    operationId: assignmentTableDelete
+    method: delete
+    path: /v1/org/assignment-tables/{assignmentTableId}
+  assignment-table-get:
+    operationId: assignmentTableGet
+    method: get
+    path: /v1/org/assignment-tables/{assignmentTableId}
+  assignment-table-get-by-ids:
+    operationId: assignmentTableGetByIds
+    method: get
+    path: /v1/org/assignment-tables/by-ids
+  assignment-table-upsert:
+    operationId: assignmentTableUpsert
+    method: put
+    path: /v1/org/assignment-tables/{assignmentTableId}
+  availability-combined:
+    operationId: availabilityCombined
+    method: post
+    path: /v1/org/availability/users/combined
+    deprecated: true
+    replacement: availability-slots-v2
+  availability-configured:
+    operationId: availabilityConfigured
+    method: put
+    path: /v1/org/availability/configured
+  availability-flexible:
+    operationId: availabilityFlexible
+    method: post
+    path: /v1/org/availability
+    deprecated: true
+    replacement: availability-slots-v2
+  availability-slots:
+    operationId: availabilitySlots
+    method: post
+    path: /v1/org/availability/slots
+    deprecated: true
+    replacement: availability-slots-v2
+  availability-slots-v2:
+    operationId: availabilitySlotsV2
+    method: put
+    path: /v1/org/availability/slots-v2
+  campaign-list:
+    operationId: campaignList
+    method: get
+    path: /v1/org/campaign/list
+  campaign-search:
+    operationId: campaignSearch
+    method: get
+    path: /v1/org/campaign/search
+  chat-logs:
+    operationId: chatLogs
+    method: get
+    path: /v1/org/chat/logs
+  chat-transcript:
+    operationId: chatTranscript
+    method: get
+    path: /v1/org/chat/transcript
+  concierge-call-logs:
+    operationId: conciergeCallLogs
+    method: post
+    path: /v1/org/concierge/call-logs
+  concierge-list-routers:
+    operationId: conciergeListRouters
+    method: post
+    path: /v1/org/concierge/routers/concierge/list
+  concierge-logs:
+    operationId: conciergeLogs
+    method: post
+    path: /v1/org/concierge/logs
+  concierge-route:
+    operationId: conciergeRoute
+    method: post
+    path: /v1/org/concierge/routers/rest
+  concierge-route-by-slug:
+    operationId: conciergeRouteBySlug
+    method: post
+    path: /v1/org/concierge/routers/{routerSlug}/rest
+  concierge-router-create:
+    operationId: conciergeRouterCreate
+    method: post
+    path: /v1/org/concierge/routers/concierge
+  concierge-router-delete:
+    operationId: conciergeRouterDelete
+    method: delete
+    path: /v1/org/concierge/routers/concierge/{routerId}
+  concierge-router-get:
+    operationId: conciergeRouterGet
+    method: get
+    path: /v1/org/concierge/routers/concierge/{routerId}
+  concierge-router-update:
+    operationId: conciergeRouterUpdate
+    method: put
+    path: /v1/org/concierge/routers/concierge/{routerId}
+  concierge-schedule:
+    operationId: conciergeSchedule
+    method: post
+    path: /v1/org/concierge/routing/{routingId}/schedule-simple
+  crm-activity:
+    operationId: crmActivity
+    method: get
+    path: /v1/org/crm/activity/{crmEventId}
+  crm-cancel:
+    operationId: crmCancel
+    method: get
+    path: /v1/org/crm/cancel/{crmEventId}
+    deprecated: true
+    replacement: crm-cancel-post
+  crm-cancel-post:
+    operationId: crmCancelPost
+    method: post
+    path: /v2/org/crm/cancel/{crmEventId}
+  crm-get:
+    operationId: crmGet
+    method: get
+    path: /v1/org/crm/get/{crmEventId}
+  crm-noshow:
+    operationId: crmNoshow
+    method: get
+    path: /v1/org/crm/noshow/{crmEventId}
+    deprecated: true
+    replacement: crm-noshow-post
+  crm-noshow-post:
+    operationId: crmNoshowPost
+    method: post
+    path: /v2/org/crm/noshow/{crmEventId}
+  data-field-create:
+    operationId: dataFieldCreate
+    method: post
+    path: /v1/org/data-fields
+  data-field-delete:
+    operationId: dataFieldDelete
+    method: delete
+    path: /v1/org/data-fields/{reference}
+  data-field-get:
+    operationId: dataFieldGet
+    method: get
+    path: /v1/org/data-fields/{reference}
+  data-field-list:
+    operationId: dataFieldList
+    method: get
+    path: /v1/org/data-fields/list
+  data-field-set-smart-parameters:
+    operationId: dataFieldSetSmartParameters
+    method: put
+    path: /v1/org/data-fields/{reference}/smart-parameters
+  data-field-update:
+    operationId: dataFieldUpdate
+    method: put
+    path: /v1/org/data-fields/{reference}
+  distribution-adjust:
+    operationId: distributionAdjust
+    method: post
+    path: /v1/org/distribution/{distributionId}/adjust
+    deprecated: true
+    replacement: distribution-adjust-v3
+  distribution-adjust-v3:
+    operationId: distributionAdjustV3
+    method: post
+    path: /v3/org/distribution/{distributionId}/adjust
+  distribution-create:
+    operationId: distributionCreate
+    method: post
+    path: /v1/org/distribution
+  distribution-delete:
+    operationId: distributionDelete
+    method: delete
+    path: /v1/org/distribution/{distributionId}
+  distribution-history-list:
+    operationId: distributionHistoryList
+    method: get
+    path: /v1/org/distribution-history
+  distribution-list:
+    operationId: distributionList
+    method: get
+    path: /v1/org/distribution
+    deprecated: true
+    replacement: distribution-list-put
+  distribution-list-put:
+    operationId: distributionListPut
+    method: put
+    path: /v2/org/distribution/list
+  distribution-update:
+    operationId: distributionUpdate
+    method: post
+    path: /v1/org/distribution/{distributionId}
+    deprecated: true
+    replacement: distribution-update-v3
+  distribution-update-v3:
+    operationId: distributionUpdateV3
+    method: post
+    path: /v3/org/distribution/{distributionId}
+  distribution-workspace-settings-get:
+    operationId: distributionWorkspaceSettingsGet
+    method: get
+    path: /v1/org/distribution/workspace-settings
+  distribution-workspace-settings-update:
+    operationId: distributionWorkspaceSettingsUpdate
+    method: put
+    path: /v1/org/distribution/workspace-settings
+  distro-list-routers:
+    operationId: distroListRouters
+    method: post
+    path: /v1/org/distro/routers/list
+  distro-log-get:
+    operationId: distroLogGet
+    method: get
+    path: /v1/org/distro/logs/{logId}
+  distro-logs:
+    operationId: distroLogs
+    method: post
+    path: /v1/org/distro/logs
+  distro-router-activate:
+    operationId: distroRouterActivate
+    method: post
+    path: /v1/org/distro/routers/{routerId}/activate
+  distro-router-create:
+    operationId: distroRouterCreate
+    method: post
+    path: /v1/org/distro/routers
+  distro-router-deactivate:
+    operationId: distroRouterDeactivate
+    method: post
+    path: /v1/org/distro/routers/{routerId}/deactivate
+  distro-router-delete:
+    operationId: distroRouterDelete
+    method: delete
+    path: /v1/org/distro/routers/{routerId}
+  distro-router-get:
+    operationId: distroRouterGet
+    method: get
+    path: /v1/org/distro/routers/{routerId}
+  distro-router-update:
+    operationId: distroRouterUpdate
+    method: put
+    path: /v1/org/distro/routers/{routerId}
+  enrichment-waterfall-list:
+    operationId: enrichmentWaterfallList
+    method: get
+    path: /v1/org/enrichment/waterfall
+  handoff-init:
+    operationId: handoffInit
+    method: post
+    path: /v1/org/handoff/workspace/{workspaceId}/booker/{userId}/init-simple
+  handoff-router-create:
+    operationId: handoffRouterCreate
+    method: post
+    path: /v1/org/handoff/routers/handoff
+  handoff-router-delete:
+    operationId: handoffRouterDelete
+    method: delete
+    path: /v1/org/handoff/routers/handoff/{routerId}
+  handoff-router-get:
+    operationId: handoffRouterGet
+    method: get
+    path: /v1/org/handoff/routers/handoff/{routerId}
+  handoff-router-list:
+    operationId: handoffRouterList
+    method: get
+    path: /v1/org/handoff/routers/handoff/list
+  handoff-router-update:
+    operationId: handoffRouterUpdate
+    method: put
+    path: /v1/org/handoff/routers/handoff/{routerId}
+  handoff-schedule:
+    operationId: handoffSchedule
+    method: post
+    path: /v1/org/handoff/routing/{routingId}/router/{routerId}/path/{pathId}/booker/{userId}/schedule-simple
+  handoff-select-simple:
+    operationId: handoffSelectSimple
+    method: post
+    path: /v1/org/handoff/routing/{routingId}/router/{routerId}/path/{pathId}/booker/{userId}/select-simple
+  health-ping:
+    operationId: healthPing
+    method: get
+    path: /v1/org/health/ping
+  integration-connection:
+    operationId: integrationConnection
+    method: get
+    path: /v1/org/integration/connection
+  integration-find-users:
+    operationId: integrationFindUsers
+    method: put
+    path: /v2/org/integration/users
+  integration-gong-set-mappings:
+    operationId: integrationGongSetMappings
+    method: put
+    path: /v1/org/integration/gong/user-mappings
+  integration-gong-users:
+    operationId: integrationGongUsers
+    method: put
+    path: /v1/org/integration/gong/users
+  integration-hubspot-set-mappings:
+    operationId: integrationHubspotSetMappings
+    method: put
+    path: /v1/org/integration/hubspot/user-mappings
+  integration-hubspot-tenant:
+    operationId: integrationHubspotTenant
+    method: get
+    path: /v1/org/integration/hubspot/tenant
+  integration-hubspot-users:
+    operationId: integrationHubspotUsers
+    method: put
+    path: /v1/org/integration/hubspot/users
+  integration-salesforce-set-mappings:
+    operationId: integrationSalesforceSetMappings
+    method: put
+    path: /v1/org/integration/salesforce/user-mappings
+  integration-salesforce-tenant:
+    operationId: integrationSalesforceTenant
+    method: get
+    path: /v1/org/integration/salesforce/tenant
+  integration-salesforce-users:
+    operationId: integrationSalesforceUsers
+    method: put
+    path: /v1/org/integration/salesforce/users
+  integration-salesloft-add-to-cadence:
+    operationId: integrationSalesloftAddToCadence
+    method: put
+    path: /v1/org/integration/salesloft/add-to-cadence
+  integration-salesloft-cadence-steps:
+    operationId: integrationSalesloftCadenceSteps
+    method: get
+    path: /v1/org/integration/salesloft/cadences/{cadenceId}/steps
+  integration-salesloft-cadences:
+    operationId: integrationSalesloftCadences
+    method: get
+    path: /v1/org/integration/salesloft/cadences
+  integration-salesloft-prospect-find:
+    operationId: integrationSalesloftProspectFind
+    method: get
+    path: /v1/org/integration/salesloft/prospect
+  integration-salesloft-users:
+    operationId: integrationSalesloftUsers
+    method: get
+    path: /v1/org/integration/salesloft/users
+  integration-slack-set-mappings:
+    operationId: integrationSlackSetMappings
+    method: put
+    path: /v1/org/integration/slack/user-mappings
+  integration-slack-users:
+    operationId: integrationSlackUsers
+    method: put
+    path: /v1/org/integration/slack/users
+  integration-teams-set-mappings:
+    operationId: integrationTeamsSetMappings
+    method: put
+    path: /v1/org/integration/teams/user-mappings
+  integration-teams-users:
+    operationId: integrationTeamsUsers
+    method: put
+    path: /v1/org/integration/teams/users
+  meeting-activity:
+    operationId: meetingActivity
+    method: get
+    path: /v1/org/meetings/activity/{meetingId}
+  meeting-cancel:
+    operationId: meetingCancel
+    method: get
+    path: /v1/org/meetings/cancel/{meetingId}
+    deprecated: true
+    replacement: meeting-cancel-post
+  meeting-cancel-post:
+    operationId: meetingCancelPost
+    method: post
+    path: /v2/org/meetings/cancel/{meetingId}
+  meeting-export:
+    operationId: meetingExport
+    method: get
+    path: /v1/org/meetings/meetings/export
+    deprecated: true
+    replacement: meeting-export-v2-put
+  meeting-export-put:
+    operationId: meetingExportPut
+    method: put
+    path: /v2/org/meetings/meetings/export
+    deprecated: true
+    replacement: meeting-export-v2-put
+  meeting-export-v2:
+    operationId: meetingExportV2
+    method: get
+    path: /v2/org/meetings/meetings/export
+    deprecated: true
+    replacement: meeting-export-v2-put
+  meeting-export-v2-put:
+    operationId: meetingExportV2Put
+    method: put
+    path: /v3/org/meetings/meetings/export
+  meeting-get:
+    operationId: meetingGet
+    method: get
+    path: /v1/org/meetings/get/{meetingId}
+  meeting-get-meeting-prep:
+    operationId: meetingGetMeetingPrep
+    method: get
+    path: /v1/org/meetings/get/{meetingId}/meeting-prep
+  meeting-list:
+    operationId: meetingList
+    method: get
+    path: /v1/org/meetings/meetings
+    deprecated: true
+    replacement: meeting-list-put
+  meeting-list-put:
+    operationId: meetingListPut
+    method: put
+    path: /v2/org/meetings/meetings
+  meeting-noshow:
+    operationId: meetingNoshow
+    method: get
+    path: /v1/org/meetings/noshow/{meetingId}
+    deprecated: true
+    replacement: meeting-noshow-post
+  meeting-noshow-post:
+    operationId: meetingNoshowPost
+    method: post
+    path: /v2/org/meetings/noshow/{meetingId}
+  meeting-patch:
+    operationId: meetingPatch
+    method: patch
+    path: /v1/org/meetings/{meetingId}
+  meeting-type-attach-reminder:
+    operationId: meetingTypeAttachReminder
+    method: put
+    path: /v1/org/meeting-types/{meetingTypeId}/reminders/{reminderId}
+  meeting-type-create:
+    operationId: meetingTypeCreate
+    method: post
+    path: /v1/org/meeting-types
+  meeting-type-delete:
+    operationId: meetingTypeDelete
+    method: delete
+    path: /v1/org/meeting-types/{meetingTypeId}
+  meeting-type-detach-reminder:
+    operationId: meetingTypeDetachReminder
+    method: delete
+    path: /v1/org/meeting-types/{meetingTypeId}/reminders/{reminderId}
+  meeting-type-get:
+    operationId: meetingTypeGet
+    method: get
+    path: /v1/org/meeting-types/{meetingTypeId}
+  meeting-type-list:
+    operationId: meetingTypeList
+    method: get
+    path: /v1/org/meeting-types/list
+  meeting-type-reminder-create:
+    operationId: meetingTypeReminderCreate
+    method: post
+    path: /v1/org/meeting-type-reminders
+  meeting-type-reminder-delete:
+    operationId: meetingTypeReminderDelete
+    method: delete
+    path: /v1/org/meeting-type-reminders/{reminderId}
+  meeting-type-reminder-list:
+    operationId: meetingTypeReminderList
+    method: get
+    path: /v1/org/meeting-type-reminders/list
+  meeting-type-reminder-update:
+    operationId: meetingTypeReminderUpdate
+    method: put
+    path: /v1/org/meeting-type-reminders/{reminderId}
+  meeting-type-update:
+    operationId: meetingTypeUpdate
+    method: put
+    path: /v1/org/meeting-types/{meetingTypeId}
+  personal-meeting-type-create:
+    operationId: personalMeetingTypeCreate
+    method: post
+    path: /v1/org/personal-meeting-types
+  personal-meeting-type-delete:
+    operationId: personalMeetingTypeDelete
+    method: delete
+    path: /v1/org/personal-meeting-types/{meetingTypeId}
+  personal-meeting-type-get:
+    operationId: personalMeetingTypeGet
+    method: get
+    path: /v1/org/personal-meeting-types/{meetingTypeId}
+  personal-meeting-type-list:
+    operationId: personalMeetingTypeList
+    method: get
+    path: /v1/org/personal-meeting-types
+  personal-meeting-type-update:
+    operationId: personalMeetingTypeUpdate
+    method: put
+    path: /v1/org/personal-meeting-types/{meetingTypeId}
+  resource-scheduler-run:
+    operationId: resourceSchedulerRun
+    method: post
+    path: /v1/org/resource-scheduler/{resourceSchedulerId}/run
+  rule-create:
+    operationId: ruleCreate
+    method: post
+    path: /v1/org/rule
+  rule-delete:
+    operationId: ruleDelete
+    method: delete
+    path: /v1/org/rule
+  rule-get:
+    operationId: ruleGet
+    method: get
+    path: /v1/org/rule/{ruleId}
+  rule-list:
+    operationId: ruleList
+    method: get
+    path: /v1/org/rule/list
+  rule-modify:
+    operationId: ruleModify
+    method: put
+    path: /v1/org/rule
+  scheduling-link-create-admin-one-on-one:
+    operationId: schedulingLinkCreateAdminOneOnOne
+    method: post
+    path: /v1/org/schedulingLinks/admin-one-on-one
+  scheduling-link-create-group:
+    operationId: schedulingLinkCreateGroup
+    method: post
+    path: /v1/org/schedulingLinks/group
+  scheduling-link-create-ownership:
+    operationId: schedulingLinkCreateOwnership
+    method: post
+    path: /v1/org/schedulingLinks/ownership
+  scheduling-link-create-round-robin:
+    operationId: schedulingLinkCreateRoundRobin
+    method: post
+    path: /v1/org/schedulingLinks/round-robin
+  scheduling-link-delete-admin-one-on-one:
+    operationId: schedulingLinkDeleteAdminOneOnOne
+    method: delete
+    path: /v1/org/schedulingLinks/admin-one-on-one/{linkId}
+  scheduling-link-delete-group:
+    operationId: schedulingLinkDeleteGroup
+    method: delete
+    path: /v1/org/schedulingLinks/group/{linkId}
+  scheduling-link-delete-ownership:
+    operationId: schedulingLinkDeleteOwnership
+    method: delete
+    path: /v1/org/schedulingLinks/ownership/{linkId}
+  scheduling-link-delete-round-robin:
+    operationId: schedulingLinkDeleteRoundRobin
+    method: delete
+    path: /v1/org/schedulingLinks/round-robin/{linkId}
+  scheduling-link-force-schedule:
+    operationId: schedulingLinkForceSchedule
+    method: post
+    path: /v1/org/schedulingLinks/routing/{routeId}/force-schedule-simple
+  scheduling-link-init:
+    operationId: schedulingLinkInit
+    method: post
+    path: /v1/org/schedulingLinks/init-simple
+  scheduling-link-list-admin-one-on-one:
+    operationId: schedulingLinkListAdminOneOnOne
+    method: post
+    path: /v1/org/schedulingLinks/list-admin-one-on-one
+  scheduling-link-list-group:
+    operationId: schedulingLinkListGroup
+    method: post
+    path: /v1/org/schedulingLinks/list-group
+  scheduling-link-list-ownership:
+    operationId: schedulingLinkListOwnership
+    method: post
+    path: /v1/org/schedulingLinks/list-ownership
+  scheduling-link-list-personal:
+    operationId: schedulingLinkListPersonal
+    method: get
+    path: /v1/org/schedulingLinks/list-personal/{userId}
+    deprecated: true
+    replacement: scheduling-link-list-personal-v2
+  scheduling-link-list-personal-deprecated:
+    operationId: schedulingLinkListPersonalDeprecated
+    method: get
+    path: /v1/org/schedulingLinks/{userId}
+    deprecated: true
+    replacement: scheduling-link-list-personal
+  scheduling-link-list-personal-v2:
+    operationId: schedulingLinkListPersonalV2
+    method: get
+    path: /v1/org/schedulingLinks/list-personal-v2/{userId}
+  scheduling-link-list-round-robin:
+    operationId: schedulingLinkListRoundRobin
+    method: post
+    path: /v1/org/schedulingLinks/list-round-robin
+  scheduling-link-schedule:
+    operationId: schedulingLinkSchedule
+    method: post
+    path: /v1/org/schedulingLinks/routing/{routeId}/schedule-simple
+  scheduling-link-update-admin-one-on-one:
+    operationId: schedulingLinkUpdateAdminOneOnOne
+    method: put
+    path: /v1/org/schedulingLinks/admin-one-on-one/{linkId}
+  scheduling-link-update-group:
+    operationId: schedulingLinkUpdateGroup
+    method: put
+    path: /v1/org/schedulingLinks/group/{linkId}
+  scheduling-link-update-ownership:
+    operationId: schedulingLinkUpdateOwnership
+    method: put
+    path: /v1/org/schedulingLinks/ownership/{linkId}
+  scheduling-link-update-round-robin:
+    operationId: schedulingLinkUpdateRoundRobin
+    method: put
+    path: /v1/org/schedulingLinks/round-robin/{linkId}
+  team-add-users:
+    operationId: teamAddUsers
+    method: post
+    path: /v1/org/team/users/add
+  team-create:
+    operationId: teamCreate
+    method: post
+    path: /v2/org/team/create
+  team-delete:
+    operationId: teamDelete
+    method: delete
+    path: /v2/org/team/{teamId}
+  team-list:
+    operationId: teamList
+    method: get
+    path: /v1/org/team
+    deprecated: true
+    replacement: team-list-put
+  team-list-put:
+    operationId: teamListPut
+    method: put
+    path: /v2/org/team
+  team-remove-users:
+    operationId: teamRemoveUsers
+    method: post
+    path: /v1/org/team/users/remove
+  team-remove-users-all:
+    operationId: teamRemoveUsersAll
+    method: post
+    path: /v1/org/team/users/remove-from-all
+  tenant-get:
+    operationId: tenantGet
+    method: get
+    path: /v1/org/tenant/get
+  user-find:
+    operationId: userFind
+    method: get
+    path: /v1/org/user/find
+  user-find-by-filter:
+    operationId: userFindByFilter
+    method: post
+    path: /v1/org/user/find-by-filter
+  user-find-by-ids:
+    operationId: userFindByIds
+    method: post
+    path: /v1/org/user/find-by-id
+  user-invite:
+    operationId: userInvite
+    method: post
+    path: /v1/org/user/invite
+  user-read:
+    operationId: userRead
+    method: get
+    path: /v1/org/user/read/{userId}
+  user-send-invites:
+    operationId: userSendInvites
+    method: post
+    path: /v1/org/user/send-invites
+  user-update:
+    operationId: userUpdate
+    method: patch
+    path: /v1/org/user/update/{userId}
+  user-update-licenses:
+    operationId: userUpdateLicenses
+    method: post
+    path: /v1/org/user/licenses
+  web-experience-create:
+    operationId: webExperienceCreate
+    method: post
+    path: /v1/org/web-experiences
+  web-experience-delete:
+    operationId: webExperienceDelete
+    method: delete
+    path: /v1/org/web-experiences/{webExperienceId}
+  web-experience-get:
+    operationId: webExperienceGet
+    method: get
+    path: /v1/org/web-experiences/{webExperienceId}
+  web-experience-list:
+    operationId: webExperienceList
+    method: get
+    path: /v1/org/web-experiences/list
+  web-experience-logs:
+    operationId: webExperienceLogs
+    method: get
+    path: /v1/org/web-experiences/logs
+  web-experience-update:
+    operationId: webExperienceUpdate
+    method: put
+    path: /v1/org/web-experiences/{webExperienceId}
+  webhook-create:
+    operationId: webhookCreate
+    method: post
+    path: /v1/org/webhook
+  webhook-delete:
+    operationId: webhookDelete
+    method: delete
+    path: /v1/org/webhook
+  webhook-get-secret:
+    operationId: webhookGetSecret
+    method: get
+    path: /v1/org/webhook/secret
+  webhook-list:
+    operationId: webhookList
+    method: get
+    path: /v1/org/webhook/list
+  webhook-rotate-secret:
+    operationId: webhookRotateSecret
+    method: post
+    path: /v1/org/webhook/secret/rotate
+  webhook-update:
+    operationId: webhookUpdate
+    method: put
+    path: /v1/org/webhook
+  workspace-add-users:
+    operationId: workspaceAddUsers
+    method: post
+    path: /v1/org/workspace/users/add
+  workspace-list:
+    operationId: workspaceList
+    method: get
+    path: /v1/org/workspace
+  workspace-list-users:
+    operationId: workspaceListUsers
+    method: get
+    path: /v1/org/workspace/users
+  workspace-remove-users:
+    operationId: workspaceRemoveUsers
+    method: post
+    path: /v1/org/workspace/users/remove
+  workspace-remove-users-all:
+    operationId: workspaceRemoveUsersAll
+    method: post
+    path: /v1/org/workspace/users/remove-from-all

@@ -1,7 +1,7 @@
 ---
 name: availability-inspector
 description: Checks why a rep or team is showing no available slots — diagnoses calendar connectivity, working hours, meeting limits, and distribution membership to find the specific blocker
-version: 0.1.2
+version: 0.1.3
 references:
   - api-reference
   - diagnostics
