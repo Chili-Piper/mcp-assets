@@ -5,6 +5,18 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Added
+- **`chiliforms-configuration` skill (new, read-only) + paired GPT +
+  `/configure-chiliforms` command.** Turns a Concierge router into a working
+  [ChiliForms](https://fire.chilipiper.com/chiliforms/cjs/chiliforms.js) embed, a form
+  Chili Piper generates from the router, for customers **without a form of their own**.
+  It resolves the tenant's `domain`/`tenantId` via `tenant-get`, confirms that the router has
+  a Chili webform or router link to generate from, and joins the fields to `data-field-list`
+  for control types and URL-prefill aliases. It returns a ready-to-paste snippet with test
+  steps. Customers who already have a form are pointed to the standard Concierge snippet
+  (`ChiliPiper.deploy`), and ChiliForms' `attach` mode is used only on explicit request.
+  Includes a troubleshooting reference keyed on ChiliForms' own console messages.
+  Router-side gaps are handed off to `concierge-router-configuration`, since this skill
+  never writes.
 - **`onboarding-chili-piper` skill (new, writes) + `/onboard` command.** Guided self-serve
   onboarding for a new customer: reads the account (tier, CRM, users, workspace structure),
   runs a short interview, confirms an Onboarding Plan, then builds shared assets (teams,

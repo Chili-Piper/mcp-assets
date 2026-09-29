@@ -36,6 +36,7 @@ _Last updated: 2026-07-02. Backfilled the missing `distro-debugger` row (shipped
 | distribution-analysis | 0.1.0 | ✅ | ✅ built | ✅ pass | `verified` | distribution-list-put array (weights/userStates/handling) + meeting attribution confirmed |
 | distro-debugger | 0.3.1 | ✅ | ⏳ pending | ⏳ pending | `draft` | Shipped in #35 without a QA log entry — static review + live run needed to promote |
 | chat-conversation-inspector | 0.1.0 | ✅ | ⏳ pending | ⏳ pending | `draft` | New (issue #41) — field names taken from the live Edge spec 2026-07-02; needs a real read-only call + live run |
+| chiliforms-configuration | 0.1.0 | ✅ | ✅ author | ⏳ pending | `draft` | New. tenant-get / concierge-router-get trigger views / data-field-list field names taken from the live Edge spec v1.495.0 (2026-09-29); ChiliForms runtime contract checked against Chili-Piper/frontend apps/chiliforms 2.1.0 (live on fire.chilipiper.com). Needs a real read-only MCP call + live run |
 | user-copy | 0.1.3 | ⚠️ writes | ✅ fixed | n/a | `tested` | `.id` joins corrected; dry-run/approval gates present ✅ (write skill — not live-run) |
 | user-offboarding | 0.1.4 | ⚠️ writes | ✅ fixed | n/a | `tested` | `team-list-put` `id`; `distribution-list-put` `workspaceIds[]` + weights/userStates; approval/destructive gates present ✅ (write skill — not live-run) |
 | meeting-type-management | 0.1.0 | ⚠️ writes | ⏳ pending | n/a | `draft` | New (issue #34) — schema from live Edge spec 2026-07-02; dry-run/approval gates present; needs static review via real read-only calls |

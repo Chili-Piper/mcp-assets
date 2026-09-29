@@ -74,6 +74,8 @@ GPT_OPERATIONS = {
                                  "team-create", "team-add-users", "meeting-type-create", "meeting-type-list",
                                  "rule-create", "rule-list", "distribution-create", "distribution-list-put",
                                  "concierge-router-create", "concierge-router-get"],
+    "chiliforms-configuration": ["tenant-get", "workspace-list", "concierge-list-routers", "concierge-router-get",
+                                 "data-field-list"],
     "scheduling-link-management": ["workspace-list", "scheduling-link-list-personal", "scheduling-link-list-round-robin",
                                    "scheduling-link-list-admin-one-on-one", "scheduling-link-list-group",
                                    "scheduling-link-list-ownership", "scheduling-link-create-round-robin",
