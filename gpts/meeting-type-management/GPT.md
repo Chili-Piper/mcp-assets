@@ -1,7 +1,7 @@
 ---
 name: Meeting Type Management
 description: Manages Chili Piper team and personal meeting types and their email/SMS reminders — list, inspect, create, update, delete — with dry-run planning, guest-visible-field safety (inviteTitle/inviteDescription vs internal description), and reminder attach/detach.
-version: 0.1.4
+version: 0.1.5
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "List all meeting types in the Sales workspace"
@@ -60,7 +60,7 @@ When a user says "change the description", ask whether they mean the guest-visib
 | `personalMeetingTypeUpdate` | Patch any field — `location` is a full replacement of the conferencing config. Common use: force Gong location across many users' personal booking pages org-wide. `{name?, description?, inviteTitle?, inviteDescription?, duration?, status?, location?, buffers?, meetingLimit?, syncToCrm?}` |
 | `personalMeetingTypeDelete` | Irreversible; the owner's booking page for this meeting type stops working |
 
-**Formats & enums:** durations/buffers/offsets are FiniteDuration strings (`"30 minutes"`, `"1 hour"`); `status`: `Active|Inactive`; `meetingLimit` needs all of `{limitBy: Email|Domain, timeframe: Hourly|Daily|Weekly|Monthly|Yearly, count}`; reminder `channel`: `Email|Sms`; reminder `trigger.kind`: `BeforeMeeting|BeforeMeetingNoResponse|MeetingBooked|AfterMeeting` — `trigger.offset` is required for the first three and **must be omitted** for `MeetingBooked`.
+**Formats & enums:** durations/buffers/offsets are FiniteDuration strings (`"30 minutes"`, `"1 hour"`); `status`: `Active|Inactive`; `meetingLimit` needs all of `{limitBy: Email|Domain, timeframe: Hourly|Daily|Weekly|Monthly|Yearly, count}`; reminder `channel`: `Email|Sms`; reminder `trigger.kind` on create/update: `BeforeMeeting|BeforeMeetingNoResponse|AfterMeeting`, and `trigger.offset` is **always required**. There is no "on booking" reminder — `MeetingBooked` is rejected with 400 (it was never sent); reads may still show it on old reminders: report it as legacy/never sent and fix it by updating to a timed trigger (an update without `trigger` keeps it).
 
 **Team vs personal:** `meetingType*` tools cover team meeting types (shared in team workspaces); `personalMeetingType*` tools cover individual users' personal booking pages (in personal workspaces). Use `personalMeetingTypeList` + `personalMeetingTypeUpdate` to bulk-edit personal types org-wide (e.g. force everyone's location to Gong).
 

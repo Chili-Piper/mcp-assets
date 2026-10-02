@@ -52,11 +52,12 @@ created ID to finish applying the remaining fields.
 ## Reminders
 
 **Create** — `meeting-type-reminder-create`: `{workspaceId*, channel*, trigger*, name*, title?, body*}`
-- `trigger`: `{kind, offset?}` — `offset` required for `BeforeMeeting`/`BeforeMeetingNoResponse`/`AfterMeeting` (FiniteDuration, e.g. `"1 hour"`), omitted for `MeetingBooked`.
+- `trigger`: `{kind, offset}` — `kind` is `BeforeMeeting`/`BeforeMeetingNoResponse`/`AfterMeeting`; `offset` is always required (FiniteDuration, e.g. `"1 hour"`). There is no "on booking" reminder: `MeetingBooked` is rejected with 400 (it was never sent). If asked for one, say so and offer a timed reminder instead.
 - `title` is used by Email reminders (subject); `body` is required for both channels.
 - Creating a reminder does **not** attach it to any meeting type — follow with `meeting-type-attach-reminder`.
 
 **Update** — `meeting-type-reminder-update` (`reminderId` in path, `workspaceId` required): `{name?, trigger?, title?, body?}`
+- `trigger`, when sent, follows the create rules (timed kind + `offset`). Omitting it keeps the current trigger, including a legacy `MeetingBooked` one — to repair such a reminder, send a timed `trigger`.
 - **`channel` cannot be changed after creation.** To switch Email↔Sms: create a new reminder on the target channel, `meeting-type-attach-reminder` it everywhere the old one was attached, then `meeting-type-detach-reminder` + `meeting-type-reminder-delete` the old one. Plan all four steps in the dry run.
 
 **Attach / detach** — `meeting-type-attach-reminder` / `meeting-type-detach-reminder` with `meetingTypeId` + `reminderId`. Both are idempotent (attach dedups; detach filters out). Both return the updated meeting type with its new `reminders` list — use that as the post-write verification.

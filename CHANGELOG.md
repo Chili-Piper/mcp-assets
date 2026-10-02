@@ -86,6 +86,15 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
   that a token's permissions can be edited without regenerating it (the token value
   doesn't change), so a missing-scope 403 no longer means minting a new key.
 
+### Fixed
+- **`meeting-type-management` 0.1.5** (SKILL + paired GPT) — reminders can no longer use the
+  `MeetingBooked` ("on booking") trigger ([CEH-11814](https://floatingapps.atlassian.net/browse/CEH-11814) / [CEH-11761](https://floatingapps.atlassian.net/browse/CEH-11761),
+  [edge PR #1366](https://github.com/Chili-Piper/edge-fire-service/pull/1366)). Such reminders
+  were accepted but never sent. Create/update now take only `BeforeMeeting`,
+  `BeforeMeetingNoResponse` or `AfterMeeting`, and `trigger.offset` is always required. Reads may
+  still return `MeetingBooked` on old reminders: the skill reports them as legacy and repairs
+  them by updating to a timed trigger.
+
 ## [1.3.0]
 
 ### Added

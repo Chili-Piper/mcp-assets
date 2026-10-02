@@ -50,8 +50,9 @@ Field names verified against the live public Edge API spec, 2026-07-02. The tool
 | `location` | `{default, others?[]}`; each location is one of: `AskTheGuest`, `CalendarPlatformConference`, `DefinedInMeetingType`, `HostsDefaultConferenceDetails`, `HostsDefaultPhysicalLocation`, `ZoomOneTimeLink`, `TeamsMeetingLink`, `GoToMeetingLink`, `WebexLink`, `RingCentralLink`, `GongLink` (discriminated by `type`) |
 | `sharedWith` | `{type: "Workspace"}` or `{type: "Teams", teamIds?}` — discriminated by `type`; the wire values are `Workspace`/`Teams` (the 2026-07-02 spec's `SharedWith_Workspace`/`SharedWith_Teams` consts are gone — sending them is rejected) |
 | Reminder `channel` | `Email` \| `Sms` — **immutable after creation** |
-| Reminder `trigger.kind` | `BeforeMeeting` \| `BeforeMeetingNoResponse` \| `MeetingBooked` \| `AfterMeeting` |
-| Reminder `trigger.offset` | Required for `BeforeMeeting`/`BeforeMeetingNoResponse`/`AfterMeeting`; **must be omitted** for `MeetingBooked` |
+| Reminder `trigger.kind` (write) | `BeforeMeeting` \| `BeforeMeetingNoResponse` \| `AfterMeeting` — `MeetingBooked` is **rejected with 400** on create/update (CEH-11761: such reminders were never sent) |
+| Reminder `trigger.offset` (write) | **Always required** (FiniteDuration) — every writable kind is timed |
+| Reminder `trigger.kind` (read) | May also return legacy `MeetingBooked` (`offset` absent). Report it as "legacy — never sent"; an update that omits `trigger` keeps it, so fix it by updating to a timed trigger (or detach + delete) |
 
 ## Permissions
 

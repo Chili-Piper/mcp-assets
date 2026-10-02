@@ -1,7 +1,7 @@
 ---
 name: meeting-type-management
 description: Manages Chili Piper team and personal meeting types and their email/SMS reminders — list, inspect, create, update, delete — with dry-run planning, guest-visible-field safety (inviteTitle/inviteDescription vs internal description), and reminder attach/detach.
-version: 0.1.4
+version: 0.1.5
 references:
   - api-reference
   - write-operations
@@ -113,7 +113,7 @@ Verify before presenting the plan:
 - [ ] Every change classified guest-visible vs internal; any "description" request disambiguated with the human.
 - [ ] Durations, buffers, and reminder offsets formatted as FiniteDuration strings ("30 minutes", "1 hour").
 - [ ] `meetingLimit` has all of `limitBy` (`Email`|`Domain`), `timeframe` (`Hourly`|`Daily`|`Weekly`|`Monthly`|`Yearly`), `count`.
-- [ ] Reminder `trigger.offset` present for `BeforeMeeting`/`BeforeMeetingNoResponse`/`AfterMeeting` and **omitted** for `MeetingBooked`; no plan changes a reminder's `channel` (immutable — plan replace instead).
+- [ ] Reminder writes use a timed `trigger.kind` (`BeforeMeeting`/`BeforeMeetingNoResponse`/`AfterMeeting`) with `trigger.offset` set — never `MeetingBooked` (rejected; legacy on read only); no plan changes a reminder's `channel` (immutable — plan replace instead).
 - [ ] Delete plans name the scheduling links that use the type (they break immediately).
 - [ ] Reminders read from `meeting-type-get` / `personal-meeting-type-get`, not from the list call.
 - [ ] For personal meeting type bulk operations (e.g. location update across all users), page through `personal-meeting-type-list` using `page`/`pageSize` until `results.length < pageSize`.
