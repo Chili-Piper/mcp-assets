@@ -6,7 +6,7 @@ Field names verified against the live public Edge API spec, 2026-07-02. The tool
 
 | Tool | HTTP | Notes |
 |------|------|-------|
-| `scheduling-link-list-personal` | `GET /v1/org/schedulingLinks/list-personal/{userId}` | Personal links for one user (**list-only** — no write tools exist). Do **not** use `scheduling-link-list-personal-deprecated` |
+| `scheduling-link-list-personal-v2` | `GET /v1/org/schedulingLinks/list-personal-v2/{userId}` | Personal links for one user → `{links: [...]}` (**list-only** — no write tools exist). Do **not** use the deprecated `scheduling-link-list-personal` (bare array, DO-4340) or `scheduling-link-list-personal-deprecated` |
 | `scheduling-link-list-round-robin` | `POST /v1/org/schedulingLinks/list-round-robin` | Body filters: `filterWorkspaceIds`, `filterLinkSlugs`, `filterMeetingTypeId`, `filterDistributionIds` |
 | `scheduling-link-list-admin-one-on-one` | `POST /v1/org/schedulingLinks/list-admin-one-on-one` | Same filter style |
 | `scheduling-link-list-group` | `POST /v1/org/schedulingLinks/list-group` | Same filter style |

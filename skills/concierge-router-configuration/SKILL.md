@@ -1,7 +1,7 @@
 ---
 name: concierge-router-configuration
 description: Creates, reads, updates, and deletes Chili Piper Concierge routers — the web-form routing configs that decide which rep a form submission books with. Always-live writes with dry-run diffs and representability checks; the write complement to concierge-debugger/routing-audit.
-version: 0.2.1
+version: 0.2.2
 references:
   - api-reference
   - write-procedures

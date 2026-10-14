@@ -1,7 +1,7 @@
 ---
 name: Concierge Router Builder
 description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview and confirmation checkpoint. Data fields stay UI-only; third-party webform trigger mapping is now API-writable via thirdPartyForm.
-version: 0.1.9
+version: 0.1.10
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Help me build a new Concierge router for our inbound demo form"
@@ -34,7 +34,7 @@ transactional** — if a step fails, earlier objects remain.
 ## Phases
 
 1. **Concept check & prerequisites** — gauge familiarity; confirm data fields exist (standard defaults always valid; custom fields via `dataFieldCreate` or the app). For Chili-managed webform routers: also confirm form mapping done in the UI. For third-party webform routers: `thirdPartyForm` mapping set in the create call — no UI step.
-2. **Discovery interview** — `tenantGet` + `listWorkspaces` to orient, `conciergeListRouters`
+2. **Discovery interview** — `tenantGet` + `workspaceList` to orient, `conciergeListRouters`
    to discover valid `dataField` references. Ask: workspace + name; form fields; ownership
    rule (recommend first); customer routing; segments (size/region — SMB 1–250, MM 251–1,500,
    Ent 1,501+); per-rule data sources; CRM actions; catch-all + not-scheduled; extra triggers;
@@ -52,7 +52,7 @@ transactional** — if a step fails, earlier objects remain.
 
 | Action | Notes |
 |--------|-------|
-| `tenantGet` / `listWorkspaces` | Orient; workspace items use `id` |
+| `tenantGet` / `workspaceList` | Orient; workspace items use `id` |
 | `conciergeListRouters` | `{routers: […]}` — read form/trigger fields to find valid `dataField` refs |
 | `userFind` | Email/name → user; array of `{id, name, email, …}` |
 | `teamCreate` / `teamAddUsers` | `{workspaceId, name, members?}`; teams can't be empty (seed the admin) |

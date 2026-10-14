@@ -94,6 +94,29 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
   `BeforeMeetingNoResponse` or `AfterMeeting`, and `trigger.offset` is always required. Reads may
   still return `MeetingBooked` on old reminders: the skill reports them as legacy and repairs
   them by updating to a timed trigger.
+- **GPT Actions specs are importable into ChatGPT again** ([CEH-11500](https://floatingapps.atlassian.net/browse/CEH-11500)).
+  `generate_gpt_openapi.py` copied the long MCP tool descriptions verbatim, so every
+  operation broke ChatGPT's 300-char description limit, and it emitted object schemas with no
+  `properties` (`Map_String` and similar), which the importer rejects. The generator now writes
+  a short description (access label + `summary` + one-line blurb + parameter names, capped at
+  300 chars), adds `properties: {}` to every object schema, tags each operation with
+  `x-mcp-tool`, and refuses deprecated operations. All 20 `openapi.yaml` bundles regenerated
+  from the live Edge spec (v1.742.0; they were frozen at v1.230–v1.321).
+- **GPT operation drift fixed.** `GPT_OPERATIONS` now uses the V2/POST replacements
+  (`availability-slots-v2`, `scheduling-link-list-personal-v2`, `meeting-cancel-post`) and
+  includes every action the GPT instructions name (chat transcript, personal meeting types,
+  campaigns, data fields, enrichment waterfalls, distro router status, the other scheduling-link
+  list types). `GPT.md` files that still used invented action names (`listWorkspaces`,
+  `listRouters`, `getRoutingLogs`, `findUsers`, …) now use the real `operationId`s, and wrong
+  identifier claims were corrected (`workspaceList` / `teamListPut` items use `id`;
+  `distributionListPut` items are `{id, published: {...}, state}`). `user-details` no longer
+  documents the `userUpdate` write (read-only skill); `distro-debugger` no longer tells the GPT
+  to call `distro-router-activate`. Skill references for `scheduling-link-management` and
+  `user-offboarding` now name the non-deprecated tools. Patch bump for the 14 affected
+  SKILL/GPT pairs (`meeting-type-management` goes to 0.1.6, after the 0.1.5 above).
+- **New CI check `validate_gpt_openapi.py`** — fails on any of the above (description length,
+  object schemas without `properties`, deprecated or missing operations, `GPT.md` naming an
+  action its spec does not contain).
 
 ## [1.3.0]
 

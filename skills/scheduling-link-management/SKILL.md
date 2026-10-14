@@ -1,7 +1,7 @@
 ---
 name: scheduling-link-management
 description: Lists, creates, updates, and deletes Chili Piper scheduling links across all four admin link types (round-robin, admin one-on-one, group, ownership) plus personal-link auditing — with dry-run planning and delete safety (deletion instantly breaks the link's booking URL).
-version: 0.1.1
+version: 0.1.2
 references:
   - api-reference
   - write-operations

@@ -55,6 +55,7 @@ pip install pyyaml pre-commit
 pre-commit run --all-files
 python .github/scripts/validate_skill_frontmatter.py
 python .github/scripts/check_gpt_sync.py
+python .github/scripts/validate_gpt_openapi.py
 ```
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full contribution flow.

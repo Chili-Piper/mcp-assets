@@ -112,6 +112,7 @@ skill), `output-format.md` (the exact result layout), then one file per deep pro
 pip install pyyaml
 python .github/scripts/validate_skill_frontmatter.py   # frontmatter + structure
 python .github/scripts/check_gpt_sync.py               # SKILL <-> GPT parity
+python .github/scripts/validate_gpt_openapi.py         # GPT specs ChatGPT-importable + match GPT.md
 ```
 
 A structural refactor that doesn't change behavior keeps the existing skill `version` (and

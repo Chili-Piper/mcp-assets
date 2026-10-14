@@ -1,7 +1,7 @@
 ---
 name: chat-conversation-inspector
 description: Inspects Chili Piper Chat AI conversation logs for a workspace — routing-outcome breakdowns (Routed/NotRouted/Abandoned), full bot/guest transcripts, and abandonment analysis. Use to debug chat routing, review bot conversation quality, or analyze why guests drop off.
-version: 0.1.4
+version: 0.1.5
 references:
   - api-reference
   - analysis-procedure
