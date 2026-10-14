@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: Chili Piper — User Details Actions
-  version: 1.494.0
+  version: 1.742.0
   description: GPT Actions for the user-details GPT — a subset of the Chili Piper Edge API. Authenticate
     with a Bearer API key (Admin Center → API Keys).
 servers:
@@ -769,8 +769,17 @@ components:
       name: Authorization
       in: header
   schemas:
-    RoundRobinSchedulingLinksRequest:
-      title: RoundRobinSchedulingLinksRequest
+    SharedWith_Workspace:
+      title: SharedWith_Workspace
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Workspace
+    GroupSchedulingLinksRequest:
+      title: GroupSchedulingLinksRequest
       type: object
       properties:
         filterWorkspaceIds:
@@ -794,35 +803,196 @@ components:
           items:
             type: string
             format: uuid
-        filterDistributionIds:
-          description: Restrict to links backed by any of these distributions.
+    MeetingStatus:
+      title: MeetingStatus
+      type: string
+      enum:
+      - Active
+      - Canceled
+      - NoShow
+      - Completed
+    HubspotObjectOwner:
+      title: HubspotObjectOwner
+      type: string
+      enum:
+      - Contact
+      - Company
+    WorkingHours:
+      title: WorkingHours
+      type: object
+      properties:
+        monday:
+          description: Working intervals on Monday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        tuesday:
+          description: Working intervals on Tuesday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        wednesday:
+          description: Working intervals on Wednesday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        thursday:
+          description: Working intervals on Thursday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        friday:
+          description: Working intervals on Friday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        saturday:
+          description: Working intervals on Saturday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        sunday:
+          description: Working intervals on Sunday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+    SimpleRule:
+      title: SimpleRule
+      oneOf:
+      - $ref: '#/components/schemas/SimpleRule_HubspotSimpleRule'
+      - $ref: '#/components/schemas/SimpleRule_SalesforceSimpleRule'
+      discriminator:
+        propertyName: type
+        mapping:
+          HubspotSimpleRule: '#/components/schemas/SimpleRule_HubspotSimpleRule'
+          SalesforceSimpleRule: '#/components/schemas/SimpleRule_SalesforceSimpleRule'
+    SimpleRule_SalesforceSimpleRule:
+      title: SimpleRule_SalesforceSimpleRule
+      type: object
+      required:
+      - ownershipObject
+      - teamId
+      - type
+      properties:
+        ownershipObject:
           type: array
           minItems: 1
           items:
-            type: string
-            pattern: '[^\s\\/]+'
-    PersonalSchedulingLinkDetail:
-      title: PersonalSchedulingLinkDetail
+            $ref: '#/components/schemas/SalesforceObjectOwner'
+        teamId:
+          $ref: '#/components/schemas/TeamId'
+        type:
+          type: string
+          const: SalesforceSimpleRule
+    BookerInvitation_DoNotInvite:
+      title: BookerInvitation_DoNotInvite
       type: object
       required:
+      - type
+      properties:
+        type:
+          type: string
+          const: DoNotInvite
+    GroupSchedulingLinkDetail:
+      title: GroupSchedulingLinkDetail
+      type: object
+      required:
+      - workspaceId
+      - linkId
+      - name
       - slug
-      - meetingTypeId
-      - meetingTypeName
       - bookingUrl
       properties:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        linkId:
+          $ref: '#/components/schemas/GroupSchedulingLinkId'
+        name:
+          type: string
+          minLength: 1
         slug:
           description: URL slug of the link.
           type: string
           pattern: '[-0-9a-z_]+'
-        meetingTypeId:
-          $ref: '#/components/schemas/MeetingTypeId'
-        meetingTypeName:
-          description: Name of the meeting type booked through this link.
-          type: string
+        meetingTypeIds:
+          description: Meeting types offered on this link.
+          type: array
+          items:
+            type: string
+            format: uuid
         bookingUrl:
           description: Public URL a guest uses to book this link.
           examples:
           - https://example.com
+          type: string
+    RoutingStrategy_DistributionBasedRouting:
+      title: RoutingStrategy_DistributionBasedRouting
+      type: object
+      required:
+      - distributionId
+      - required
+      - type
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        required:
+          type: boolean
+        type:
+          type: string
+          const: DistributionBasedRouting
+    DistributionHost_BookerIfExists:
+      title: DistributionHost_BookerIfExists
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: BookerIfExists
+    RoutingStrategy_RuleBasedRouting:
+      title: RoutingStrategy_RuleBasedRouting
+      type: object
+      required:
+      - ruleId
+      - scheduleWithTeamMember
+      - required
+      - type
+      properties:
+        ruleId:
+          $ref: '#/components/schemas/RuleId'
+        scheduleWithTeamMember:
+          $ref: '#/components/schemas/ScheduleWithTeamMember'
+        required:
+          type: boolean
+        type:
+          type: string
+          const: RuleBasedRouting
+    LinkPageConfig:
+      title: LinkPageConfig
+      type: object
+      properties:
+        title:
+          description: Custom heading shown on the link's public booking page; falls back to the meeting
+            type name when absent.
+          type: string
+    RoundRobinSchedulingLinkId:
+      title: RoundRobinSchedulingLinkId
+      examples:
+      - b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d0e
+      type: string
+      pattern: '[^\s\\/]+'
+    WorkInterval:
+      title: WorkInterval
+      type: object
+      required:
+      - start
+      - end
+      properties:
+        start:
+          description: Start of the working interval as a local time (HH:mm), in the schedule timezone.
+          type: string
+        end:
+          description: End of the working interval as a local time (HH:mm); must be after start.
           type: string
     User:
       title: User
@@ -890,86 +1060,53 @@ components:
           examples:
           - America/New_York
           type: string
-    AdminSchedulingLinkDetails:
-      title: AdminSchedulingLinkDetails
-      type: object
-      properties:
-        links:
-          description: The admin (one-on-one) scheduling links.
-          type: array
-          items:
-            $ref: '#/components/schemas/AdminSchedulingLinkDetail'
-    HubspotUser:
-      title: HubspotUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-          description: Email of the linked HubSpot user.
-        id:
-          description: Identifier of the linked HubSpot user.
-          type: integer
-          format: int64
-    OwnershipSettings:
-      title: OwnershipSettings
+    OwnershipHost:
+      title: OwnershipHost
       oneOf:
-      - $ref: '#/components/schemas/OwnershipSettings_WithMixedRouting'
-      - $ref: '#/components/schemas/OwnershipSettings_WithSimpleRule'
+      - $ref: '#/components/schemas/OwnershipHost_AssigneeFromDistribution'
+      - $ref: '#/components/schemas/OwnershipHost_AssigneeFromOwnershipRule'
+      - $ref: '#/components/schemas/OwnershipHost_AssigneeFromSimpleRule'
+      - $ref: '#/components/schemas/OwnershipHost_BookerIfExists'
       discriminator:
         propertyName: type
         mapping:
-          WithMixedRouting: '#/components/schemas/OwnershipSettings_WithMixedRouting'
-          WithSimpleRule: '#/components/schemas/OwnershipSettings_WithSimpleRule'
-    Tier:
-      title: Tier
-      type: string
-      enum:
-      - RoutingAndScheduling
-      - Experiences
-      - ChiliDataPlatform
-    MeetingTypeId:
-      title: MeetingTypeId
-      examples:
-      - 4a8f2b3c-7d1e-4f9b-8a2c-3d5e6f789012
-      type: string
-      format: uuid
-    CallerRef:
-      title: CallerRef
-      description: stringified caller reference in format $type/$id
-      examples:
-      - user/17a3d4563d5a67a3d456ad635
-      type: string
-    OwnershipHost_AssigneeFromSimpleRule:
-      title: OwnershipHost_AssigneeFromSimpleRule
+          AssigneeFromDistribution: '#/components/schemas/OwnershipHost_AssigneeFromDistribution'
+          AssigneeFromOwnershipRule: '#/components/schemas/OwnershipHost_AssigneeFromOwnershipRule'
+          AssigneeFromSimpleRule: '#/components/schemas/OwnershipHost_AssigneeFromSimpleRule'
+          BookerIfExists: '#/components/schemas/OwnershipHost_BookerIfExists'
+    OwnershipSettings_WithSimpleRule:
+      title: OwnershipSettings_WithSimpleRule
       type: object
       required:
+      - rule
+      - scheduleWithTeamMember
+      - required
       - type
       properties:
+        rule:
+          $ref: '#/components/schemas/SimpleRule'
+        scheduleWithTeamMember:
+          $ref: '#/components/schemas/ScheduleWithTeamMember'
+        required:
+          type: boolean
         type:
           type: string
-          const: AssigneeFromSimpleRule
-    WorkInterval:
-      title: WorkInterval
-      type: object
-      required:
-      - start
-      - end
-      properties:
-        start:
-          description: Start of the working interval as a local time (HH:mm), in the schedule timezone.
-          type: string
-        end:
-          description: End of the working interval as a local time (HH:mm); must be after start.
-          type: string
-    OwnershipSchedulingLinkId:
-      title: OwnershipSchedulingLinkId
+          const: WithSimpleRule
+    AdminSchedulingLinkId:
+      title: AdminSchedulingLinkId
       examples:
-      - d1e2f3a4-b5c6-4d7e-ae8f-9b0c1d2e3f4a
+      - a5b6c7d8-e9f0-4a1b-9c2d-3e4f5a6b7c8d
       type: string
       pattern: '[^\s\\/]+'
+    OwnershipSchedulingLinkDetails:
+      title: OwnershipSchedulingLinkDetails
+      type: object
+      properties:
+        links:
+          description: The ownership scheduling links.
+          type: array
+          items:
+            $ref: '#/components/schemas/OwnershipSchedulingLinkDetail'
     Workspace:
       title: Workspace
       type: object
@@ -992,224 +1129,6 @@ components:
           type: string
         metadata:
           $ref: '#/components/schemas/SimpleMetadata'
-    GroupSchedulingLinksRequest:
-      title: GroupSchedulingLinksRequest
-      type: object
-      properties:
-        filterWorkspaceIds:
-          description: Restrict to links in these workspaces; omit for all accessible workspaces.
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        filterLinkSlugs:
-          description: Restrict to links with these slugs.
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[-0-9a-z_]+'
-        filterMeetingTypeId:
-          description: Restrict to links offering any of these meeting types.
-          type: array
-          minItems: 1
-          items:
-            type: string
-            format: uuid
-    RoutingStrategy_DistributionBasedRouting:
-      title: RoutingStrategy_DistributionBasedRouting
-      type: object
-      required:
-      - distributionId
-      - required
-      - type
-      properties:
-        distributionId:
-          $ref: '#/components/schemas/DistributionId'
-        required:
-          type: boolean
-        type:
-          type: string
-          const: DistributionBasedRouting
-    SimpleRule_SalesforceSimpleRule:
-      title: SimpleRule_SalesforceSimpleRule
-      type: object
-      required:
-      - ownershipObject
-      - teamId
-      - type
-      properties:
-        ownershipObject:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/SalesforceObjectOwner'
-        teamId:
-          $ref: '#/components/schemas/TeamId'
-        type:
-          type: string
-          const: SalesforceSimpleRule
-    SimpleRule:
-      title: SimpleRule
-      oneOf:
-      - $ref: '#/components/schemas/SimpleRule_HubspotSimpleRule'
-      - $ref: '#/components/schemas/SimpleRule_SalesforceSimpleRule'
-      discriminator:
-        propertyName: type
-        mapping:
-          HubspotSimpleRule: '#/components/schemas/SimpleRule_HubspotSimpleRule'
-          SalesforceSimpleRule: '#/components/schemas/SimpleRule_SalesforceSimpleRule'
-    WorkspaceId:
-      title: WorkspaceId
-      examples:
-      - b7263a5d-89cb-4f50-a532-ea4aff74688e
-      type: string
-      pattern: '[^\s\\/]+'
-    LinkPageConfig:
-      title: LinkPageConfig
-      type: object
-      properties:
-        title:
-          description: Custom heading shown on the link's public booking page; falls back to the meeting
-            type name when absent.
-          type: string
-    RoundRobinSchedulingLinkDetail:
-      title: RoundRobinSchedulingLinkDetail
-      type: object
-      required:
-      - workspaceId
-      - linkId
-      - name
-      - slug
-      - assignments
-      - bookingUrl
-      properties:
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-        distributionId:
-          deprecated: true
-          type: string
-          pattern: '[^\s\\/]+'
-        linkId:
-          $ref: '#/components/schemas/RoundRobinSchedulingLinkId'
-        name:
-          type: string
-          minLength: 1
-        slug:
-          description: URL slug of the link.
-          type: string
-          pattern: '[-0-9a-z_]+'
-        meetingTypeIds:
-          description: Meeting types offered on this link.
-          type: array
-          items:
-            type: string
-            format: uuid
-        members:
-          deprecated: true
-          type: array
-          items:
-            $ref: '#/components/schemas/SchedulingLinkMemberDetail'
-        assignments:
-          description: Distributions assigned to this link, with per-distribution attendance and resolved
-            members.
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/DistributionAssignment'
-        bookingUrl:
-          description: Public URL a guest uses to book this link.
-          examples:
-          - https://example.com
-          type: string
-    SalesforceObjectOwner:
-      title: SalesforceObjectOwner
-      type: string
-      enum:
-      - Lead
-      - Contact
-      - Account
-    RuleId:
-      title: RuleId
-      examples:
-      - 3b4c5d6e-7f8a-4b9c-9d0e-1f2a3b4c5d6e
-      type: string
-      pattern: '[^\s\\/]+'
-    AdminSchedulingLinkDetail:
-      title: AdminSchedulingLinkDetail
-      type: object
-      required:
-      - workspaceId
-      - linkId
-      - name
-      - slug
-      - bookingUrl
-      properties:
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-        linkId:
-          $ref: '#/components/schemas/AdminSchedulingLinkId'
-        name:
-          type: string
-          minLength: 1
-        slug:
-          description: URL slug of the link.
-          type: string
-          pattern: '[-0-9a-z_]+'
-        meetingTypeIds:
-          description: Meeting types offered on this link.
-          type: array
-          items:
-            type: string
-            format: uuid
-        bookingUrl:
-          description: Public URL a guest uses to book this link.
-          examples:
-          - https://example.com
-          type: string
-    PersonalSchedulingLinkDetails:
-      title: PersonalSchedulingLinkDetails
-      type: object
-      properties:
-        links:
-          description: The user's personal scheduling links.
-          type: array
-          items:
-            $ref: '#/components/schemas/PersonalSchedulingLinkDetail'
-    PaginatedResult_User:
-      title: PaginatedResult_User
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    BookerInvitation:
-      title: BookerInvitation
-      oneOf:
-      - $ref: '#/components/schemas/BookerInvitation_DoNotInvite'
-      - $ref: '#/components/schemas/BookerInvitation_Invite'
-      discriminator:
-        propertyName: type
-        mapping:
-          DoNotInvite: '#/components/schemas/BookerInvitation_DoNotInvite'
-          Invite: '#/components/schemas/BookerInvitation_Invite'
     UserPersonalDetails:
       title: UserPersonalDetails
       type: object
@@ -1243,134 +1162,8 @@ components:
         customCompanyLogoUrl:
           description: URL of a custom company logo shown on the user's booking pages.
           type: string
-    HubspotObjectOwner:
-      title: HubspotObjectOwner
-      type: string
-      enum:
-      - Contact
-      - Company
-    BookerInvitation_Invite:
-      title: BookerInvitation_Invite
-      type: object
-      required:
-      - autoDeclineOnBookersBehalf
-      - required
-      - type
-      properties:
-        autoDeclineOnBookersBehalf:
-          type: boolean
-        required:
-          type: boolean
-        type:
-          type: string
-          const: Invite
-    OwnershipHost:
-      title: OwnershipHost
-      oneOf:
-      - $ref: '#/components/schemas/OwnershipHost_AssigneeFromDistribution'
-      - $ref: '#/components/schemas/OwnershipHost_AssigneeFromOwnershipRule'
-      - $ref: '#/components/schemas/OwnershipHost_AssigneeFromSimpleRule'
-      - $ref: '#/components/schemas/OwnershipHost_BookerIfExists'
-      discriminator:
-        propertyName: type
-        mapping:
-          AssigneeFromDistribution: '#/components/schemas/OwnershipHost_AssigneeFromDistribution'
-          AssigneeFromOwnershipRule: '#/components/schemas/OwnershipHost_AssigneeFromOwnershipRule'
-          AssigneeFromSimpleRule: '#/components/schemas/OwnershipHost_AssigneeFromSimpleRule'
-          BookerIfExists: '#/components/schemas/OwnershipHost_BookerIfExists'
-    UserLicenses:
-      title: UserLicenses
-      type: object
-      required:
-      - chiliCalOrg
-      - handoff
-      properties:
-        distro:
-          description: Whether the user holds a Distro (lead-routing) license.
-          type: boolean
-        chiliCalOrg:
-          description: Whether the user holds a ChiliCal organization license.
-          type: boolean
-        concierge:
-          description: Whether the user holds a Concierge license.
-          type: boolean
-        conciergeLive:
-          description: Whether the user holds a Concierge Live license.
-          type: boolean
-        chat:
-          description: Whether the user holds a Chat license.
-          type: boolean
-        handoff:
-          description: Whether the user holds a Handoff license.
-          type: boolean
-        tier:
-          $ref: '#/components/schemas/Tier'
-    SchedulingLinkMemberDetail:
-      title: SchedulingLinkMemberDetail
-      type: object
-      required:
-      - id
-      properties:
-        email:
-          description: Member's email address; absent if not available.
-          type: string
-          pattern: .+@.+
-        id:
-          $ref: '#/components/schemas/UserId'
-        name:
-          type: string
-          minLength: 1
-        slug:
-          description: Member's personal booking-page slug; absent if they have none.
-          type: string
-          pattern: '[-0-9a-z_]+'
-    OwnershipSettings_WithSimpleRule:
-      title: OwnershipSettings_WithSimpleRule
-      type: object
-      required:
-      - rule
-      - scheduleWithTeamMember
-      - required
-      - type
-      properties:
-        rule:
-          $ref: '#/components/schemas/SimpleRule'
-        scheduleWithTeamMember:
-          $ref: '#/components/schemas/ScheduleWithTeamMember'
-        required:
-          type: boolean
-        type:
-          type: string
-          const: WithSimpleRule
-    RoutingStrategy:
-      title: RoutingStrategy
-      oneOf:
-      - $ref: '#/components/schemas/RoutingStrategy_DistributionBasedRouting'
-      - $ref: '#/components/schemas/RoutingStrategy_RuleBasedRouting'
-      discriminator:
-        propertyName: type
-        mapping:
-          DistributionBasedRouting: '#/components/schemas/RoutingStrategy_DistributionBasedRouting'
-          RuleBasedRouting: '#/components/schemas/RoutingStrategy_RuleBasedRouting'
-    MeetingStatus:
-      title: MeetingStatus
-      type: string
-      enum:
-      - Active
-      - Canceled
-      - NoShow
-      - Completed
-    BookerInvitation_DoNotInvite:
-      title: BookerInvitation_DoNotInvite
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: DoNotInvite
-    OwnershipHost_AssigneeFromDistribution:
-      title: OwnershipHost_AssigneeFromDistribution
+    DistributionHost_AssigneeFromDistribution:
+      title: DistributionHost_AssigneeFromDistribution
       type: object
       required:
       - distributionId
@@ -1381,115 +1174,66 @@ components:
         type:
           type: string
           const: AssigneeFromDistribution
-    WorkingHours:
-      title: WorkingHours
+    SharedWith_Teams:
+      title: SharedWith_Teams
       type: object
+      required:
+      - type
       properties:
-        monday:
-          description: Working intervals on Monday; empty means unavailable.
+        teamIds:
           type: array
+          uniqueItems: true
           items:
-            $ref: '#/components/schemas/WorkInterval'
-        tuesday:
-          description: Working intervals on Tuesday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        wednesday:
-          description: Working intervals on Wednesday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        thursday:
-          description: Working intervals on Thursday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        friday:
-          description: Working intervals on Friday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        saturday:
-          description: Working intervals on Saturday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        sunday:
-          description: Working intervals on Sunday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
+            type: string
+            pattern: '[^\s\\/]+'
+        type:
+          type: string
+          const: Teams
     DistributionId:
       title: DistributionId
       examples:
       - 7f8a1b2c-3d4e-4f5a-8b9c-0d1e2f3a4b5c
       type: string
       pattern: '[^\s\\/]+'
-    GroupSchedulingLinkId:
-      title: GroupSchedulingLinkId
+    DistributionHost:
+      title: DistributionHost
+      oneOf:
+      - $ref: '#/components/schemas/DistributionHost_AssigneeFromDistribution'
+      - $ref: '#/components/schemas/DistributionHost_BookerIfExists'
+      discriminator:
+        propertyName: type
+        mapping:
+          AssigneeFromDistribution: '#/components/schemas/DistributionHost_AssigneeFromDistribution'
+          BookerIfExists: '#/components/schemas/DistributionHost_BookerIfExists'
+    MeetingTypeId:
+      title: MeetingTypeId
       examples:
-      - c9d0e1f2-a3b4-4c5d-9e6f-7a8b9c0d1e2f
+      - 4a8f2b3c-7d1e-4f9b-8a2c-3d5e6f789012
       type: string
-      pattern: '[^\s\\/]+'
-    DistributionAssignment:
-      title: DistributionAssignment
+      format: uuid
+    PaginatedResult_User:
+      title: PaginatedResult_User
       type: object
       required:
-      - distributionId
-      - required
+      - total
+      - page
+      - pageSize
       properties:
-        distributionId:
-          $ref: '#/components/schemas/DistributionId'
-          description: Distribution whose members are the eligible assignees for this link.
-        required:
-          description: Whether members drawn from this distribution attend as required or optional.
-          type: boolean
-        members:
-          description: Members of the distribution resolved at read time; output only, ignored on writes.
+        results:
           type: array
           items:
-            $ref: '#/components/schemas/SchedulingLinkMemberDetail'
-    RoundRobinSchedulingLinkDetails:
-      title: RoundRobinSchedulingLinkDetails
-      type: object
-      properties:
-        links:
-          description: The round-robin scheduling links.
-          type: array
-          items:
-            $ref: '#/components/schemas/RoundRobinSchedulingLinkDetail'
-    FindAllRequest:
-      title: FindAllRequest
-      type: object
-      properties:
-        workspaceIds:
-          description: Restrict results to teams in these workspaces. Omit for all.
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+          format: int64
         page:
-          description: Zero-based page index. Defaults to 0.
           type: integer
           format: int64
           minimum: 0
         pageSize:
-          description: Number of teams per page.
           type: integer
           format: int64
           exclusiveMinimum: 0
-        name:
-          description: Free-text term matched against team name.
-          type: string
-        member:
-          description: Restrict results to teams containing any of these user ids.
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
     OwnershipSchedulingLinksRequest:
       title: OwnershipSchedulingLinksRequest
       type: object
@@ -1522,86 +1266,39 @@ components:
           items:
             type: string
             pattern: '[^\s\\/]+'
+    GroupSchedulingLinkDetails:
+      title: GroupSchedulingLinkDetails
+      type: object
+      properties:
+        links:
+          description: The group scheduling links.
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupSchedulingLinkDetail'
+    OwnershipSchedulingLinkId:
+      title: OwnershipSchedulingLinkId
+      examples:
+      - d1e2f3a4-b5c6-4d7e-ae8f-9b0c1d2e3f4a
+      type: string
+      pattern: '[^\s\\/]+'
+    RuleId:
+      title: RuleId
+      examples:
+      - 3b4c5d6e-7f8a-4b9c-9d0e-1f2a3b4c5d6e
+      type: string
+      pattern: '[^\s\\/]+'
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
     UserId:
       title: UserId
       examples:
       - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
       type: string
       pattern: '[^\s\\/]+'
-    PaginatedResult_Workspace:
-      title: PaginatedResult_Workspace
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Workspace'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    RoundRobinSchedulingLinkId:
-      title: RoundRobinSchedulingLinkId
-      examples:
-      - b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d0e
-      type: string
-      pattern: '[^\s\\/]+'
-    OwnershipHost_BookerIfExists:
-      title: OwnershipHost_BookerIfExists
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: BookerIfExists
-    DistributionHost_BookerIfExists:
-      title: DistributionHost_BookerIfExists
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: BookerIfExists
-    Map_String:
-      title: Map_String
-      type: object
-      additionalProperties:
-        type: string
-      properties: {}
-    SalesforceUser:
-      title: SalesforceUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-          description: Email of the linked Salesforce user.
-        id:
-          description: Identifier of the linked Salesforce user.
-          type: string
-          pattern: '[^\s\\/]+'
-        name:
-          description: Display name of the linked Salesforce user, when known.
-          type: string
-          minLength: 1
-        active:
-          description: Whether the linked Salesforce user is active, when known.
-          type: boolean
     ExportMeetingsRequest:
       title: ExportMeetingsRequest
       type: object
@@ -1662,71 +1359,18 @@ components:
           minItems: 1
           items:
             $ref: '#/components/schemas/MeetingStatus'
-    AlwaysInvitedUser:
-      title: AlwaysInvitedUser
-      type: object
-      required:
-      - userId
-      - optional
-      properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-          description: User added to the invite on every meeting booked through this link.
-        optional:
-          description: If true the user attends as an optional guest; if false they are a required attendee.
-          type: boolean
-    OwnershipHost_AssigneeFromOwnershipRule:
-      title: OwnershipHost_AssigneeFromOwnershipRule
-      type: object
-      required:
-      - ruleId
-      - type
-      properties:
-        ruleId:
-          $ref: '#/components/schemas/RuleId'
-        type:
-          type: string
-          const: AssigneeFromOwnershipRule
-    SimpleMetadata:
-      title: SimpleMetadata
-      type: object
-      required:
-      - createdAt
-      - createdBy
-      - updatedAt
-      - updatedBy
-      - revision
-      properties:
-        createdAt:
-          type: string
-          format: date-time
-        createdBy:
-          $ref: '#/components/schemas/CallerRef'
-        updatedAt:
-          type: string
-          format: date-time
-        updatedBy:
-          $ref: '#/components/schemas/CallerRef'
-        revision:
-          type: integer
-          format: int32
-    SharedWith_Teams:
-      title: SharedWith_Teams
-      type: object
-      required:
-      - type
-      properties:
-        teamIds:
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        type:
-          type: string
-          const: Teams
-    GroupSchedulingLinkDetail:
-      title: GroupSchedulingLinkDetail
+    BookerInvitation:
+      title: BookerInvitation
+      oneOf:
+      - $ref: '#/components/schemas/BookerInvitation_DoNotInvite'
+      - $ref: '#/components/schemas/BookerInvitation_Invite'
+      discriminator:
+        propertyName: type
+        mapping:
+          DoNotInvite: '#/components/schemas/BookerInvitation_DoNotInvite'
+          Invite: '#/components/schemas/BookerInvitation_Invite'
+    AdminSchedulingLinkDetail:
+      title: AdminSchedulingLinkDetail
       type: object
       required:
       - workspaceId
@@ -1738,7 +1382,7 @@ components:
         workspaceId:
           $ref: '#/components/schemas/WorkspaceId'
         linkId:
-          $ref: '#/components/schemas/GroupSchedulingLinkId'
+          $ref: '#/components/schemas/AdminSchedulingLinkId'
         name:
           type: string
           minLength: 1
@@ -1772,213 +1416,192 @@ components:
         type:
           type: string
           const: WithMixedRouting
-    DistributionInvitation:
-      title: DistributionInvitation
-      type: object
-      required:
-      - assignments
-      - host
-      - bookerInvitation
-      properties:
-        assignments:
-          description: Distributions that supply the meeting's assignees, with per-distribution attendance.
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/DistributionAssignment'
-        host:
-          $ref: '#/components/schemas/DistributionHost'
-        bookerInvitation:
-          $ref: '#/components/schemas/BookerInvitation'
-        alwaysInvitedUsers:
-          description: Users invited to every meeting booked through this link, in addition to the routed
-            assignees.
-          type: array
-          items:
-            $ref: '#/components/schemas/AlwaysInvitedUser'
-    AdminSchedulingLinksRequest:
-      title: AdminSchedulingLinksRequest
-      type: object
-      properties:
-        filterWorkspaceIds:
-          description: Restrict to links in these workspaces; omit for all accessible workspaces.
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        filterLinkSlugs:
-          description: Restrict to links with these slugs.
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[-0-9a-z_]+'
-        filterMeetingTypeId:
-          description: Restrict to links offering any of these meeting types.
-          type: array
-          minItems: 1
-          items:
-            type: string
-            format: uuid
-    Team:
-      title: Team
-      type: object
-      required:
-      - id
-      - workspaceId
-      - name
-      - metadata
-      properties:
-        id:
-          $ref: '#/components/schemas/TeamId'
-          description: Unique identifier of the team.
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-          description: Workspace the team belongs to.
-        name:
-          description: The team's display name.
-          type: string
-        members:
-          description: User ids of the team's members.
-          type: array
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        metadata: {}
-    OwnershipSchedulingLinkDetails:
-      title: OwnershipSchedulingLinkDetails
-      type: object
-      properties:
-        links:
-          description: The ownership scheduling links.
-          type: array
-          items:
-            $ref: '#/components/schemas/OwnershipSchedulingLinkDetail'
-    DistributionHost:
-      title: DistributionHost
+    OwnershipSettings:
+      title: OwnershipSettings
       oneOf:
-      - $ref: '#/components/schemas/DistributionHost_AssigneeFromDistribution'
-      - $ref: '#/components/schemas/DistributionHost_BookerIfExists'
+      - $ref: '#/components/schemas/OwnershipSettings_WithMixedRouting'
+      - $ref: '#/components/schemas/OwnershipSettings_WithSimpleRule'
       discriminator:
         propertyName: type
         mapping:
-          AssigneeFromDistribution: '#/components/schemas/DistributionHost_AssigneeFromDistribution'
-          BookerIfExists: '#/components/schemas/DistributionHost_BookerIfExists'
-    ScheduleWithTeamMember:
-      title: ScheduleWithTeamMember
-      type: string
-      enum:
-      - OwnerOnly
-      - AllowWithAny
-    SharedWith_Workspace:
-      title: SharedWith_Workspace
+          WithMixedRouting: '#/components/schemas/OwnershipSettings_WithMixedRouting'
+          WithSimpleRule: '#/components/schemas/OwnershipSettings_WithSimpleRule'
+    UserLicenses:
+      title: UserLicenses
       type: object
       required:
-      - type
+      - chiliCalOrg
+      - handoff
       properties:
-        type:
-          type: string
-          const: Workspace
-    DistributionHost_AssigneeFromDistribution:
-      title: DistributionHost_AssigneeFromDistribution
-      type: object
-      required:
-      - distributionId
-      - type
-      properties:
-        distributionId:
-          $ref: '#/components/schemas/DistributionId'
-        type:
-          type: string
-          const: AssigneeFromDistribution
-    TeamId:
-      title: TeamId
-      examples:
-      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
-      type: string
-      pattern: '[^\s\\/]+'
-    PaginatedResult_Team:
-      title: PaginatedResult_Team
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Team'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
+        distro:
+          description: Whether the user holds a Distro (lead-routing) license.
+          type: boolean
+        chiliCalOrg:
+          description: Whether the user holds a ChiliCal organization license.
+          type: boolean
+        concierge:
+          description: Whether the user holds a Concierge license.
+          type: boolean
+        conciergeLive:
+          description: Whether the user holds a Concierge Live license.
+          type: boolean
+        chat:
+          description: Whether the user holds a Chat license.
+          type: boolean
+        handoff:
+          description: Whether the user holds a Handoff license.
+          type: boolean
+        tier:
+          $ref: '#/components/schemas/Tier'
     Email:
       title: Email
       examples:
       - john.doe@acme.com
       type: string
       pattern: .+@.+
-    SimpleRule_HubspotSimpleRule:
-      title: SimpleRule_HubspotSimpleRule
+    FindAllRequest:
+      title: FindAllRequest
       type: object
-      required:
-      - ownershipObject
-      - teamId
-      - type
       properties:
-        ownershipObject:
+        workspaceIds:
+          description: Restrict results to teams in these workspaces. Omit for all.
           type: array
           minItems: 1
           items:
-            $ref: '#/components/schemas/HubspotObjectOwner'
-        teamId:
-          $ref: '#/components/schemas/TeamId'
-        type:
+            type: string
+            pattern: '[^\s\\/]+'
+        page:
+          description: Zero-based page index. Defaults to 0.
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          description: Number of teams per page.
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        name:
+          description: Free-text term matched against team name.
           type: string
-          const: HubspotSimpleRule
-    SharedWith:
-      title: SharedWith
+        member:
+          description: Restrict results to teams containing any of these user ids.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+    GroupSchedulingLinkId:
+      title: GroupSchedulingLinkId
+      examples:
+      - c9d0e1f2-a3b4-4c5d-9e6f-7a8b9c0d1e2f
+      type: string
+      pattern: '[^\s\\/]+'
+    DistributionAssignment:
+      title: DistributionAssignment
+      type: object
+      required:
+      - distributionId
+      - required
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+          description: Distribution whose members are the eligible assignees for this link.
+        required:
+          description: Whether members drawn from this distribution attend as required or optional.
+          type: boolean
+        members:
+          description: Members of the distribution resolved at read time; output only, ignored on writes.
+          type: array
+          items:
+            $ref: '#/components/schemas/SchedulingLinkMemberDetail'
+    SimpleMetadata:
+      title: SimpleMetadata
+      type: object
+      required:
+      - createdAt
+      - createdBy
+      - updatedAt
+      - updatedBy
+      - revision
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: '#/components/schemas/CallerRef'
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: '#/components/schemas/CallerRef'
+        revision:
+          type: integer
+          format: int32
+    RoutingStrategy:
+      title: RoutingStrategy
       oneOf:
-      - $ref: '#/components/schemas/SharedWith_Teams'
-      - $ref: '#/components/schemas/SharedWith_Workspace'
+      - $ref: '#/components/schemas/RoutingStrategy_DistributionBasedRouting'
+      - $ref: '#/components/schemas/RoutingStrategy_RuleBasedRouting'
       discriminator:
         propertyName: type
         mapping:
-          Teams: '#/components/schemas/SharedWith_Teams'
-          Workspace: '#/components/schemas/SharedWith_Workspace'
-    AdminSchedulingLinkId:
-      title: AdminSchedulingLinkId
+          DistributionBasedRouting: '#/components/schemas/RoutingStrategy_DistributionBasedRouting'
+          RuleBasedRouting: '#/components/schemas/RoutingStrategy_RuleBasedRouting'
+    TeamId:
+      title: TeamId
       examples:
-      - a5b6c7d8-e9f0-4a1b-9c2d-3e4f5a6b7c8d
+      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
       type: string
       pattern: '[^\s\\/]+'
-    RoutingStrategy_RuleBasedRouting:
-      title: RoutingStrategy_RuleBasedRouting
+    RoundRobinSchedulingLinkDetail:
+      title: RoundRobinSchedulingLinkDetail
       type: object
       required:
-      - ruleId
-      - scheduleWithTeamMember
-      - required
-      - type
+      - workspaceId
+      - linkId
+      - name
+      - slug
+      - assignments
+      - bookingUrl
       properties:
-        ruleId:
-          $ref: '#/components/schemas/RuleId'
-        scheduleWithTeamMember:
-          $ref: '#/components/schemas/ScheduleWithTeamMember'
-        required:
-          type: boolean
-        type:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+        distributionId:
+          deprecated: true
           type: string
-          const: RuleBasedRouting
+          pattern: '[^\s\\/]+'
+        linkId:
+          $ref: '#/components/schemas/RoundRobinSchedulingLinkId'
+        name:
+          type: string
+          minLength: 1
+        slug:
+          description: URL slug of the link.
+          type: string
+          pattern: '[-0-9a-z_]+'
+        meetingTypeIds:
+          description: Meeting types offered on this link.
+          type: array
+          items:
+            type: string
+            format: uuid
+        members:
+          deprecated: true
+          type: array
+          items:
+            $ref: '#/components/schemas/SchedulingLinkMemberDetail'
+        assignments:
+          description: Distributions assigned to this link, with per-distribution attendance and resolved
+            members.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DistributionAssignment'
+        bookingUrl:
+          description: Public URL a guest uses to book this link.
+          examples:
+          - https://example.com
+          type: string
     OwnershipSchedulingLinkDetail:
       title: OwnershipSchedulingLinkDetail
       type: object
@@ -2025,15 +1648,179 @@ components:
           examples:
           - https://example.com
           type: string
-    GroupSchedulingLinkDetails:
-      title: GroupSchedulingLinkDetails
+    ScheduleWithTeamMember:
+      title: ScheduleWithTeamMember
+      type: string
+      enum:
+      - OwnerOnly
+      - AllowWithAny
+    RoundRobinSchedulingLinksRequest:
+      title: RoundRobinSchedulingLinksRequest
+      type: object
+      properties:
+        filterWorkspaceIds:
+          description: Restrict to links in these workspaces; omit for all accessible workspaces.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        filterLinkSlugs:
+          description: Restrict to links with these slugs.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[-0-9a-z_]+'
+        filterMeetingTypeId:
+          description: Restrict to links offering any of these meeting types.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+        filterDistributionIds:
+          description: Restrict to links backed by any of these distributions.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+    HubspotUser:
+      title: HubspotUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: Email of the linked HubSpot user.
+        id:
+          description: Identifier of the linked HubSpot user.
+          type: integer
+          format: int64
+    SalesforceUser:
+      title: SalesforceUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: Email of the linked Salesforce user.
+        id:
+          description: Identifier of the linked Salesforce user.
+          type: string
+          pattern: ^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$
+        name:
+          description: Display name of the linked Salesforce user, when known.
+          type: string
+          minLength: 1
+        active:
+          description: Whether the linked Salesforce user is active, when known.
+          type: boolean
+    AdminSchedulingLinksRequest:
+      title: AdminSchedulingLinksRequest
+      type: object
+      properties:
+        filterWorkspaceIds:
+          description: Restrict to links in these workspaces; omit for all accessible workspaces.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        filterLinkSlugs:
+          description: Restrict to links with these slugs.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[-0-9a-z_]+'
+        filterMeetingTypeId:
+          description: Restrict to links offering any of these meeting types.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+      properties: {}
+    PaginatedResult_Workspace:
+      title: PaginatedResult_Workspace
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workspace'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    PersonalSchedulingLinkDetails:
+      title: PersonalSchedulingLinkDetails
       type: object
       properties:
         links:
-          description: The group scheduling links.
+          description: The user's personal scheduling links.
           type: array
           items:
-            $ref: '#/components/schemas/GroupSchedulingLinkDetail'
+            $ref: '#/components/schemas/PersonalSchedulingLinkDetail'
+    AlwaysInvitedUser:
+      title: AlwaysInvitedUser
+      type: object
+      required:
+      - userId
+      - optional
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+          description: User added to the invite on every meeting booked through this link.
+        optional:
+          description: If true the user attends as an optional guest; if false they are a required attendee.
+          type: boolean
+    DistributionInvitation:
+      title: DistributionInvitation
+      type: object
+      required:
+      - assignments
+      - host
+      - bookerInvitation
+      properties:
+        assignments:
+          description: Distributions that supply the meeting's assignees, with per-distribution attendance.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DistributionAssignment'
+        host:
+          $ref: '#/components/schemas/DistributionHost'
+        bookerInvitation:
+          $ref: '#/components/schemas/BookerInvitation'
+        alwaysInvitedUsers:
+          description: Users invited to every meeting booked through this link, in addition to the routed
+            assignees.
+          type: array
+          items:
+            $ref: '#/components/schemas/AlwaysInvitedUser'
     OwnershipInvitation:
       title: OwnershipInvitation
       type: object
@@ -2054,3 +1841,216 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AlwaysInvitedUser'
+    Team:
+      title: Team
+      type: object
+      required:
+      - id
+      - workspaceId
+      - name
+      - metadata
+      properties:
+        id:
+          $ref: '#/components/schemas/TeamId'
+          description: Unique identifier of the team.
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+          description: Workspace the team belongs to.
+        name:
+          description: The team's display name.
+          type: string
+        members:
+          description: User ids of the team's members.
+          type: array
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        metadata: {}
+    OwnershipHost_BookerIfExists:
+      title: OwnershipHost_BookerIfExists
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: BookerIfExists
+    PaginatedResult_Team:
+      title: PaginatedResult_Team
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Team'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    OwnershipHost_AssigneeFromOwnershipRule:
+      title: OwnershipHost_AssigneeFromOwnershipRule
+      type: object
+      required:
+      - ruleId
+      - type
+      properties:
+        ruleId:
+          $ref: '#/components/schemas/RuleId'
+        type:
+          type: string
+          const: AssigneeFromOwnershipRule
+    OwnershipHost_AssigneeFromSimpleRule:
+      title: OwnershipHost_AssigneeFromSimpleRule
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: AssigneeFromSimpleRule
+    BookerInvitation_Invite:
+      title: BookerInvitation_Invite
+      type: object
+      required:
+      - autoDeclineOnBookersBehalf
+      - required
+      - type
+      properties:
+        autoDeclineOnBookersBehalf:
+          type: boolean
+        required:
+          type: boolean
+        type:
+          type: string
+          const: Invite
+    SimpleRule_HubspotSimpleRule:
+      title: SimpleRule_HubspotSimpleRule
+      type: object
+      required:
+      - ownershipObject
+      - teamId
+      - type
+      properties:
+        ownershipObject:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/HubspotObjectOwner'
+        teamId:
+          $ref: '#/components/schemas/TeamId'
+        type:
+          type: string
+          const: HubspotSimpleRule
+    Tier:
+      title: Tier
+      type: string
+      enum:
+      - RoutingAndScheduling
+      - Experiences
+      - ChiliDataPlatform
+    RoundRobinSchedulingLinkDetails:
+      title: RoundRobinSchedulingLinkDetails
+      type: object
+      properties:
+        links:
+          description: The round-robin scheduling links.
+          type: array
+          items:
+            $ref: '#/components/schemas/RoundRobinSchedulingLinkDetail'
+    SharedWith:
+      title: SharedWith
+      oneOf:
+      - $ref: '#/components/schemas/SharedWith_Teams'
+      - $ref: '#/components/schemas/SharedWith_Workspace'
+      discriminator:
+        propertyName: type
+        mapping:
+          Teams: '#/components/schemas/SharedWith_Teams'
+          Workspace: '#/components/schemas/SharedWith_Workspace'
+    AdminSchedulingLinkDetails:
+      title: AdminSchedulingLinkDetails
+      type: object
+      properties:
+        links:
+          description: The admin (one-on-one) scheduling links.
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminSchedulingLinkDetail'
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string
+    SalesforceObjectOwner:
+      title: SalesforceObjectOwner
+      type: string
+      enum:
+      - Lead
+      - Contact
+      - Account
+    OwnershipHost_AssigneeFromDistribution:
+      title: OwnershipHost_AssigneeFromDistribution
+      type: object
+      required:
+      - distributionId
+      - type
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        type:
+          type: string
+          const: AssigneeFromDistribution
+    SchedulingLinkMemberDetail:
+      title: SchedulingLinkMemberDetail
+      type: object
+      required:
+      - id
+      properties:
+        email:
+          description: Member's email address; absent if not available.
+          type: string
+          pattern: .+@.+
+        id:
+          $ref: '#/components/schemas/UserId'
+        name:
+          type: string
+          minLength: 1
+        slug:
+          description: Member's personal booking-page slug; absent if they have none.
+          type: string
+          pattern: '[-0-9a-z_]+'
+    PersonalSchedulingLinkDetail:
+      title: PersonalSchedulingLinkDetail
+      type: object
+      required:
+      - slug
+      - meetingTypeId
+      - meetingTypeName
+      - bookingUrl
+      properties:
+        slug:
+          description: URL slug of the link.
+          type: string
+          pattern: '[-0-9a-z_]+'
+        meetingTypeId:
+          $ref: '#/components/schemas/MeetingTypeId'
+        meetingTypeName:
+          description: Name of the meeting type booked through this link.
+          type: string
+        bookingUrl:
+          description: Public URL a guest uses to book this link.
+          examples:
+          - https://example.com
+          type: string

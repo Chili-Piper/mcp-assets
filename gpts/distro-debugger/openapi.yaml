@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: Chili Piper — Distribution Debugger Actions
-  version: 1.494.0
+  version: 1.742.0
   description: GPT Actions for the distro-debugger GPT — a subset of the Chili Piper Edge API. Authenticate
     with a Bearer API key (Admin Center → API Keys).
 servers:
@@ -413,89 +413,12 @@ components:
       name: Authorization
       in: header
   schemas:
-    DistributionAssignmentTypeConfig:
-      title: DistributionAssignmentTypeConfig
-      oneOf:
-      - $ref: '#/components/schemas/DistributionAssignmentTypeConfig_Conversation'
-      - $ref: '#/components/schemas/DistributionAssignmentTypeConfig_Meeting'
-      - $ref: '#/components/schemas/DistributionAssignmentTypeConfig_Record'
-      discriminator:
-        propertyName: type
-        mapping:
-          Conversation: '#/components/schemas/DistributionAssignmentTypeConfig_Conversation'
-          Meeting: '#/components/schemas/DistributionAssignmentTypeConfig_Meeting'
-          Record: '#/components/schemas/DistributionAssignmentTypeConfig_Record'
-    DistroLogTrigger:
-      title: DistroLogTrigger
-      type: object
-      required:
-      - entityId
-      - entityType
-      - eventType
-      properties:
-        entityId:
-          description: CRM record id that triggered the routing.
-          type: string
-        entityType:
-          description: CRM object type of the triggering record.
-          type: string
-        eventType:
-          $ref: '#/components/schemas/DistroLogTriggerEventType'
-    Levels:
-      title: Levels
-      type: object
-      required:
-      - current
-      - nextAssignmentDelta
-      - total
-      properties:
-        current:
-          description: Earned score plus prolonged-reservation projection, before manual calibration.
-          type: number
-        nextAssignmentDelta:
-          description: Score increment that will be added if this user receives the next assignment. Forward-looking;
-            not included in `current` or `total`.
-          type: number
-        calibrationDelta:
-          description: Manual-calibration adjustment applied on top of `current`. Absent when no calibration
-            is in effect. When present, `total = current + calibrationDelta`.
-          type: number
-        total:
-          description: Current score with manual calibration applied.
-          type: number
-    Prioritization:
-      title: Prioritization
-      type: object
-      properties:
-        queue:
-          description: Ordered list of active user IDs in the order they will receive the next assignments.
-            This is the authoritative assignment-ordering surface; level fields are informational.
-          type: array
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        onVacation:
-          description: Users currently on vacation and skipped by the queue until they return.
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        reachedCap:
-          description: Users who have reached their assignment cap for the current period and are skipped
-            until the cap resets.
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-    DistributionAssignmentType:
-      title: DistributionAssignmentType
+    ReassignmentType:
+      title: ReassignmentType
       type: string
       enum:
-      - Record
-      - Meeting
-      - Conversation
+      - SameUser
+      - AnyTeamMember
     DistributionMethod:
       title: DistributionMethod
       type: string
@@ -510,439 +433,6 @@ components:
       - NoDistribution
       - NoUserAvailable
       - ClientError
-    DistroTriggerEventType_Scheduled:
-      title: DistroTriggerEventType_Scheduled
-      type: object
-      required:
-      - schedulerId
-      - type
-      properties:
-        schedulerId:
-          $ref: '#/components/schemas/ResourceSchedulerId'
-        type:
-          type: string
-          const: Scheduled
-    DistroRouterStatus_Error:
-      title: DistroRouterStatus_Error
-      type: object
-      required:
-      - message
-      - type
-      properties:
-        message:
-          type: string
-        type:
-          type: string
-          const: Error
-    WorkspaceId:
-      title: WorkspaceId
-      examples:
-      - b7263a5d-89cb-4f50-a532-ea4aff74688e
-      type: string
-      pattern: '[^\s\\/]+'
-    RecordHandling_Strict:
-      title: RecordHandling_Strict
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: Strict
-    DistributedAssignmentLimit:
-      title: DistributedAssignmentLimit
-      type: object
-      required:
-      - resetPeriodicity
-      properties:
-        userCaps:
-          description: Per-user assignment caps.
-          type: array
-          uniqueItems: true
-          items:
-            $ref: '#/components/schemas/UserLimit'
-        resetPeriodicity:
-          $ref: '#/components/schemas/DistributedAssignmentLimitReset'
-    UserCalibration:
-      title: UserCalibration
-      type: object
-      required:
-      - userId
-      - calibration
-      properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        calibration:
-          description: Manual offset added to this user's computed score to bias their position in the
-            assignment queue (signed).
-          type: integer
-          format: int32
-    DistroLogRouteEvaluation:
-      title: DistroLogRouteEvaluation
-      type: object
-      properties:
-        routeId:
-          description: Route identifier.
-          type: string
-        ruleName:
-          description: Name of the route's gating rule.
-          type: string
-        matchers:
-          description: Matcher evaluations for this route.
-          type: array
-          items:
-            $ref: '#/components/schemas/DistroLogMatcherEvaluation'
-        rules:
-          description: Rule evaluations for this route.
-          type: array
-          items:
-            $ref: '#/components/schemas/DistroLogRuleEvaluation'
-        duplicateMatches:
-          description: Duplicate records found for this route.
-          type: array
-          items:
-            $ref: '#/components/schemas/DistroLogDuplicateMatch'
-    DistroLog:
-      title: DistroLog
-      type: object
-      required:
-      - id
-      - workspaceId
-      - routerId
-      - status
-      - createdAt
-      - updatedAt
-      properties:
-        id:
-          description: Log entry identifier.
-          type: string
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-          description: Workspace the routed record belongs to.
-        routerId:
-          $ref: '#/components/schemas/RouterId'
-          description: Router that processed the record.
-        status:
-          $ref: '#/components/schemas/DistroLogStatus'
-        assignments:
-          description: Users the record was assigned to.
-          type: array
-          items:
-            $ref: '#/components/schemas/DistroLogAssignment'
-        trigger:
-          $ref: '#/components/schemas/DistroLogTrigger'
-        createdAt:
-          description: When routing started.
-          type: string
-          format: date-time
-        updatedAt:
-          description: When the log was last updated.
-          type: string
-          format: date-time
-    UserStatistics:
-      title: UserStatistics
-      type: object
-      required:
-      - assigned
-      - cancelled
-      - noShow
-      - reassignedToThis
-      - reassignedFromThis
-      properties:
-        assigned:
-          description: Number of assignments booked directly to this user in the current period.
-          type: integer
-          format: int32
-        cancelled:
-          description: Number of assignments that were later cancelled.
-          type: integer
-          format: int32
-        noShow:
-          description: Number of assignments where the invitee did not show up.
-          type: integer
-          format: int32
-        reassignedToThis:
-          description: Number of assignments that were reassigned to this user from another.
-          type: integer
-          format: int32
-        reassignedFromThis:
-          description: Number of assignments originally made to this user that were reassigned away.
-          type: integer
-          format: int32
-    MeetingHandling_Strict:
-      title: MeetingHandling_Strict
-      type: object
-      required:
-      - hideAssignee
-      - type
-      properties:
-        hideAssignee:
-          type: boolean
-        type:
-          type: string
-          const: Strict
-    DistributedAssignmentLimitReset:
-      title: DistributedAssignmentLimitReset
-      oneOf:
-      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_Daily'
-      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_HourlyRolling'
-      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_Monthly'
-      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_Weekly'
-      discriminator:
-        propertyName: type
-        mapping:
-          Daily: '#/components/schemas/DistributedAssignmentLimitReset_Daily'
-          HourlyRolling: '#/components/schemas/DistributedAssignmentLimitReset_HourlyRolling'
-          Monthly: '#/components/schemas/DistributedAssignmentLimitReset_Monthly'
-          Weekly: '#/components/schemas/DistributedAssignmentLimitReset_Weekly'
-    DistroLogAssignment:
-      title: DistroLogAssignment
-      type: object
-      required:
-      - userId
-      - method
-      properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-          description: User the record was assigned to.
-        distributionId:
-          description: Distribution that selected the assignee, if any.
-          type: string
-          pattern: '[^\s\\/]+'
-        method:
-          $ref: '#/components/schemas/DistributionMethod'
-    DistributionUserState_NoLicense:
-      title: DistributionUserState_NoLicense
-      description: User is still on the team but has lost their license, so they cannot receive assignments.
-        Re-licensing restores them.
-      type: object
-      required:
-      - userId
-      - total
-      - licenseRemovedAt
-      - statistics
-      - type
-      properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        total:
-          type: integer
-          format: int32
-        licenseRemovedAt:
-          type: string
-          format: date-time
-        statistics:
-          $ref: '#/components/schemas/UserStatistics'
-        type:
-          type: string
-          const: NoLicense
-    DistroFieldUpdateExpression_FieldUpdateAnd:
-      title: DistroFieldUpdateExpression_FieldUpdateAnd
-      type: object
-      required:
-      - expressions
-      - type
-      properties:
-        expressions:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/DistroFieldUpdateExpression'
-        type:
-          type: string
-          const: FieldUpdateAnd
-    DistroRouterStatus_Active:
-      title: DistroRouterStatus_Active
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: Active
-    DistroSimpleObjectType_DuplicateContact:
-      title: DistroSimpleObjectType_DuplicateContact
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: DuplicateContact
-    DistributionId:
-      title: DistributionId
-      examples:
-      - 7f8a1b2c-3d4e-4f5a-8b9c-0d1e2f3a4b5c
-      type: string
-      pattern: '[^\s\\/]+'
-    PaginatedResult_Workspace:
-      title: PaginatedResult_Workspace
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Workspace'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    DistroTriggerEventType_UpdateField:
-      title: DistroTriggerEventType_UpdateField
-      type: object
-      required:
-      - expression
-      - type
-      properties:
-        expression:
-          $ref: '#/components/schemas/DistroFieldUpdateExpression'
-        type:
-          type: string
-          const: UpdateField
-    DistroSimpleObjectType_Lead:
-      title: DistroSimpleObjectType_Lead
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: Lead
-    MeetingLimit:
-      title: MeetingLimit
-      oneOf:
-      - $ref: '#/components/schemas/MeetingLimit_MeetingLimitSet'
-      - $ref: '#/components/schemas/MeetingLimit_MeetingLimitUnset'
-      discriminator:
-        propertyName: type
-        mapping:
-          MeetingLimitSet: '#/components/schemas/MeetingLimit_MeetingLimitSet'
-          MeetingLimitUnset: '#/components/schemas/MeetingLimit_MeetingLimitUnset'
-    MeetingHandling:
-      title: MeetingHandling
-      oneOf:
-      - $ref: '#/components/schemas/MeetingHandling_Flexible'
-      - $ref: '#/components/schemas/MeetingHandling_Strict'
-      discriminator:
-        propertyName: type
-        mapping:
-          Flexible: '#/components/schemas/MeetingHandling_Flexible'
-          Strict: '#/components/schemas/MeetingHandling_Strict'
-    MeetingLimit_MeetingLimitUnset:
-      title: MeetingLimit_MeetingLimitUnset
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: MeetingLimitUnset
-    DistroTriggerEventType_NewRecordOrUpdateField:
-      title: DistroTriggerEventType_NewRecordOrUpdateField
-      type: object
-      required:
-      - expression
-      - type
-      properties:
-        expression:
-          $ref: '#/components/schemas/DistroFieldUpdateExpression'
-        type:
-          type: string
-          const: NewRecordOrUpdateField
-    UserLimit:
-      title: UserLimit
-      type: object
-      required:
-      - userId
-      - limit
-      properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        limit:
-          description: Maximum assignments this user may receive per reset period (non-negative).
-          type: integer
-          format: int32
-          minimum: 0
-    PaginatedResult_Distribution:
-      title: PaginatedResult_Distribution
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Distribution'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    DistributionState:
-      title: DistributionState
-      type: object
-      properties:
-        userStates:
-          description: Per-user state and statistics for every user in the distribution.
-          type: array
-          items:
-            $ref: '#/components/schemas/DistributionUserState'
-        lastReset:
-          description: When the distribution's counters were last reset; absent if never reset.
-          type: string
-          format: date-time
-    DistroSimpleObjectType_Contact:
-      title: DistroSimpleObjectType_Contact
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: Contact
-    DistroSimpleObjectType_DuplicateLead:
-      title: DistroSimpleObjectType_DuplicateLead
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: DuplicateLead
-    DistributedAssignmentLimitReset_Daily:
-      title: DistributedAssignmentLimitReset_Daily
-      type: object
-      required:
-      - timeZone
-      - type
-      properties:
-        timeZone:
-          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
-          examples:
-          - America/New_York
-          type: string
-        type:
-          type: string
-          const: Daily
     DistroLogsFilter:
       title: DistroLogsFilter
       type: object
@@ -974,18 +464,64 @@ components:
           description: Upper bound (inclusive) on log creation time.
           type: string
           format: date-time
-    DistroTriggerDelay_BeforeRecordEval:
-      title: DistroTriggerDelay_BeforeRecordEval
+    DistroFieldUpdateExpression:
+      title: DistroFieldUpdateExpression
+      oneOf:
+      - $ref: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdate'
+      - $ref: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdateAnd'
+      - $ref: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdateOr'
+      discriminator:
+        propertyName: type
+        mapping:
+          FieldUpdate: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdate'
+          FieldUpdateAnd: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdateAnd'
+          FieldUpdateOr: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdateOr'
+    DistroSimpleObjectType_OpportunityTeamMember:
+      title: DistroSimpleObjectType_OpportunityTeamMember
       type: object
       required:
-      - duration
       - type
       properties:
-        duration:
+        type:
+          type: string
+          const: OpportunityTeamMember
+    DistributionState:
+      title: DistributionState
+      type: object
+      properties:
+        userStates:
+          description: Per-user state and statistics for every user in the distribution.
+          type: array
+          items:
+            $ref: '#/components/schemas/DistributionUserState'
+        lastReset:
+          description: When the distribution's counters were last reset; absent if never reset.
+          type: string
+          format: date-time
+    DistributedAssignmentLimitReset_Monthly:
+      title: DistributedAssignmentLimitReset_Monthly
+      type: object
+      required:
+      - timeZone
+      - type
+      properties:
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
           type: string
         type:
           type: string
-          const: BeforeRecordEval
+          const: Monthly
+    DistroRouterStatus_Deactivating:
+      title: DistroRouterStatus_Deactivating
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Deactivating
     DistroTriggerEventType:
       title: DistroTriggerEventType
       oneOf:
@@ -1002,6 +538,484 @@ components:
           Scheduled: '#/components/schemas/DistroTriggerEventType_Scheduled'
           Signal: '#/components/schemas/DistroTriggerEventType_Signal'
           UpdateField: '#/components/schemas/DistroTriggerEventType_UpdateField'
+    RecordHandling_Strict:
+      title: RecordHandling_Strict
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Strict
+    DistroLogMatcherKind:
+      title: DistroLogMatcherKind
+      type: string
+      enum:
+      - Relation
+      - DuplicateMatch
+      - CustomMatchedObject
+    DistributionUserState_Removed:
+      title: DistributionUserState_Removed
+      description: User was removed from the team entirely — historical record, no assignments will go
+        to this user.
+      type: object
+      required:
+      - userId
+      - total
+      - removedAt
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        removedAt:
+          type: string
+          format: date-time
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: Removed
+    MeetingLimitReset_Daily:
+      title: MeetingLimitReset_Daily
+      type: object
+      required:
+      - every
+      - startsOn
+      - resetLocalTime
+      - timezone
+      - type
+      properties:
+        every:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        startsOn:
+          type: string
+          format: date
+        resetLocalTime:
+          type: string
+        timezone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Daily
+    DistroSimpleObjectType_Contact:
+      title: DistroSimpleObjectType_Contact
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Contact
+    DistroLogConditionKind:
+      title: DistroLogConditionKind
+      type: string
+      enum:
+      - Comparison
+      - FieldComparison
+      - Ownership
+      - FuzzyOwnership
+      - Existence
+      - AlwaysTrue
+    PaginatedResult_DistroLogEntry:
+      title: PaginatedResult_DistroLogEntry
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroLogEntry'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    DistroSimpleObjectType:
+      title: DistroSimpleObjectType
+      oneOf:
+      - $ref: '#/components/schemas/DistroSimpleObjectType_Account'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_AccountTeamMember'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_Case'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_Contact'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_CustomObject'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_DuplicateContact'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_DuplicateLead'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_Lead'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_Opportunity'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_OpportunityTeamMember'
+      - $ref: '#/components/schemas/DistroSimpleObjectType_Task'
+      discriminator:
+        propertyName: type
+        mapping:
+          Account: '#/components/schemas/DistroSimpleObjectType_Account'
+          AccountTeamMember: '#/components/schemas/DistroSimpleObjectType_AccountTeamMember'
+          Case: '#/components/schemas/DistroSimpleObjectType_Case'
+          Contact: '#/components/schemas/DistroSimpleObjectType_Contact'
+          CustomObject: '#/components/schemas/DistroSimpleObjectType_CustomObject'
+          DuplicateContact: '#/components/schemas/DistroSimpleObjectType_DuplicateContact'
+          DuplicateLead: '#/components/schemas/DistroSimpleObjectType_DuplicateLead'
+          Lead: '#/components/schemas/DistroSimpleObjectType_Lead'
+          Opportunity: '#/components/schemas/DistroSimpleObjectType_Opportunity'
+          OpportunityTeamMember: '#/components/schemas/DistroSimpleObjectType_OpportunityTeamMember'
+          Task: '#/components/schemas/DistroSimpleObjectType_Task'
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+      properties: {}
+    Levels:
+      title: Levels
+      type: object
+      required:
+      - current
+      - nextAssignmentDelta
+      - total
+      properties:
+        current:
+          description: Earned score plus prolonged-reservation projection, before manual calibration.
+          type: number
+        nextAssignmentDelta:
+          description: Score increment that will be added if this user receives the next assignment. Forward-looking;
+            not included in `current` or `total`.
+          type: number
+        calibrationDelta:
+          description: Manual-calibration adjustment applied on top of `current`. Absent when no calibration
+            is in effect. When present, `total = current + calibrationDelta`.
+          type: number
+        total:
+          description: Current score with manual calibration applied.
+          type: number
+    DistributionAssignmentTypeConfig_Meeting:
+      title: DistributionAssignmentTypeConfig_Meeting
+      type: object
+      required:
+      - handling
+      - limits
+      - type
+      properties:
+        handling:
+          $ref: '#/components/schemas/MeetingHandling'
+        limits:
+          $ref: '#/components/schemas/MeetingLimit'
+        type:
+          type: string
+          const: Meeting
+    Prioritization:
+      title: Prioritization
+      type: object
+      properties:
+        queue:
+          description: Ordered list of active user IDs in the order they will receive the next assignments.
+            This is the authoritative assignment-ordering surface; level fields are informational.
+          type: array
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        onVacation:
+          description: Users currently on vacation and skipped by the queue until they return.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        reachedCap:
+          description: Users who have reached their assignment cap for the current period and are skipped
+            until the cap resets.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+    DistroLogTrigger:
+      title: DistroLogTrigger
+      type: object
+      required:
+      - entityId
+      - entityType
+      - eventType
+      properties:
+        entityId:
+          description: CRM record id that triggered the routing.
+          type: string
+        entityType:
+          description: CRM object type of the triggering record.
+          type: string
+        eventType:
+          $ref: '#/components/schemas/DistroLogTriggerEventType'
+    DistroRoutersListResponse:
+      title: DistroRoutersListResponse
+      type: object
+      properties:
+        routers:
+          description: Distro routers in the workspace.
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroRouter'
+    DistroRouterStatus_Inactive:
+      title: DistroRouterStatus_Inactive
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Inactive
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string
+    ConfigurationDTO:
+      title: ConfigurationDTO
+      type: object
+      required:
+      - distributionId
+      - workspaceId
+      - assignmentTypeConfig
+      - teamRef
+      - metadata
+      properties:
+        distributionId:
+          $ref: '#/components/schemas/DistributionId'
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+          description: Workspace the distribution belongs to.
+        assignmentTypeConfig:
+          $ref: '#/components/schemas/DistributionAssignmentTypeConfig'
+        teamRef:
+          $ref: '#/components/schemas/TeamRef'
+          description: Team whose members participate in this distribution.
+        weights:
+          description: Per-user relative assignment weights.
+          type: array
+          items:
+            $ref: '#/components/schemas/UserWeight'
+        name:
+          description: Human-readable distribution name; absent for unnamed distributions.
+          type: string
+        manualCalibration:
+          description: Per-user manual score offsets applied on top of computed levels.
+          type: array
+          items:
+            $ref: '#/components/schemas/UserCalibration'
+        capping:
+          $ref: '#/components/schemas/DistributedAssignmentLimit'
+          description: Per-user assignment cap; absent means uncapped.
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+          description: Creation/update audit metadata.
+    DistributedAssignmentLimitReset_HourlyRolling:
+      title: DistributedAssignmentLimitReset_HourlyRolling
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: HourlyRolling
+    ResourceSchedulerId:
+      title: ResourceSchedulerId
+      examples:
+      - d4e5f6a7-b8c9-4d0e-a1f2-3b4c5d6e7f8a
+      type: string
+      format: uuid
+    DistroTriggerDelay_AfterRecordEval:
+      title: DistroTriggerDelay_AfterRecordEval
+      type: object
+      required:
+      - duration
+      - type
+      properties:
+        duration:
+          type: string
+        type:
+          type: string
+          const: AfterRecordEval
+    DistroLogEnrichmentField:
+      title: DistroLogEnrichmentField
+      type: object
+      required:
+      - field
+      - overwriteEnabled
+      - overwriteExisting
+      properties:
+        field:
+          description: CRM field being enriched.
+          type: string
+        provider:
+          description: Enrichment data provider, if any.
+          type: string
+        existingValue:
+          description: Value on the record before enrichment.
+        enrichedValue:
+          description: Value produced by the enrichment provider.
+        overwriteEnabled:
+          description: Whether overwriting an existing value is allowed.
+          type: boolean
+        overwriteExisting:
+          description: Whether the existing value was actually overwritten.
+          type: boolean
+    DistroRouterStatus_Error:
+      title: DistroRouterStatus_Error
+      type: object
+      required:
+      - message
+      - type
+      properties:
+        message:
+          type: string
+        type:
+          type: string
+          const: Error
+    DistributionUserState_Active:
+      title: DistributionUserState_Active
+      description: User is active in the distribution and eligible for assignments. Carries the user's
+        current level.
+      type: object
+      required:
+      - userId
+      - total
+      - level
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        level:
+          $ref: '#/components/schemas/Levels'
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: Active
+    DistroFieldUpdateExpression_FieldUpdate:
+      title: DistroFieldUpdateExpression_FieldUpdate
+      type: object
+      required:
+      - fieldName
+      - type
+      properties:
+        fieldName:
+          type: string
+        type:
+          type: string
+          const: FieldUpdate
+    DistroSimpleObjectType_Opportunity:
+      title: DistroSimpleObjectType_Opportunity
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Opportunity
+    DistributedAssignmentLimitReset_Weekly:
+      title: DistributedAssignmentLimitReset_Weekly
+      type: object
+      required:
+      - timeZone
+      - dayOfWeek
+      - type
+      properties:
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        dayOfWeek:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 7
+        type:
+          type: string
+          const: Weekly
+    DistributionId:
+      title: DistributionId
+      examples:
+      - 7f8a1b2c-3d4e-4f5a-8b9c-0d1e2f3a4b5c
+      type: string
+      pattern: '[^\s\\/]+'
+    MeetingLimitReset:
+      title: MeetingLimitReset
+      oneOf:
+      - $ref: '#/components/schemas/MeetingLimitReset_Daily'
+      - $ref: '#/components/schemas/MeetingLimitReset_Monthly'
+      - $ref: '#/components/schemas/MeetingLimitReset_Weekly'
+      discriminator:
+        propertyName: type
+        mapping:
+          Daily: '#/components/schemas/MeetingLimitReset_Daily'
+          Monthly: '#/components/schemas/MeetingLimitReset_Monthly'
+          Weekly: '#/components/schemas/MeetingLimitReset_Weekly'
+    DistroLogDetail:
+      title: DistroLogDetail
+      type: object
+      required:
+      - log
+      properties:
+        log:
+          $ref: '#/components/schemas/DistroLog'
+        events:
+          description: Per-stage routing events in order.
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroLogEventDetail'
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
+    ListRequest:
+      title: ListRequest
+      type: object
+      properties:
+        workspaceIds:
+          description: Restrict results to these workspaces. Omit to search all accessible workspaces.
+          type: array
+          minItems: 1
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        page:
+          description: Zero-based page index. Defaults to 0.
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          description: Number of distributions per page.
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+        name:
+          description: Filter to distributions matching this name.
+          type: string
+        assignmentType:
+          $ref: '#/components/schemas/DistributionAssignmentType'
     MeetingLimitReset_Weekly:
       title: MeetingLimitReset_Weekly
       type: object
@@ -1039,105 +1053,280 @@ components:
         type:
           type: string
           const: Weekly
-    Workspace:
-      title: Workspace
+    DistroSimpleObjectType_Lead:
+      title: DistroSimpleObjectType_Lead
       type: object
       required:
-      - id
-      - name
-      - metadata
-      properties:
-        id:
-          $ref: '#/components/schemas/WorkspaceId'
-          description: Unique identifier of the workspace.
-        name:
-          description: Human-readable workspace name.
-          type: string
-        emoji:
-          description: Optional emoji shown as the workspace's icon.
-          type: string
-        logo:
-          description: Optional URL of the workspace's logo image.
-          type: string
-        metadata:
-          $ref: '#/components/schemas/SimpleMetadata'
-    MeetingLimitReset_Monthly:
-      title: MeetingLimitReset_Monthly
-      type: object
-      required:
-      - every
-      - startsOn
-      - resetDay
-      - timezone
       - type
       properties:
-        every:
-          type: integer
-          format: int32
-          exclusiveMinimum: 0
-        startsOn:
-          type: string
-          format: date
-        resetDay:
-          type: integer
-          format: int32
-          minimum: 1
-          maximum: 28
-        timezone:
-          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
-          examples:
-          - America/New_York
-          type: string
         type:
           type: string
-          const: Monthly
-    Distribution:
-      title: Distribution
+          const: Lead
+    PaginatedResult_Workspace:
+      title: PaginatedResult_Workspace
       type: object
       required:
-      - id
-      - published
-      - state
-      - prioritization
+      - total
+      - page
+      - pageSize
       properties:
-        id:
-          $ref: '#/components/schemas/DistributionId'
-        published:
-          $ref: '#/components/schemas/ConfigurationDTO'
-        state:
-          $ref: '#/components/schemas/DistributionState'
-        prioritization:
-          $ref: '#/components/schemas/Prioritization'
-    MeetingLimitReset:
-      title: MeetingLimitReset
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workspace'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    DistroLogRuleEvaluation:
+      title: DistroLogRuleEvaluation
+      type: object
+      required:
+      - matched
+      properties:
+        ruleId:
+          description: Id of the evaluated rule, if it has one.
+          type: string
+          pattern: '[^\s\\/]+'
+        ruleName:
+          description: Rule display name.
+          type: string
+        matched:
+          description: Whether the rule matched the record.
+          type: boolean
+        logic:
+          description: Boolean logic combining the conditions (e.g. "1 AND 2").
+          type: string
+        conditions:
+          description: Per-condition evaluation results.
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroLogConditionEvaluation'
+    DistributionUserState_NoLicense:
+      title: DistributionUserState_NoLicense
+      description: User is still on the team but has lost their license, so they cannot receive assignments.
+        Re-licensing restores them.
+      type: object
+      required:
+      - userId
+      - total
+      - licenseRemovedAt
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        licenseRemovedAt:
+          type: string
+          format: date-time
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: NoLicense
+    DistributionAssignmentType:
+      title: DistributionAssignmentType
+      type: string
+      enum:
+      - Record
+      - Meeting
+      - Conversation
+    MeetingHandling_Strict:
+      title: MeetingHandling_Strict
+      type: object
+      required:
+      - hideAssignee
+      - type
+      properties:
+        hideAssignee:
+          type: boolean
+        type:
+          type: string
+          const: Strict
+    DistributionUserState_Disabled:
+      title: DistributionUserState_Disabled
+      description: User has been explicitly disabled in this distribution (weight set to 0). Still on
+        the team but won't receive assignments until re-enabled.
+      type: object
+      required:
+      - userId
+      - total
+      - disabledAt
+      - statistics
+      - type
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
+          type: integer
+          format: int32
+        disabledAt:
+          type: string
+          format: date-time
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
+        type:
+          type: string
+          const: Disabled
+    DistroTriggerDelay:
+      title: DistroTriggerDelay
       oneOf:
-      - $ref: '#/components/schemas/MeetingLimitReset_Daily'
-      - $ref: '#/components/schemas/MeetingLimitReset_Monthly'
-      - $ref: '#/components/schemas/MeetingLimitReset_Weekly'
+      - $ref: '#/components/schemas/DistroTriggerDelay_AfterRecordEval'
+      - $ref: '#/components/schemas/DistroTriggerDelay_BeforeRecordEval'
       discriminator:
         propertyName: type
         mapping:
-          Daily: '#/components/schemas/MeetingLimitReset_Daily'
-          Monthly: '#/components/schemas/MeetingLimitReset_Monthly'
-          Weekly: '#/components/schemas/MeetingLimitReset_Weekly'
-    DistroTriggerEventType_Signal:
-      title: DistroTriggerEventType_Signal
+          AfterRecordEval: '#/components/schemas/DistroTriggerDelay_AfterRecordEval'
+          BeforeRecordEval: '#/components/schemas/DistroTriggerDelay_BeforeRecordEval'
+    DistroLogMatcherEvaluation:
+      title: DistroLogMatcherEvaluation
+      type: object
+      required:
+      - kind
+      - matched
+      properties:
+        routeId:
+          description: Route this matcher belongs to.
+          type: string
+        kind:
+          $ref: '#/components/schemas/DistroLogMatcherKind'
+        objectType:
+          description: CRM object type the matcher inspected.
+          type: string
+        exists:
+          description: Whether a matching record was found.
+          type: boolean
+        matchToAccountOwner:
+          description: Whether the match routes to the account owner.
+          type: boolean
+        matched:
+          description: Whether the matcher matched.
+          type: boolean
+        recordId:
+          description: Matched record id, if any.
+          type: string
+    DistributionAssignmentTypeConfig_Record:
+      title: DistributionAssignmentTypeConfig_Record
+      type: object
+      required:
+      - handling
+      - type
+      properties:
+        handling:
+          $ref: '#/components/schemas/RecordHandling'
+        type:
+          type: string
+          const: Record
+    DistroSimpleObjectType_AccountTeamMember:
+      title: DistroSimpleObjectType_AccountTeamMember
       type: object
       required:
       - type
       properties:
         type:
           type: string
-          const: Signal
-    DistroRouterStatus_Inactive:
-      title: DistroRouterStatus_Inactive
+          const: AccountTeamMember
+    DistributionAssignmentTypeConfig:
+      title: DistributionAssignmentTypeConfig
+      oneOf:
+      - $ref: '#/components/schemas/DistributionAssignmentTypeConfig_Conversation'
+      - $ref: '#/components/schemas/DistributionAssignmentTypeConfig_Meeting'
+      - $ref: '#/components/schemas/DistributionAssignmentTypeConfig_Record'
+      discriminator:
+        propertyName: type
+        mapping:
+          Conversation: '#/components/schemas/DistributionAssignmentTypeConfig_Conversation'
+          Meeting: '#/components/schemas/DistributionAssignmentTypeConfig_Meeting'
+          Record: '#/components/schemas/DistributionAssignmentTypeConfig_Record'
+    DistroLogEnrichmentStep:
+      title: DistroLogEnrichmentStep
       type: object
       required:
+      - stepId
+      properties:
+        stepId:
+          description: Enrichment step identifier.
+          type: string
+        fields:
+          description: Fields processed by this step.
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroLogEnrichmentField'
+        errors:
+          description: Errors raised during this step.
+          type: array
+          items:
+            type: string
+    MeetingLimit_MeetingLimitSet:
+      title: MeetingLimit_MeetingLimitSet
+      type: object
+      required:
+      - resetPeriodicity
       - type
       properties:
+        userCaps:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/UserLimit'
+        resetPeriodicity:
+          $ref: '#/components/schemas/MeetingLimitReset'
         type:
           type: string
-          const: Inactive
+          const: MeetingLimitSet
+    MeetingHandling_Flexible:
+      title: MeetingHandling_Flexible
+      type: object
+      required:
+      - reassignmentType
+      - allowPickingAssignee
+      - type
+      properties:
+        reassignmentType:
+          $ref: '#/components/schemas/ReassignmentType'
+        allowPickingAssignee:
+          type: boolean
+        type:
+          type: string
+          const: Flexible
+    TeamRef:
+      title: TeamRef
+      type: object
+      required:
+      - id
+      - revision
+      properties:
+        id:
+          $ref: '#/components/schemas/TeamId'
+        revision:
+          type: integer
+          format: int32
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
+    RecordHandling:
+      title: RecordHandling
+      oneOf:
+      - $ref: '#/components/schemas/RecordHandling_Strict'
+      - $ref: '#/components/schemas/RecordHandling_WorkingHours'
+      discriminator:
+        propertyName: type
+        mapping:
+          Strict: '#/components/schemas/RecordHandling_Strict'
+          WorkingHours: '#/components/schemas/RecordHandling_WorkingHours'
     DistributionUserState:
       title: DistributionUserState
       oneOf:
@@ -1154,77 +1343,6 @@ components:
           Disabled: '#/components/schemas/DistributionUserState_Disabled'
           NoLicense: '#/components/schemas/DistributionUserState_NoLicense'
           Removed: '#/components/schemas/DistributionUserState_Removed'
-    DistributionAssignmentTypeConfig_Conversation:
-      title: DistributionAssignmentTypeConfig_Conversation
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: Conversation
-    DistroLogDetail:
-      title: DistroLogDetail
-      type: object
-      required:
-      - log
-      properties:
-        log:
-          $ref: '#/components/schemas/DistroLog'
-        events:
-          description: Per-stage routing events in order.
-          type: array
-          items:
-            $ref: '#/components/schemas/DistroLogEventDetail'
-    MeetingHandling_Flexible:
-      title: MeetingHandling_Flexible
-      type: object
-      required:
-      - reassignmentType
-      - allowPickingAssignee
-      - type
-      properties:
-        reassignmentType:
-          $ref: '#/components/schemas/ReassignmentType'
-        allowPickingAssignee:
-          type: boolean
-        type:
-          type: string
-          const: Flexible
-    RecordHandling:
-      title: RecordHandling
-      oneOf:
-      - $ref: '#/components/schemas/RecordHandling_Strict'
-      - $ref: '#/components/schemas/RecordHandling_WorkingHours'
-      discriminator:
-        propertyName: type
-        mapping:
-          Strict: '#/components/schemas/RecordHandling_Strict'
-          WorkingHours: '#/components/schemas/RecordHandling_WorkingHours'
-    DistroLogEnrichmentField:
-      title: DistroLogEnrichmentField
-      type: object
-      required:
-      - field
-      - overwriteEnabled
-      - overwriteExisting
-      properties:
-        field:
-          description: CRM field being enriched.
-          type: string
-        provider:
-          description: Enrichment data provider, if any.
-          type: string
-        existingValue:
-          description: Value on the record before enrichment.
-        enrichedValue:
-          description: Value produced by the enrichment provider.
-        overwriteEnabled:
-          description: Whether overwriting an existing value is allowed.
-          type: boolean
-        overwriteExisting:
-          description: Whether the existing value was actually overwritten.
-          type: boolean
     DistroLogDuplicateMatch:
       title: DistroLogDuplicateMatch
       type: object
@@ -1247,30 +1365,39 @@ components:
           description: Email of the duplicate record's owner.
           type: string
           pattern: .+@.+
-    DistributionUserState_Active:
-      title: DistributionUserState_Active
-      description: User is active in the distribution and eligible for assignments. Carries the user's
-        current level.
+    DistroRouter:
+      title: DistroRouter
       type: object
       required:
-      - userId
-      - total
-      - level
-      - statistics
-      - type
+      - id
+      - name
+      - status
+      - trigger
       properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        total:
-          type: integer
-          format: int32
-        level:
-          $ref: '#/components/schemas/Levels'
-        statistics:
-          $ref: '#/components/schemas/UserStatistics'
-        type:
+        id:
+          $ref: '#/components/schemas/RouterId'
+          description: Router identifier.
+        name:
+          description: Router display name.
           type: string
-          const: Active
+        status:
+          $ref: '#/components/schemas/DistroRouterStatus'
+        trigger:
+          $ref: '#/components/schemas/DistroTrigger'
+    DistributedAssignmentLimitReset:
+      title: DistributedAssignmentLimitReset
+      oneOf:
+      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_Daily'
+      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_HourlyRolling'
+      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_Monthly'
+      - $ref: '#/components/schemas/DistributedAssignmentLimitReset_Weekly'
+      discriminator:
+        propertyName: type
+        mapping:
+          Daily: '#/components/schemas/DistributedAssignmentLimitReset_Daily'
+          HourlyRolling: '#/components/schemas/DistributedAssignmentLimitReset_HourlyRolling'
+          Monthly: '#/components/schemas/DistributedAssignmentLimitReset_Monthly'
+          Weekly: '#/components/schemas/DistributedAssignmentLimitReset_Weekly'
     DistroLogConditionEvaluation:
       title: DistroLogConditionEvaluation
       type: object
@@ -1315,54 +1442,122 @@ components:
         error:
           description: Error message if the condition failed to evaluate.
           type: string
-    DistroLogEvaluatedOwner:
-      title: DistroLogEvaluatedOwner
+    DistroSimpleObjectType_Task:
+      title: DistroSimpleObjectType_Task
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Task
+    TeamId:
+      title: TeamId
+      examples:
+      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
+      type: string
+      pattern: '[^\s\\/]+'
+    MeetingLimitReset_Monthly:
+      title: MeetingLimitReset_Monthly
+      type: object
+      required:
+      - every
+      - startsOn
+      - resetDay
+      - timezone
+      - type
+      properties:
+        every:
+          type: integer
+          format: int32
+          exclusiveMinimum: 0
+        startsOn:
+          type: string
+          format: date
+        resetDay:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 28
+        timezone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
+          type: string
+        type:
+          type: string
+          const: Monthly
+    DistroLogRouteEvaluation:
+      title: DistroLogRouteEvaluation
       type: object
       properties:
-        userId:
-          description: CP user resolved as the owner, if matched.
+        routeId:
+          description: Route identifier.
+          type: string
+        ruleName:
+          description: Name of the route's gating rule.
+          type: string
+        matchers:
+          description: Matcher evaluations for this route.
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroLogMatcherEvaluation'
+        rules:
+          description: Rule evaluations for this route.
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroLogRuleEvaluation'
+        duplicateMatches:
+          description: Duplicate records found for this route.
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroLogDuplicateMatch'
+    DistroRouterStatus_Active:
+      title: DistroRouterStatus_Active
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Active
+    DistroTrigger:
+      title: DistroTrigger
+      type: object
+      required:
+      - objectType
+      - eventTypes
+      properties:
+        objectType:
+          $ref: '#/components/schemas/DistroSimpleObjectType'
+        eventTypes:
+          description: CRM events that make a record flow through the router.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DistroTriggerEventType'
+        evaluation:
+          description: Optional gating rule; only matching records flow through.
           type: string
           pattern: '[^\s\\/]+'
-        email:
-          description: Owner email resolved from the CRM record.
-          type: string
-          pattern: .+@.+
-    DistroRouter:
-      title: DistroRouter
+        delay:
+          $ref: '#/components/schemas/DistroTriggerDelay'
+    DistroLogAssignment:
+      title: DistroLogAssignment
       type: object
       required:
-      - id
-      - name
-      - status
-      - trigger
+      - userId
+      - method
       properties:
-        id:
-          $ref: '#/components/schemas/RouterId'
-          description: Router identifier.
-        name:
-          description: Router display name.
+        userId:
+          $ref: '#/components/schemas/UserId'
+          description: User the record was assigned to.
+        distributionId:
+          description: Distribution that selected the assignee, if any.
           type: string
-        status:
-          $ref: '#/components/schemas/DistroRouterStatus'
-        trigger:
-          $ref: '#/components/schemas/DistroTrigger'
-    DistroRouterSummary:
-      title: DistroRouterSummary
-      type: object
-      required:
-      - id
-      - name
-      - workspaceId
-      properties:
-        id:
-          $ref: '#/components/schemas/RouterId'
-          description: Router identifier.
-        name:
-          description: Router display name.
-          type: string
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-          description: Workspace the router belongs to.
+          pattern: '[^\s\\/]+'
+        method:
+          $ref: '#/components/schemas/DistributionMethod'
     UserWeight:
       title: UserWeight
       type: object
@@ -1379,58 +1574,216 @@ components:
           format: int32
           minimum: 0
           maximum: 10000
-    DistroTriggerDelay_AfterRecordEval:
-      title: DistroTriggerDelay_AfterRecordEval
+    Distribution:
+      title: Distribution
       type: object
       required:
-      - duration
+      - id
+      - published
+      - state
+      - prioritization
+      properties:
+        id:
+          $ref: '#/components/schemas/DistributionId'
+        published:
+          $ref: '#/components/schemas/ConfigurationDTO'
+        state:
+          $ref: '#/components/schemas/DistributionState'
+        prioritization:
+          $ref: '#/components/schemas/Prioritization'
+    DistroTriggerEventType_NewRecordOrUpdateField:
+      title: DistroTriggerEventType_NewRecordOrUpdateField
+      type: object
+      required:
+      - expression
       - type
       properties:
-        duration:
+        expression:
+          $ref: '#/components/schemas/DistroFieldUpdateExpression'
+        type:
+          type: string
+          const: NewRecordOrUpdateField
+    DistroFieldUpdateExpression_FieldUpdateOr:
+      title: DistroFieldUpdateExpression_FieldUpdateOr
+      type: object
+      required:
+      - expressions
+      - type
+      properties:
+        expressions:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DistroFieldUpdateExpression'
+        type:
+          type: string
+          const: FieldUpdateOr
+    DistroLogStatus:
+      title: DistroLogStatus
+      type: string
+      enum:
+      - NotTriggered
+      - NotMatchedEntryRule
+      - DelayInProgress
+      - WorkingHours
+      - SlaInProgress
+      - NotRouted
+      - Finished
+      - SlaFinished
+      - Error
+    DistributedAssignmentLimitReset_Daily:
+      title: DistributedAssignmentLimitReset_Daily
+      type: object
+      required:
+      - timeZone
+      - type
+      properties:
+        timeZone:
+          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
+          examples:
+          - America/New_York
           type: string
         type:
           type: string
-          const: AfterRecordEval
-    DistributionAssignmentTypeConfig_Meeting:
-      title: DistributionAssignmentTypeConfig_Meeting
+          const: Daily
+    DistroTriggerEventType_Scheduled:
+      title: DistroTriggerEventType_Scheduled
       type: object
       required:
-      - handling
-      - limits
+      - schedulerId
       - type
       properties:
-        handling:
-          $ref: '#/components/schemas/MeetingHandling'
-        limits:
-          $ref: '#/components/schemas/MeetingLimit'
+        schedulerId:
+          $ref: '#/components/schemas/ResourceSchedulerId'
         type:
           type: string
-          const: Meeting
-    DistributionUserState_Disabled:
-      title: DistributionUserState_Disabled
-      description: User has been explicitly disabled in this distribution (weight set to 0). Still on
-        the team but won't receive assignments until re-enabled.
+          const: Scheduled
+    DistroLog:
+      title: DistroLog
       type: object
       required:
-      - userId
-      - total
-      - disabledAt
-      - statistics
-      - type
+      - id
+      - workspaceId
+      - routerId
+      - status
+      - createdAt
+      - updatedAt
       properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        total:
-          type: integer
-          format: int32
-        disabledAt:
+        id:
+          description: Log entry identifier.
+          type: string
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+          description: Workspace the routed record belongs to.
+        routerId:
+          $ref: '#/components/schemas/RouterId'
+          description: Router that processed the record.
+        status:
+          $ref: '#/components/schemas/DistroLogStatus'
+        assignments:
+          description: Users the record was assigned to.
+          type: array
+          items:
+            $ref: '#/components/schemas/DistroLogAssignment'
+        trigger:
+          $ref: '#/components/schemas/DistroLogTrigger'
+        createdAt:
+          description: When routing started.
           type: string
           format: date-time
-        statistics:
-          $ref: '#/components/schemas/UserStatistics'
+        updatedAt:
+          description: When the log was last updated.
+          type: string
+          format: date-time
+    DistroRouterStatus:
+      title: DistroRouterStatus
+      oneOf:
+      - $ref: '#/components/schemas/DistroRouterStatus_Activating'
+      - $ref: '#/components/schemas/DistroRouterStatus_Active'
+      - $ref: '#/components/schemas/DistroRouterStatus_Deactivating'
+      - $ref: '#/components/schemas/DistroRouterStatus_Error'
+      - $ref: '#/components/schemas/DistroRouterStatus_Inactive'
+      discriminator:
+        propertyName: type
+        mapping:
+          Activating: '#/components/schemas/DistroRouterStatus_Activating'
+          Active: '#/components/schemas/DistroRouterStatus_Active'
+          Deactivating: '#/components/schemas/DistroRouterStatus_Deactivating'
+          Error: '#/components/schemas/DistroRouterStatus_Error'
+          Inactive: '#/components/schemas/DistroRouterStatus_Inactive'
+    DistributedAssignmentLimit:
+      title: DistributedAssignmentLimit
+      type: object
+      required:
+      - resetPeriodicity
+      properties:
+        userCaps:
+          description: Per-user assignment caps.
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/UserLimit'
+        resetPeriodicity:
+          $ref: '#/components/schemas/DistributedAssignmentLimitReset'
+    DistroSimpleObjectType_Account:
+      title: DistroSimpleObjectType_Account
+      type: object
+      required:
+      - type
+      properties:
         type:
           type: string
-          const: Disabled
+          const: Account
+    DistroSimpleObjectType_CustomObject:
+      title: DistroSimpleObjectType_CustomObject
+      type: object
+      required:
+      - value
+      - type
+      properties:
+        value:
+          type: string
+          pattern: '[^\s\\/]+'
+        type:
+          type: string
+          const: CustomObject
+    MeetingLimit_MeetingLimitUnset:
+      title: MeetingLimit_MeetingLimitUnset
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: MeetingLimitUnset
+    DistroSimpleObjectType_DuplicateLead:
+      title: DistroSimpleObjectType_DuplicateLead
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: DuplicateLead
+    MeetingHandling:
+      title: MeetingHandling
+      oneOf:
+      - $ref: '#/components/schemas/MeetingHandling_Flexible'
+      - $ref: '#/components/schemas/MeetingHandling_Strict'
+      discriminator:
+        propertyName: type
+        mapping:
+          Flexible: '#/components/schemas/MeetingHandling_Flexible'
+          Strict: '#/components/schemas/MeetingHandling_Strict'
+    DistroTriggerEventType_Signal:
+      title: DistroTriggerEventType_Signal
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Signal
     DistroLogEventDetail:
       title: DistroLogEventDetail
       type: object
@@ -1482,33 +1835,61 @@ components:
           description: When the event was last updated.
           type: string
           format: date-time
-    TeamRef:
-      title: TeamRef
+    DistroFieldUpdateExpression_FieldUpdateAnd:
+      title: DistroFieldUpdateExpression_FieldUpdateAnd
+      type: object
+      required:
+      - expressions
+      - type
+      properties:
+        expressions:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DistroFieldUpdateExpression'
+        type:
+          type: string
+          const: FieldUpdateAnd
+    DistroRouterSummary:
+      title: DistroRouterSummary
       type: object
       required:
       - id
-      - revision
+      - name
+      - workspaceId
       properties:
         id:
-          $ref: '#/components/schemas/TeamId'
-        revision:
-          type: integer
-          format: int32
-    CallerRef:
-      title: CallerRef
-      description: stringified caller reference in format $type/$id
-      examples:
-      - user/17a3d4563d5a67a3d456ad635
-      type: string
-    DistroSimpleObjectType_Opportunity:
-      title: DistroSimpleObjectType_Opportunity
+          $ref: '#/components/schemas/RouterId'
+          description: Router identifier.
+        name:
+          description: Router display name.
+          type: string
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+          description: Workspace the router belongs to.
+    PaginatedResult_Distribution:
+      title: PaginatedResult_Distribution
       type: object
       required:
-      - type
+      - total
+      - page
+      - pageSize
       properties:
-        type:
-          type: string
-          const: Opportunity
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Distribution'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
     DistroLogEntry:
       title: DistroLogEntry
       type: object
@@ -1520,225 +1901,125 @@ components:
           $ref: '#/components/schemas/DistroLog'
         router:
           $ref: '#/components/schemas/DistroRouterSummary'
-    DistroSimpleObjectType_CustomObject:
-      title: DistroSimpleObjectType_CustomObject
+    Workspace:
+      title: Workspace
       type: object
       required:
-      - value
-      - type
+      - id
+      - name
+      - metadata
       properties:
-        value:
-          type: string
-          pattern: '[^\s\\/]+'
-        type:
-          type: string
-          const: CustomObject
-    DistroFieldUpdateExpression:
-      title: DistroFieldUpdateExpression
-      oneOf:
-      - $ref: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdate'
-      - $ref: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdateAnd'
-      - $ref: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdateOr'
-      discriminator:
-        propertyName: type
-        mapping:
-          FieldUpdate: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdate'
-          FieldUpdateAnd: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdateAnd'
-          FieldUpdateOr: '#/components/schemas/DistroFieldUpdateExpression_FieldUpdateOr'
-    DistroSimpleObjectType_AccountTeamMember:
-      title: DistroSimpleObjectType_AccountTeamMember
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: AccountTeamMember
-    ListRequest:
-      title: ListRequest
-      type: object
-      properties:
-        workspaceIds:
-          description: Restrict results to these workspaces. Omit to search all accessible workspaces.
-          type: array
-          minItems: 1
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        page:
-          description: Zero-based page index. Defaults to 0.
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          description: Number of distributions per page.
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
+        id:
+          $ref: '#/components/schemas/WorkspaceId'
+          description: Unique identifier of the workspace.
         name:
-          description: Filter to distributions matching this name.
+          description: Human-readable workspace name.
           type: string
-        assignmentType:
-          $ref: '#/components/schemas/DistributionAssignmentType'
-    DistributionAssignmentTypeConfig_Record:
-      title: DistributionAssignmentTypeConfig_Record
+        emoji:
+          description: Optional emoji shown as the workspace's icon.
+          type: string
+        logo:
+          description: Optional URL of the workspace's logo image.
+          type: string
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+    DistroTriggerDelay_BeforeRecordEval:
+      title: DistroTriggerDelay_BeforeRecordEval
       type: object
       required:
-      - handling
+      - duration
       - type
       properties:
-        handling:
-          $ref: '#/components/schemas/RecordHandling'
+        duration:
+          type: string
         type:
           type: string
-          const: Record
-    MeetingLimitReset_Daily:
-      title: MeetingLimitReset_Daily
+          const: BeforeRecordEval
+    DistributionUserState_Capped:
+      title: DistributionUserState_Capped
+      description: User has reached their assignment cap for the current period and is temporarily excluded
+        until the cap resets.
       type: object
       required:
-      - every
-      - startsOn
-      - resetLocalTime
-      - timezone
+      - userId
+      - total
+      - statistics
       - type
       properties:
-        every:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        total:
           type: integer
           format: int32
-          exclusiveMinimum: 0
-        startsOn:
-          type: string
-          format: date
-        resetLocalTime:
-          type: string
-        timezone:
-          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
-          examples:
-          - America/New_York
-          type: string
+        statistics:
+          $ref: '#/components/schemas/UserStatistics'
         type:
           type: string
-          const: Daily
-    DistributedAssignmentLimitReset_Weekly:
-      title: DistributedAssignmentLimitReset_Weekly
-      type: object
-      required:
-      - timeZone
-      - dayOfWeek
-      - type
-      properties:
-        timeZone:
-          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
-          examples:
-          - America/New_York
-          type: string
-        dayOfWeek:
-          type: integer
-          format: int32
-          minimum: 1
-          maximum: 7
-        type:
-          type: string
-          const: Weekly
-    DistributedAssignmentLimitReset_Monthly:
-      title: DistributedAssignmentLimitReset_Monthly
-      type: object
-      required:
-      - timeZone
-      - type
-      properties:
-        timeZone:
-          description: IANA timezone identifier (e.g. America/New_York, Europe/London, Asia/Tokyo)
-          examples:
-          - America/New_York
-          type: string
-        type:
-          type: string
-          const: Monthly
-    DistroLogEnrichmentStep:
-      title: DistroLogEnrichmentStep
-      type: object
-      required:
-      - stepId
-      properties:
-        stepId:
-          description: Enrichment step identifier.
-          type: string
-        fields:
-          description: Fields processed by this step.
-          type: array
-          items:
-            $ref: '#/components/schemas/DistroLogEnrichmentField'
-        errors:
-          description: Errors raised during this step.
-          type: array
-          items:
-            type: string
-    ReassignmentType:
-      title: ReassignmentType
+          const: Capped
+    DistroLogTriggerEventType:
+      title: DistroLogTriggerEventType
       type: string
       enum:
-      - SameUser
-      - AnyTeamMember
-    DistroSimpleObjectType_OpportunityTeamMember:
-      title: DistroSimpleObjectType_OpportunityTeamMember
+      - Created
+      - Updated
+      - Signaled
+    RouterId:
+      title: RouterId
+      examples:
+      - c5d6e7f8-a9b0-4c1d-ae2f-3a4b5c6d7e8f
+      type: string
+      pattern: '[^\s\\/]+'
+    DistroSimpleObjectType_Case:
+      title: DistroSimpleObjectType_Case
       type: object
       required:
       - type
       properties:
         type:
           type: string
-          const: OpportunityTeamMember
-    DistroLogConditionKind:
-      title: DistroLogConditionKind
-      type: string
-      enum:
-      - Comparison
-      - FieldComparison
-      - Ownership
-      - FuzzyOwnership
-      - Existence
-      - AlwaysTrue
-    DistroLogStatus:
-      title: DistroLogStatus
-      type: string
-      enum:
-      - NotTriggered
-      - NotMatchedEntryRule
-      - DelayInProgress
-      - WorkingHours
-      - SlaInProgress
-      - NotRouted
-      - Finished
-      - SlaFinished
-      - Error
-    Map_String:
-      title: Map_String
+          const: Case
+    DistroLogEvaluatedOwner:
+      title: DistroLogEvaluatedOwner
       type: object
-      additionalProperties:
-        type: string
-      properties: {}
-    DistroTrigger:
-      title: DistroTrigger
-      type: object
-      required:
-      - objectType
-      - eventTypes
       properties:
-        objectType:
-          $ref: '#/components/schemas/DistroSimpleObjectType'
-        eventTypes:
-          description: CRM events that make a record flow through the router.
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/DistroTriggerEventType'
-        evaluation:
-          description: Optional gating rule; only matching records flow through.
+        userId:
+          description: CP user resolved as the owner, if matched.
           type: string
           pattern: '[^\s\\/]+'
-        delay:
-          $ref: '#/components/schemas/DistroTriggerDelay'
+        email:
+          description: Owner email resolved from the CRM record.
+          type: string
+          pattern: .+@.+
+    UserStatistics:
+      title: UserStatistics
+      type: object
+      required:
+      - assigned
+      - cancelled
+      - noShow
+      - reassignedToThis
+      - reassignedFromThis
+      properties:
+        assigned:
+          description: Number of assignments booked directly to this user in the current period.
+          type: integer
+          format: int32
+        cancelled:
+          description: Number of assignments that were later cancelled.
+          type: integer
+          format: int32
+        noShow:
+          description: Number of assignments where the invitee did not show up.
+          type: integer
+          format: int32
+        reassignedToThis:
+          description: Number of assignments that were reassigned to this user from another.
+          type: integer
+          format: int32
+        reassignedFromThis:
+          description: Number of assignments originally made to this user that were reassigned away.
+          type: integer
+          format: int32
     SimpleMetadata:
       title: SimpleMetadata
       type: object
@@ -1762,58 +2043,56 @@ components:
         revision:
           type: integer
           format: int32
-    DistroLogRuleEvaluation:
-      title: DistroLogRuleEvaluation
+    UserLimit:
+      title: UserLimit
       type: object
       required:
-      - matched
+      - userId
+      - limit
       properties:
-        ruleId:
-          description: Id of the evaluated rule, if it has one.
-          type: string
-          pattern: '[^\s\\/]+'
-        ruleName:
-          description: Rule display name.
-          type: string
-        matched:
-          description: Whether the rule matched the record.
-          type: boolean
-        logic:
-          description: Boolean logic combining the conditions (e.g. "1 AND 2").
-          type: string
-        conditions:
-          description: Per-condition evaluation results.
-          type: array
-          items:
-            $ref: '#/components/schemas/DistroLogConditionEvaluation'
-    DistroSimpleObjectType:
-      title: DistroSimpleObjectType
+        userId:
+          $ref: '#/components/schemas/UserId'
+        limit:
+          description: Maximum assignments this user may receive per reset period (non-negative).
+          type: integer
+          format: int32
+          minimum: 0
+    MeetingLimit:
+      title: MeetingLimit
       oneOf:
-      - $ref: '#/components/schemas/DistroSimpleObjectType_Account'
-      - $ref: '#/components/schemas/DistroSimpleObjectType_AccountTeamMember'
-      - $ref: '#/components/schemas/DistroSimpleObjectType_Case'
-      - $ref: '#/components/schemas/DistroSimpleObjectType_Contact'
-      - $ref: '#/components/schemas/DistroSimpleObjectType_CustomObject'
-      - $ref: '#/components/schemas/DistroSimpleObjectType_DuplicateContact'
-      - $ref: '#/components/schemas/DistroSimpleObjectType_DuplicateLead'
-      - $ref: '#/components/schemas/DistroSimpleObjectType_Lead'
-      - $ref: '#/components/schemas/DistroSimpleObjectType_Opportunity'
-      - $ref: '#/components/schemas/DistroSimpleObjectType_OpportunityTeamMember'
-      - $ref: '#/components/schemas/DistroSimpleObjectType_Task'
+      - $ref: '#/components/schemas/MeetingLimit_MeetingLimitSet'
+      - $ref: '#/components/schemas/MeetingLimit_MeetingLimitUnset'
       discriminator:
         propertyName: type
         mapping:
-          Account: '#/components/schemas/DistroSimpleObjectType_Account'
-          AccountTeamMember: '#/components/schemas/DistroSimpleObjectType_AccountTeamMember'
-          Case: '#/components/schemas/DistroSimpleObjectType_Case'
-          Contact: '#/components/schemas/DistroSimpleObjectType_Contact'
-          CustomObject: '#/components/schemas/DistroSimpleObjectType_CustomObject'
-          DuplicateContact: '#/components/schemas/DistroSimpleObjectType_DuplicateContact'
-          DuplicateLead: '#/components/schemas/DistroSimpleObjectType_DuplicateLead'
-          Lead: '#/components/schemas/DistroSimpleObjectType_Lead'
-          Opportunity: '#/components/schemas/DistroSimpleObjectType_Opportunity'
-          OpportunityTeamMember: '#/components/schemas/DistroSimpleObjectType_OpportunityTeamMember'
-          Task: '#/components/schemas/DistroSimpleObjectType_Task'
+          MeetingLimitSet: '#/components/schemas/MeetingLimit_MeetingLimitSet'
+          MeetingLimitUnset: '#/components/schemas/MeetingLimit_MeetingLimitUnset'
+    UserCalibration:
+      title: UserCalibration
+      type: object
+      required:
+      - userId
+      - calibration
+      properties:
+        userId:
+          $ref: '#/components/schemas/UserId'
+        calibration:
+          description: Manual offset added to this user's computed score to bias their position in the
+            assignment queue (signed).
+          type: integer
+          format: int32
+    DistroTriggerEventType_UpdateField:
+      title: DistroTriggerEventType_UpdateField
+      type: object
+      required:
+      - expression
+      - type
+      properties:
+        expression:
+          $ref: '#/components/schemas/DistroFieldUpdateExpression'
+        type:
+          type: string
+          const: UpdateField
     DistroTriggerEventType_NewRecord:
       title: DistroTriggerEventType_NewRecord
       type: object
@@ -1823,273 +2102,6 @@ components:
         type:
           type: string
           const: NewRecord
-    DistributionUserState_Removed:
-      title: DistributionUserState_Removed
-      description: User was removed from the team entirely — historical record, no assignments will go
-        to this user.
-      type: object
-      required:
-      - userId
-      - total
-      - removedAt
-      - statistics
-      - type
-      properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        total:
-          type: integer
-          format: int32
-        removedAt:
-          type: string
-          format: date-time
-        statistics:
-          $ref: '#/components/schemas/UserStatistics'
-        type:
-          type: string
-          const: Removed
-    DistributedAssignmentLimitReset_HourlyRolling:
-      title: DistributedAssignmentLimitReset_HourlyRolling
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: HourlyRolling
-    PaginatedResult_DistroLogEntry:
-      title: PaginatedResult_DistroLogEntry
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/DistroLogEntry'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    DistributionUserState_Capped:
-      title: DistributionUserState_Capped
-      description: User has reached their assignment cap for the current period and is temporarily excluded
-        until the cap resets.
-      type: object
-      required:
-      - userId
-      - total
-      - statistics
-      - type
-      properties:
-        userId:
-          $ref: '#/components/schemas/UserId'
-        total:
-          type: integer
-          format: int32
-        statistics:
-          $ref: '#/components/schemas/UserStatistics'
-        type:
-          type: string
-          const: Capped
-    DistroSimpleObjectType_Case:
-      title: DistroSimpleObjectType_Case
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: Case
-    MeetingLimit_MeetingLimitSet:
-      title: MeetingLimit_MeetingLimitSet
-      type: object
-      required:
-      - resetPeriodicity
-      - type
-      properties:
-        userCaps:
-          type: array
-          uniqueItems: true
-          items:
-            $ref: '#/components/schemas/UserLimit'
-        resetPeriodicity:
-          $ref: '#/components/schemas/MeetingLimitReset'
-        type:
-          type: string
-          const: MeetingLimitSet
-    ResourceSchedulerId:
-      title: ResourceSchedulerId
-      examples:
-      - d4e5f6a7-b8c9-4d0e-a1f2-3b4c5d6e7f8a
-      type: string
-      format: uuid
-    ConfigurationDTO:
-      title: ConfigurationDTO
-      type: object
-      required:
-      - distributionId
-      - workspaceId
-      - assignmentTypeConfig
-      - teamRef
-      - metadata
-      properties:
-        distributionId:
-          $ref: '#/components/schemas/DistributionId'
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-          description: Workspace the distribution belongs to.
-        assignmentTypeConfig:
-          $ref: '#/components/schemas/DistributionAssignmentTypeConfig'
-        teamRef:
-          $ref: '#/components/schemas/TeamRef'
-          description: Team whose members participate in this distribution.
-        weights:
-          description: Per-user relative assignment weights.
-          type: array
-          items:
-            $ref: '#/components/schemas/UserWeight'
-        name:
-          description: Human-readable distribution name; absent for unnamed distributions.
-          type: string
-        manualCalibration:
-          description: Per-user manual score offsets applied on top of computed levels.
-          type: array
-          items:
-            $ref: '#/components/schemas/UserCalibration'
-        capping:
-          $ref: '#/components/schemas/DistributedAssignmentLimit'
-          description: Per-user assignment cap; absent means uncapped.
-        metadata:
-          $ref: '#/components/schemas/SimpleMetadata'
-          description: Creation/update audit metadata.
-    DistroLogMatcherEvaluation:
-      title: DistroLogMatcherEvaluation
-      type: object
-      required:
-      - kind
-      - matched
-      properties:
-        routeId:
-          description: Route this matcher belongs to.
-          type: string
-        kind:
-          $ref: '#/components/schemas/DistroLogMatcherKind'
-        objectType:
-          description: CRM object type the matcher inspected.
-          type: string
-        exists:
-          description: Whether a matching record was found.
-          type: boolean
-        matchToAccountOwner:
-          description: Whether the match routes to the account owner.
-          type: boolean
-        matched:
-          description: Whether the matcher matched.
-          type: boolean
-        recordId:
-          description: Matched record id, if any.
-          type: string
-    DistroRoutersListResponse:
-      title: DistroRoutersListResponse
-      type: object
-      properties:
-        routers:
-          description: Distro routers in the workspace.
-          type: array
-          items:
-            $ref: '#/components/schemas/DistroRouter'
-    DistroTriggerDelay:
-      title: DistroTriggerDelay
-      oneOf:
-      - $ref: '#/components/schemas/DistroTriggerDelay_AfterRecordEval'
-      - $ref: '#/components/schemas/DistroTriggerDelay_BeforeRecordEval'
-      discriminator:
-        propertyName: type
-        mapping:
-          AfterRecordEval: '#/components/schemas/DistroTriggerDelay_AfterRecordEval'
-          BeforeRecordEval: '#/components/schemas/DistroTriggerDelay_BeforeRecordEval'
-    DistroRouterStatus:
-      title: DistroRouterStatus
-      oneOf:
-      - $ref: '#/components/schemas/DistroRouterStatus_Activating'
-      - $ref: '#/components/schemas/DistroRouterStatus_Active'
-      - $ref: '#/components/schemas/DistroRouterStatus_Deactivating'
-      - $ref: '#/components/schemas/DistroRouterStatus_Error'
-      - $ref: '#/components/schemas/DistroRouterStatus_Inactive'
-      discriminator:
-        propertyName: type
-        mapping:
-          Activating: '#/components/schemas/DistroRouterStatus_Activating'
-          Active: '#/components/schemas/DistroRouterStatus_Active'
-          Deactivating: '#/components/schemas/DistroRouterStatus_Deactivating'
-          Error: '#/components/schemas/DistroRouterStatus_Error'
-          Inactive: '#/components/schemas/DistroRouterStatus_Inactive'
-    DistroFieldUpdateExpression_FieldUpdate:
-      title: DistroFieldUpdateExpression_FieldUpdate
-      type: object
-      required:
-      - fieldName
-      - type
-      properties:
-        fieldName:
-          type: string
-        type:
-          type: string
-          const: FieldUpdate
-    DistroLogMatcherKind:
-      title: DistroLogMatcherKind
-      type: string
-      enum:
-      - Relation
-      - DuplicateMatch
-      - CustomMatchedObject
-    DistroSimpleObjectType_Account:
-      title: DistroSimpleObjectType_Account
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: Account
-    DistroLogTriggerEventType:
-      title: DistroLogTriggerEventType
-      type: string
-      enum:
-      - Created
-      - Updated
-      - Signaled
-    UserId:
-      title: UserId
-      examples:
-      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
-      type: string
-      pattern: '[^\s\\/]+'
-    DistroFieldUpdateExpression_FieldUpdateOr:
-      title: DistroFieldUpdateExpression_FieldUpdateOr
-      type: object
-      required:
-      - expressions
-      - type
-      properties:
-        expressions:
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/DistroFieldUpdateExpression'
-        type:
-          type: string
-          const: FieldUpdateOr
     DistroRouterStatus_Activating:
       title: DistroRouterStatus_Activating
       type: object
@@ -2099,6 +2111,33 @@ components:
         type:
           type: string
           const: Activating
+    RecordHandling_WorkingHours:
+      title: RecordHandling_WorkingHours
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: WorkingHours
+    DistributionAssignmentTypeConfig_Conversation:
+      title: DistributionAssignmentTypeConfig_Conversation
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Conversation
+    DistroSimpleObjectType_DuplicateContact:
+      title: DistroSimpleObjectType_DuplicateContact
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: DuplicateContact
     DistroLogError:
       title: DistroLogError
       type: object
@@ -2116,42 +2155,3 @@ components:
         errorCode:
           description: Machine-readable error code.
           type: string
-    DistroSimpleObjectType_Task:
-      title: DistroSimpleObjectType_Task
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: Task
-    RecordHandling_WorkingHours:
-      title: RecordHandling_WorkingHours
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: WorkingHours
-    TeamId:
-      title: TeamId
-      examples:
-      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
-      type: string
-      pattern: '[^\s\\/]+'
-    DistroRouterStatus_Deactivating:
-      title: DistroRouterStatus_Deactivating
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: Deactivating
-    RouterId:
-      title: RouterId
-      examples:
-      - c5d6e7f8-a9b0-4c1d-ae2f-3a4b5c6d7e8f
-      type: string
-      pattern: '[^\s\\/]+'

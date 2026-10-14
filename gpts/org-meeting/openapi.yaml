@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: Chili Piper — Org Meeting Snapshot Actions
-  version: 1.494.0
+  version: 1.742.0
   description: GPT Actions for the org-meeting GPT — a subset of the Chili Piper Edge API. Authenticate
     with a Bearer API key (Admin Center → API Keys).
 servers:
@@ -272,71 +272,65 @@ components:
       name: Authorization
       in: header
   schemas:
-    User:
-      title: User
+    MeetingStatus:
+      title: MeetingStatus
+      type: string
+      enum:
+      - Active
+      - Canceled
+      - NoShow
+      - Completed
+    WorkingHours:
+      title: WorkingHours
+      type: object
+      properties:
+        monday:
+          description: Working intervals on Monday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        tuesday:
+          description: Working intervals on Tuesday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        wednesday:
+          description: Working intervals on Wednesday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        thursday:
+          description: Working intervals on Thursday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        friday:
+          description: Working intervals on Friday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        saturday:
+          description: Working intervals on Saturday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        sunday:
+          description: Working intervals on Sunday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+    WorkInterval:
+      title: WorkInterval
       type: object
       required:
-      - id
-      - name
-      - email
-      - isSuperAdmin
-      - licenses
+      - start
+      - end
       properties:
-        id:
-          $ref: '#/components/schemas/UserId'
-        name:
+        start:
+          description: Start of the working interval as a local time (HH:mm), in the schedule timezone.
           type: string
-          minLength: 1
-        email:
-          $ref: '#/components/schemas/Email'
-          description: User's email address.
-        isSuperAdmin:
-          description: Whether the user is a super administrator of the tenant.
-          type: boolean
-        managedWorkspaces:
-          description: Workspaces the user administers.
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        managedTeams:
-          description: Teams the user administers.
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        licenses:
-          $ref: '#/components/schemas/UserLicenses'
-        salesforce:
-          $ref: '#/components/schemas/SalesforceUser'
-        hubspot:
-          $ref: '#/components/schemas/HubspotUser'
-        slug:
-          description: User's personal booking-page slug; absent if they have none.
-          type: string
-          pattern: '[-0-9a-z_]+'
-        workspaces:
-          description: All workspaces the user is a member of.
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        personalWorkspaceId:
-          description: The user's personal workspace, when they have one.
-          type: string
-          pattern: '[^\s\\/]+'
-        personalDetails:
-          $ref: '#/components/schemas/UserPersonalDetails'
-        workingHours:
-          $ref: '#/components/schemas/WorkingHours'
-        timezone:
-          description: The user's configured scheduling timezone (IANA id); absent when synced from their
-            connected calendar. Populated by user-read only.
-          examples:
-          - America/New_York
+        end:
+          description: End of the working interval as a local time (HH:mm); must be after start.
           type: string
     QueryMeetingsRequest:
       title: QueryMeetingsRequest
@@ -405,45 +399,71 @@ components:
           items:
             type: string
             format: uuid
-    HubspotUser:
-      title: HubspotUser
+    User:
+      title: User
       type: object
       required:
-      - email
       - id
+      - name
+      - email
+      - isSuperAdmin
+      - licenses
       properties:
+        id:
+          $ref: '#/components/schemas/UserId'
+        name:
+          type: string
+          minLength: 1
         email:
           $ref: '#/components/schemas/Email'
-          description: Email of the linked HubSpot user.
-        id:
-          description: Identifier of the linked HubSpot user.
-          type: integer
-          format: int64
-    Tier:
-      title: Tier
-      type: string
-      enum:
-      - RoutingAndScheduling
-      - Experiences
-      - ChiliDataPlatform
-    CallerRef:
-      title: CallerRef
-      description: stringified caller reference in format $type/$id
-      examples:
-      - user/17a3d4563d5a67a3d456ad635
-      type: string
-    WorkInterval:
-      title: WorkInterval
-      type: object
-      required:
-      - start
-      - end
-      properties:
-        start:
-          description: Start of the working interval as a local time (HH:mm), in the schedule timezone.
+          description: User's email address.
+        isSuperAdmin:
+          description: Whether the user is a super administrator of the tenant.
+          type: boolean
+        managedWorkspaces:
+          description: Workspaces the user administers.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        managedTeams:
+          description: Teams the user administers.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        licenses:
+          $ref: '#/components/schemas/UserLicenses'
+        salesforce:
+          $ref: '#/components/schemas/SalesforceUser'
+        hubspot:
+          $ref: '#/components/schemas/HubspotUser'
+        slug:
+          description: User's personal booking-page slug; absent if they have none.
           type: string
-        end:
-          description: End of the working interval as a local time (HH:mm); must be after start.
+          pattern: '[-0-9a-z_]+'
+        workspaces:
+          description: All workspaces the user is a member of.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        personalWorkspaceId:
+          description: The user's personal workspace, when they have one.
+          type: string
+          pattern: '[^\s\\/]+'
+        personalDetails:
+          $ref: '#/components/schemas/UserPersonalDetails'
+        workingHours:
+          $ref: '#/components/schemas/WorkingHours'
+        timezone:
+          description: The user's configured scheduling timezone (IANA id); absent when synced from their
+            connected calendar. Populated by user-read only.
+          examples:
+          - America/New_York
           type: string
     Workspace:
       title: Workspace
@@ -467,35 +487,6 @@ components:
           type: string
         metadata:
           $ref: '#/components/schemas/SimpleMetadata'
-    WorkspaceId:
-      title: WorkspaceId
-      examples:
-      - b7263a5d-89cb-4f50-a532-ea4aff74688e
-      type: string
-      pattern: '[^\s\\/]+'
-    PaginatedResult_User:
-      title: PaginatedResult_User
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
     UserPersonalDetails:
       title: UserPersonalDetails
       type: object
@@ -529,6 +520,53 @@ components:
         customCompanyLogoUrl:
           description: URL of a custom company logo shown on the user's booking pages.
           type: string
+    PaginatedResult_User:
+      title: PaginatedResult_User
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
+    HasMore:
+      title: HasMore
+      type: string
+      enum:
+      - 'Yes'
+      - 'No'
+    Email:
+      title: Email
+      examples:
+      - john.doe@acme.com
+      type: string
+      pattern: .+@.+
     UserLicenses:
       title: UserLicenses
       type: object
@@ -556,123 +594,6 @@ components:
           type: boolean
         tier:
           $ref: '#/components/schemas/Tier'
-    HttpQueryResponse_A:
-      title: HttpQueryResponse_A
-      type: object
-      required:
-      - data
-      - hasMore
-      - hasMoreItems
-      properties:
-        data: {}
-        hasMore:
-          $ref: '#/components/schemas/HasMore'
-        hasMoreItems:
-          description: Whether more results exist beyond this page; drives pagination.
-          type: boolean
-    MeetingStatus:
-      title: MeetingStatus
-      type: string
-      enum:
-      - Active
-      - Canceled
-      - NoShow
-      - Completed
-    WorkingHours:
-      title: WorkingHours
-      type: object
-      properties:
-        monday:
-          description: Working intervals on Monday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        tuesday:
-          description: Working intervals on Tuesday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        wednesday:
-          description: Working intervals on Wednesday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        thursday:
-          description: Working intervals on Thursday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        friday:
-          description: Working intervals on Friday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        saturday:
-          description: Working intervals on Saturday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        sunday:
-          description: Working intervals on Sunday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-    UserId:
-      title: UserId
-      examples:
-      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
-      type: string
-      pattern: '[^\s\\/]+'
-    PaginatedResult_Workspace:
-      title: PaginatedResult_Workspace
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Workspace'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    SalesforceUser:
-      title: SalesforceUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-          description: Email of the linked Salesforce user.
-        id:
-          description: Identifier of the linked Salesforce user.
-          type: string
-          pattern: '[^\s\\/]+'
-        name:
-          description: Display name of the linked Salesforce user, when known.
-          type: string
-          minLength: 1
-        active:
-          description: Whether the linked Salesforce user is active, when known.
-          type: boolean
-    Map_String:
-      title: Map_String
-      type: object
-      additionalProperties:
-        type: string
-      properties: {}
     SimpleMetadata:
       title: SimpleMetadata
       type: object
@@ -696,15 +617,94 @@ components:
         revision:
           type: integer
           format: int32
-    HasMore:
-      title: HasMore
+    HubspotUser:
+      title: HubspotUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: Email of the linked HubSpot user.
+        id:
+          description: Identifier of the linked HubSpot user.
+          type: integer
+          format: int64
+    PaginatedResult_Workspace:
+      title: PaginatedResult_Workspace
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workspace'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+      properties: {}
+    SalesforceUser:
+      title: SalesforceUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: Email of the linked Salesforce user.
+        id:
+          description: Identifier of the linked Salesforce user.
+          type: string
+          pattern: ^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$
+        name:
+          description: Display name of the linked Salesforce user, when known.
+          type: string
+          minLength: 1
+        active:
+          description: Whether the linked Salesforce user is active, when known.
+          type: boolean
+    Tier:
+      title: Tier
       type: string
       enum:
-      - 'Yes'
-      - 'No'
-    Email:
-      title: Email
+      - RoutingAndScheduling
+      - Experiences
+      - ChiliDataPlatform
+    HttpQueryResponse_A:
+      title: HttpQueryResponse_A
+      type: object
+      required:
+      - data
+      - hasMore
+      - hasMoreItems
+      properties:
+        data: {}
+        hasMore:
+          $ref: '#/components/schemas/HasMore'
+        hasMoreItems:
+          description: Whether more results exist beyond this page; drives pagination.
+          type: boolean
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
       examples:
-      - john.doe@acme.com
+      - user/17a3d4563d5a67a3d456ad635
       type: string
-      pattern: .+@.+

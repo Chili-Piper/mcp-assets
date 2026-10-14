@@ -5,6 +5,27 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Added
+- **`chiliforms-configuration` skill (new, read-only) + paired GPT +
+  `/configure-chiliforms` command.** Turns a Concierge router into a working
+  [ChiliForms](https://fire.chilipiper.com/chiliforms/cjs/chiliforms.js) embed, a form
+  Chili Piper generates from the router, for customers **without a form of their own**.
+  It resolves the tenant's `domain`/`tenantId` via `tenant-get`, confirms that the router has
+  a Chili webform or router link to generate from, and joins the fields to `data-field-list`
+  for control types and URL-prefill aliases. It returns a ready-to-paste snippet with test
+  steps. Customers who already have a form are pointed to the standard Concierge snippet
+  (`ChiliPiper.deploy`), and ChiliForms' `attach` mode is used only on explicit request.
+  It also predicts how the form will submit (ChiliForms 2.1.1+, Chili-Piper/frontend#18596): as a modal via a covering
+  ThirdPartyForm mapping, full-page via a Router Link, or refused for webform-only routers, with a handoff.
+  Includes a troubleshooting reference keyed on ChiliForms' own console messages.
+  Router-side gaps are handed off to `concierge-router-configuration`, since this skill
+  never writes.
+- **`onboarding-chili-piper` skill (new, writes) + `/onboard` command.** Guided self-serve
+  onboarding for a new customer: reads the account (tier, CRM, users, workspace structure),
+  runs a short interview, confirms an Onboarding Plan, then builds shared assets (teams,
+  meeting types and reminders, data fields, rules, distributions) sized for every motion,
+  and stands up each product in turn (Concierge, Chat, Handoff, Distro, ChiliCal),
+  dispatching to the configuration skills where installed. Every write sits behind the
+  plan checkpoint and the client's approval prompt. No paired GPT (listed in `NO_GPT`).
 - **Cursor plugin (`.cursor-plugin/plugin.json` + root `mcp.json`).** Makes this repo
   installable as a first-party [Cursor](https://cursor.com) plugin (also surfaced in the
   Grok bot plugin list), reusing the same `skills/` and `commands/` as the Claude plugin.
@@ -66,14 +87,21 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
   doesn't change), so a missing-scope 403 no longer means minting a new key.
 
 ### Fixed
+- **`meeting-type-management` 0.1.5** (SKILL + paired GPT) — reminders can no longer use the
+  `MeetingBooked` ("on booking") trigger ([CEH-11814](https://floatingapps.atlassian.net/browse/CEH-11814) / [CEH-11761](https://floatingapps.atlassian.net/browse/CEH-11761),
+  [edge PR #1366](https://github.com/Chili-Piper/edge-fire-service/pull/1366)). Such reminders
+  were accepted but never sent. Create/update now take only `BeforeMeeting`,
+  `BeforeMeetingNoResponse` or `AfterMeeting`, and `trigger.offset` is always required. Reads may
+  still return `MeetingBooked` on old reminders: the skill reports them as legacy and repairs
+  them by updating to a timed trigger.
 - **GPT Actions specs are importable into ChatGPT again** ([CEH-11500](https://floatingapps.atlassian.net/browse/CEH-11500)).
   `generate_gpt_openapi.py` copied the long MCP tool descriptions verbatim, so every
   operation broke ChatGPT's 300-char description limit, and it emitted object schemas with no
   `properties` (`Map_String` and similar), which the importer rejects. The generator now writes
   a short description (access label + `summary` + one-line blurb + parameter names, capped at
   300 chars), adds `properties: {}` to every object schema, tags each operation with
-  `x-mcp-tool`, and refuses deprecated operations. All 19 `openapi.yaml` bundles regenerated
-  from the live Edge spec (v1.494.0; they were frozen at v1.230–v1.321).
+  `x-mcp-tool`, and refuses deprecated operations. All 20 `openapi.yaml` bundles regenerated
+  from the live Edge spec (v1.742.0; they were frozen at v1.230–v1.321).
 - **GPT operation drift fixed.** `GPT_OPERATIONS` now uses the V2/POST replacements
   (`availability-slots-v2`, `scheduling-link-list-personal-v2`, `meeting-cancel-post`) and
   includes every action the GPT instructions name (chat transcript, personal meeting types,
@@ -85,7 +113,7 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
   documents the `userUpdate` write (read-only skill); `distro-debugger` no longer tells the GPT
   to call `distro-router-activate`. Skill references for `scheduling-link-management` and
   `user-offboarding` now name the non-deprecated tools. Patch bump for the 14 affected
-  SKILL/GPT pairs.
+  SKILL/GPT pairs (`meeting-type-management` goes to 0.1.6, after the 0.1.5 above).
 - **New CI check `validate_gpt_openapi.py`** — fails on any of the above (description length,
   object schemas without `properties`, deprecated or missing operations, `GPT.md` naming an
   action its spec does not contain).

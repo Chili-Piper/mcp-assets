@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: Chili Piper — User Meetings Actions
-  version: 1.494.0
+  version: 1.742.0
   description: GPT Actions for the user-meetings GPT — a subset of the Chili Piper Edge API. Authenticate
     with a Bearer API key (Admin Center → API Keys).
 servers:
@@ -277,6 +277,66 @@ components:
       name: Authorization
       in: header
   schemas:
+    MeetingStatus:
+      title: MeetingStatus
+      type: string
+      enum:
+      - Active
+      - Canceled
+      - NoShow
+      - Completed
+    WorkingHours:
+      title: WorkingHours
+      type: object
+      properties:
+        monday:
+          description: Working intervals on Monday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        tuesday:
+          description: Working intervals on Tuesday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        wednesday:
+          description: Working intervals on Wednesday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        thursday:
+          description: Working intervals on Thursday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        friday:
+          description: Working intervals on Friday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        saturday:
+          description: Working intervals on Saturday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        sunday:
+          description: Working intervals on Sunday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+    WorkInterval:
+      title: WorkInterval
+      type: object
+      required:
+      - start
+      - end
+      properties:
+        start:
+          description: Start of the working interval as a local time (HH:mm), in the schedule timezone.
+          type: string
+        end:
+          description: End of the working interval as a local time (HH:mm); must be after start.
+          type: string
     User:
       title: User
       type: object
@@ -343,46 +403,6 @@ components:
           examples:
           - America/New_York
           type: string
-    HubspotUser:
-      title: HubspotUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-          description: Email of the linked HubSpot user.
-        id:
-          description: Identifier of the linked HubSpot user.
-          type: integer
-          format: int64
-    Tier:
-      title: Tier
-      type: string
-      enum:
-      - RoutingAndScheduling
-      - Experiences
-      - ChiliDataPlatform
-    CallerRef:
-      title: CallerRef
-      description: stringified caller reference in format $type/$id
-      examples:
-      - user/17a3d4563d5a67a3d456ad635
-      type: string
-    WorkInterval:
-      title: WorkInterval
-      type: object
-      required:
-      - start
-      - end
-      properties:
-        start:
-          description: Start of the working interval as a local time (HH:mm), in the schedule timezone.
-          type: string
-        end:
-          description: End of the working interval as a local time (HH:mm); must be after start.
-          type: string
     Workspace:
       title: Workspace
       type: object
@@ -405,35 +425,6 @@ components:
           type: string
         metadata:
           $ref: '#/components/schemas/SimpleMetadata'
-    WorkspaceId:
-      title: WorkspaceId
-      examples:
-      - b7263a5d-89cb-4f50-a532-ea4aff74688e
-      type: string
-      pattern: '[^\s\\/]+'
-    PaginatedResult_User:
-      title: PaginatedResult_User
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
     UserPersonalDetails:
       title: UserPersonalDetails
       type: object
@@ -467,88 +458,8 @@ components:
         customCompanyLogoUrl:
           description: URL of a custom company logo shown on the user's booking pages.
           type: string
-    UserLicenses:
-      title: UserLicenses
-      type: object
-      required:
-      - chiliCalOrg
-      - handoff
-      properties:
-        distro:
-          description: Whether the user holds a Distro (lead-routing) license.
-          type: boolean
-        chiliCalOrg:
-          description: Whether the user holds a ChiliCal organization license.
-          type: boolean
-        concierge:
-          description: Whether the user holds a Concierge license.
-          type: boolean
-        conciergeLive:
-          description: Whether the user holds a Concierge Live license.
-          type: boolean
-        chat:
-          description: Whether the user holds a Chat license.
-          type: boolean
-        handoff:
-          description: Whether the user holds a Handoff license.
-          type: boolean
-        tier:
-          $ref: '#/components/schemas/Tier'
-    MeetingStatus:
-      title: MeetingStatus
-      type: string
-      enum:
-      - Active
-      - Canceled
-      - NoShow
-      - Completed
-    WorkingHours:
-      title: WorkingHours
-      type: object
-      properties:
-        monday:
-          description: Working intervals on Monday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        tuesday:
-          description: Working intervals on Tuesday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        wednesday:
-          description: Working intervals on Wednesday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        thursday:
-          description: Working intervals on Thursday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        friday:
-          description: Working intervals on Friday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        saturday:
-          description: Working intervals on Saturday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        sunday:
-          description: Working intervals on Sunday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-    UserId:
-      title: UserId
-      examples:
-      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
-      type: string
-      pattern: '[^\s\\/]+'
-    PaginatedResult_Workspace:
-      title: PaginatedResult_Workspace
+    PaginatedResult_User:
+      title: PaginatedResult_User
       type: object
       required:
       - total
@@ -558,7 +469,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/Workspace'
+            $ref: '#/components/schemas/User'
         total:
           type: integer
           format: int64
@@ -570,33 +481,18 @@ components:
           type: integer
           format: int64
           exclusiveMinimum: 0
-    SalesforceUser:
-      title: SalesforceUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-          description: Email of the linked Salesforce user.
-        id:
-          description: Identifier of the linked Salesforce user.
-          type: string
-          pattern: '[^\s\\/]+'
-        name:
-          description: Display name of the linked Salesforce user, when known.
-          type: string
-          minLength: 1
-        active:
-          description: Whether the linked Salesforce user is active, when known.
-          type: boolean
-    Map_String:
-      title: Map_String
-      type: object
-      additionalProperties:
-        type: string
-      properties: {}
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
     ExportMeetingsRequest:
       title: ExportMeetingsRequest
       type: object
@@ -657,6 +553,39 @@ components:
           minItems: 1
           items:
             $ref: '#/components/schemas/MeetingStatus'
+    Email:
+      title: Email
+      examples:
+      - john.doe@acme.com
+      type: string
+      pattern: .+@.+
+    UserLicenses:
+      title: UserLicenses
+      type: object
+      required:
+      - chiliCalOrg
+      - handoff
+      properties:
+        distro:
+          description: Whether the user holds a Distro (lead-routing) license.
+          type: boolean
+        chiliCalOrg:
+          description: Whether the user holds a ChiliCal organization license.
+          type: boolean
+        concierge:
+          description: Whether the user holds a Concierge license.
+          type: boolean
+        conciergeLive:
+          description: Whether the user holds a Concierge Live license.
+          type: boolean
+        chat:
+          description: Whether the user holds a Chat license.
+          type: boolean
+        handoff:
+          description: Whether the user holds a Handoff license.
+          type: boolean
+        tier:
+          $ref: '#/components/schemas/Tier'
     SimpleMetadata:
       title: SimpleMetadata
       type: object
@@ -680,9 +609,80 @@ components:
         revision:
           type: integer
           format: int32
-    Email:
-      title: Email
-      examples:
-      - john.doe@acme.com
+    HubspotUser:
+      title: HubspotUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: Email of the linked HubSpot user.
+        id:
+          description: Identifier of the linked HubSpot user.
+          type: integer
+          format: int64
+    SalesforceUser:
+      title: SalesforceUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: Email of the linked Salesforce user.
+        id:
+          description: Identifier of the linked Salesforce user.
+          type: string
+          pattern: ^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$
+        name:
+          description: Display name of the linked Salesforce user, when known.
+          type: string
+          minLength: 1
+        active:
+          description: Whether the linked Salesforce user is active, when known.
+          type: boolean
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+      properties: {}
+    PaginatedResult_Workspace:
+      title: PaginatedResult_Workspace
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workspace'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    Tier:
+      title: Tier
       type: string
-      pattern: .+@.+
+      enum:
+      - RoutingAndScheduling
+      - Experiences
+      - ChiliDataPlatform
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string

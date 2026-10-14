@@ -1,6 +1,6 @@
 # Generated from the Chili Piper Edge API OpenAPI spec by
 # .github/scripts/generate_gpt_openapi.py — do not edit by hand.
-edgeVersion: 1.494.0
+edgeVersion: 1.742.0
 operations:
   asset-change-history-list:
     operationId: assetChangeHistoryList

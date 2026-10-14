@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: Chili Piper — Chat Conversation Inspector Actions
-  version: 1.494.0
+  version: 1.742.0
   description: GPT Actions for the chat-conversation-inspector GPT — a subset of the Chili Piper Edge
     API. Authenticate with a Bearer API key (Admin Center → API Keys).
 servers:
@@ -459,317 +459,6 @@ components:
       name: Authorization
       in: header
   schemas:
-    ChatTranscriptCursor:
-      title: ChatTranscriptCursor
-      type: object
-      required:
-      - before
-      properties:
-        before:
-          description: 'Boundary timestamp: the oldest message time of the page this cursor came from.'
-          type: string
-          format: date-time
-        seenIds:
-          description: Message-archive ids already returned at `before`; echoed back as `beforeSeenId`
-            to skip the overlap.
-          type: array
-          items:
-            type: string
-    User:
-      title: User
-      type: object
-      required:
-      - id
-      - name
-      - email
-      - isSuperAdmin
-      - licenses
-      properties:
-        id:
-          $ref: '#/components/schemas/UserId'
-        name:
-          type: string
-          minLength: 1
-        email:
-          $ref: '#/components/schemas/Email'
-          description: User's email address.
-        isSuperAdmin:
-          description: Whether the user is a super administrator of the tenant.
-          type: boolean
-        managedWorkspaces:
-          description: Workspaces the user administers.
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        managedTeams:
-          description: Teams the user administers.
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        licenses:
-          $ref: '#/components/schemas/UserLicenses'
-        salesforce:
-          $ref: '#/components/schemas/SalesforceUser'
-        hubspot:
-          $ref: '#/components/schemas/HubspotUser'
-        slug:
-          description: User's personal booking-page slug; absent if they have none.
-          type: string
-          pattern: '[-0-9a-z_]+'
-        workspaces:
-          description: All workspaces the user is a member of.
-          type: array
-          uniqueItems: true
-          items:
-            type: string
-            pattern: '[^\s\\/]+'
-        personalWorkspaceId:
-          description: The user's personal workspace, when they have one.
-          type: string
-          pattern: '[^\s\\/]+'
-        personalDetails:
-          $ref: '#/components/schemas/UserPersonalDetails'
-        workingHours:
-          $ref: '#/components/schemas/WorkingHours'
-        timezone:
-          description: The user's configured scheduling timezone (IANA id); absent when synced from their
-            connected calendar. Populated by user-read only.
-          examples:
-          - America/New_York
-          type: string
-    HubspotUser:
-      title: HubspotUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-          description: Email of the linked HubSpot user.
-        id:
-          description: Identifier of the linked HubSpot user.
-          type: integer
-          format: int64
-    Tier:
-      title: Tier
-      type: string
-      enum:
-      - RoutingAndScheduling
-      - Experiences
-      - ChiliDataPlatform
-    PaginatedResult_ChatConversationLog:
-      title: PaginatedResult_ChatConversationLog
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/ChatConversationLog'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    ChatRoutingOutcome:
-      title: ChatRoutingOutcome
-      type: string
-      enum:
-      - Routed
-      - NotRouted
-      - Abandoned
-    CallerRef:
-      title: CallerRef
-      description: stringified caller reference in format $type/$id
-      examples:
-      - user/17a3d4563d5a67a3d456ad635
-      type: string
-    WorkInterval:
-      title: WorkInterval
-      type: object
-      required:
-      - start
-      - end
-      properties:
-        start:
-          description: Start of the working interval as a local time (HH:mm), in the schedule timezone.
-          type: string
-        end:
-          description: End of the working interval as a local time (HH:mm); must be after start.
-          type: string
-    Workspace:
-      title: Workspace
-      type: object
-      required:
-      - id
-      - name
-      - metadata
-      properties:
-        id:
-          $ref: '#/components/schemas/WorkspaceId'
-          description: Unique identifier of the workspace.
-        name:
-          description: Human-readable workspace name.
-          type: string
-        emoji:
-          description: Optional emoji shown as the workspace's icon.
-          type: string
-        logo:
-          description: Optional URL of the workspace's logo image.
-          type: string
-        metadata:
-          $ref: '#/components/schemas/SimpleMetadata'
-    WorkspaceId:
-      title: WorkspaceId
-      examples:
-      - b7263a5d-89cb-4f50-a532-ea4aff74688e
-      type: string
-      pattern: '[^\s\\/]+'
-    RuleId:
-      title: RuleId
-      examples:
-      - 3b4c5d6e-7f8a-4b9c-9d0e-1f2a3b4c5d6e
-      type: string
-      pattern: '[^\s\\/]+'
-    PaginatedResult_User:
-      title: PaginatedResult_User
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    UserPersonalDetails:
-      title: UserPersonalDetails
-      type: object
-      required:
-      - email
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-          description: The user's email address.
-        firstName:
-          description: The user's first name.
-          type: string
-        lastName:
-          description: The user's last name.
-          type: string
-        jobTitle:
-          description: The user's job title.
-          type: string
-        conferenceDetails:
-          description: Free-text conferencing details shown on the user's meetings.
-          type: string
-        location:
-          description: The user's location.
-          type: string
-        phoneNumber:
-          description: The user's phone number.
-          type: string
-        imageUrl:
-          description: URL of the user's profile picture.
-          type: string
-        customCompanyLogoUrl:
-          description: URL of a custom company logo shown on the user's booking pages.
-          type: string
-    UserLicenses:
-      title: UserLicenses
-      type: object
-      required:
-      - chiliCalOrg
-      - handoff
-      properties:
-        distro:
-          description: Whether the user holds a Distro (lead-routing) license.
-          type: boolean
-        chiliCalOrg:
-          description: Whether the user holds a ChiliCal organization license.
-          type: boolean
-        concierge:
-          description: Whether the user holds a Concierge license.
-          type: boolean
-        conciergeLive:
-          description: Whether the user holds a Concierge Live license.
-          type: boolean
-        chat:
-          description: Whether the user holds a Chat license.
-          type: boolean
-        handoff:
-          description: Whether the user holds a Handoff license.
-          type: boolean
-        tier:
-          $ref: '#/components/schemas/Tier'
-    ChatTranscriptSender:
-      title: ChatTranscriptSender
-      type: string
-      enum:
-      - Bot
-      - Guest
-      - Rep
-    ChatTranscriptMessage:
-      title: ChatTranscriptMessage
-      type: object
-      required:
-      - sender
-      - text
-      - timestamp
-      properties:
-        sender:
-          $ref: '#/components/schemas/ChatTranscriptSender'
-        text:
-          description: Message body text; a reply-button selection reads as "<label> [Shortcut]".
-          type: string
-        timestamp:
-          description: When the message was sent.
-          type: string
-          format: date-time
-    ChatConversationMeeting:
-      title: ChatConversationMeeting
-      type: object
-      required:
-      - assigneeId
-      - origin
-      - scheduledAt
-      properties:
-        assigneeId:
-          $ref: '#/components/schemas/UserId'
-          description: Rep the meeting was booked with.
-        origin:
-          description: How the meeting was booked (e.g. chat, form).
-          type: string
-        scheduledAt:
-          description: When the meeting is scheduled to start.
-          type: string
-          format: date-time
     WorkingHours:
       title: WorkingHours
       type: object
@@ -809,136 +498,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/WorkInterval'
-    ChatMessageRole:
-      title: ChatMessageRole
+    ChatRoutingOutcome:
+      title: ChatRoutingOutcome
       type: string
       enum:
-      - Bot
-      - Guest
-    UserId:
-      title: UserId
-      examples:
-      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
-      type: string
-      pattern: '[^\s\\/]+'
-    PaginatedResult_Workspace:
-      title: PaginatedResult_Workspace
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Workspace'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    ChatAssignment:
-      title: ChatAssignment
-      type: object
-      required:
-      - assigneeId
-      - method
-      - assignmentType
-      properties:
-        assigneeId:
-          $ref: '#/components/schemas/UserId'
-          description: Assignee (rep) user id.
-        method:
-          description: Assignment method that selected this assignee, e.g. FlexibleRoundRobin.
-          type: string
-        assignmentType:
-          description: Whether this assignee took the Conversation (live chat) or the Meeting.
-          type: string
-    ChatTranscriptPage:
-      title: ChatTranscriptPage
-      type: object
-      properties:
-        messages:
-          description: Messages in this page, ordered newest-first.
-          type: array
-          items:
-            $ref: '#/components/schemas/ChatTranscriptMessage'
-        nextCursor:
-          $ref: '#/components/schemas/ChatTranscriptCursor'
-    SalesforceUser:
-      title: SalesforceUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-          description: Email of the linked Salesforce user.
-        id:
-          description: Identifier of the linked Salesforce user.
-          type: string
-          pattern: '[^\s\\/]+'
-        name:
-          description: Display name of the linked Salesforce user, when known.
-          type: string
-          minLength: 1
-        active:
-          description: Whether the linked Salesforce user is active, when known.
-          type: boolean
-    Map_String:
-      title: Map_String
-      type: object
-      additionalProperties:
-        type: string
-      properties: {}
-    SimpleMetadata:
-      title: SimpleMetadata
-      type: object
-      required:
-      - createdAt
-      - createdBy
-      - updatedAt
-      - updatedBy
-      - revision
-      properties:
-        createdAt:
-          type: string
-          format: date-time
-        createdBy:
-          $ref: '#/components/schemas/CallerRef'
-        updatedAt:
-          type: string
-          format: date-time
-        updatedBy:
-          $ref: '#/components/schemas/CallerRef'
-        revision:
-          type: integer
-          format: int32
-    ChatConversationMessage:
-      title: ChatConversationMessage
-      type: object
-      required:
-      - role
-      - content
-      - timestamp
-      properties:
-        role:
-          $ref: '#/components/schemas/ChatMessageRole'
-        content:
-          description: Message body text.
-          type: string
-        timestamp:
-          description: When the message was sent.
-          type: string
-          format: date-time
+      - Routed
+      - NotRouted
+      - Abandoned
     ChatConversationLog:
       title: ChatConversationLog
       type: object
@@ -1034,6 +600,192 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ChatConversationMessage'
+    ChatMessageRole:
+      title: ChatMessageRole
+      type: string
+      enum:
+      - Bot
+      - Guest
+    WorkInterval:
+      title: WorkInterval
+      type: object
+      required:
+      - start
+      - end
+      properties:
+        start:
+          description: Start of the working interval as a local time (HH:mm), in the schedule timezone.
+          type: string
+        end:
+          description: End of the working interval as a local time (HH:mm); must be after start.
+          type: string
+    User:
+      title: User
+      type: object
+      required:
+      - id
+      - name
+      - email
+      - isSuperAdmin
+      - licenses
+      properties:
+        id:
+          $ref: '#/components/schemas/UserId'
+        name:
+          type: string
+          minLength: 1
+        email:
+          $ref: '#/components/schemas/Email'
+          description: User's email address.
+        isSuperAdmin:
+          description: Whether the user is a super administrator of the tenant.
+          type: boolean
+        managedWorkspaces:
+          description: Workspaces the user administers.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        managedTeams:
+          description: Teams the user administers.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        licenses:
+          $ref: '#/components/schemas/UserLicenses'
+        salesforce:
+          $ref: '#/components/schemas/SalesforceUser'
+        hubspot:
+          $ref: '#/components/schemas/HubspotUser'
+        slug:
+          description: User's personal booking-page slug; absent if they have none.
+          type: string
+          pattern: '[-0-9a-z_]+'
+        workspaces:
+          description: All workspaces the user is a member of.
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            pattern: '[^\s\\/]+'
+        personalWorkspaceId:
+          description: The user's personal workspace, when they have one.
+          type: string
+          pattern: '[^\s\\/]+'
+        personalDetails:
+          $ref: '#/components/schemas/UserPersonalDetails'
+        workingHours:
+          $ref: '#/components/schemas/WorkingHours'
+        timezone:
+          description: The user's configured scheduling timezone (IANA id); absent when synced from their
+            connected calendar. Populated by user-read only.
+          examples:
+          - America/New_York
+          type: string
+    Workspace:
+      title: Workspace
+      type: object
+      required:
+      - id
+      - name
+      - metadata
+      properties:
+        id:
+          $ref: '#/components/schemas/WorkspaceId'
+          description: Unique identifier of the workspace.
+        name:
+          description: Human-readable workspace name.
+          type: string
+        emoji:
+          description: Optional emoji shown as the workspace's icon.
+          type: string
+        logo:
+          description: Optional URL of the workspace's logo image.
+          type: string
+        metadata:
+          $ref: '#/components/schemas/SimpleMetadata'
+    UserPersonalDetails:
+      title: UserPersonalDetails
+      type: object
+      required:
+      - email
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: The user's email address.
+        firstName:
+          description: The user's first name.
+          type: string
+        lastName:
+          description: The user's last name.
+          type: string
+        jobTitle:
+          description: The user's job title.
+          type: string
+        conferenceDetails:
+          description: Free-text conferencing details shown on the user's meetings.
+          type: string
+        location:
+          description: The user's location.
+          type: string
+        phoneNumber:
+          description: The user's phone number.
+          type: string
+        imageUrl:
+          description: URL of the user's profile picture.
+          type: string
+        customCompanyLogoUrl:
+          description: URL of a custom company logo shown on the user's booking pages.
+          type: string
+    PaginatedResult_ChatConversationLog:
+      title: PaginatedResult_ChatConversationLog
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatConversationLog'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    PaginatedResult_User:
+      title: PaginatedResult_User
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
     ChatRuleEvaluation:
       title: ChatRuleEvaluation
       type: object
@@ -1060,9 +812,257 @@ components:
           description: When the rule was evaluated.
           type: string
           format: date-time
+    RuleId:
+      title: RuleId
+      examples:
+      - 3b4c5d6e-7f8a-4b9c-9d0e-1f2a3b4c5d6e
+      type: string
+      pattern: '[^\s\\/]+'
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
     Email:
       title: Email
       examples:
       - john.doe@acme.com
       type: string
       pattern: .+@.+
+    UserLicenses:
+      title: UserLicenses
+      type: object
+      required:
+      - chiliCalOrg
+      - handoff
+      properties:
+        distro:
+          description: Whether the user holds a Distro (lead-routing) license.
+          type: boolean
+        chiliCalOrg:
+          description: Whether the user holds a ChiliCal organization license.
+          type: boolean
+        concierge:
+          description: Whether the user holds a Concierge license.
+          type: boolean
+        conciergeLive:
+          description: Whether the user holds a Concierge Live license.
+          type: boolean
+        chat:
+          description: Whether the user holds a Chat license.
+          type: boolean
+        handoff:
+          description: Whether the user holds a Handoff license.
+          type: boolean
+        tier:
+          $ref: '#/components/schemas/Tier'
+    SimpleMetadata:
+      title: SimpleMetadata
+      type: object
+      required:
+      - createdAt
+      - createdBy
+      - updatedAt
+      - updatedBy
+      - revision
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          $ref: '#/components/schemas/CallerRef'
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          $ref: '#/components/schemas/CallerRef'
+        revision:
+          type: integer
+          format: int32
+    ChatConversationMessage:
+      title: ChatConversationMessage
+      type: object
+      required:
+      - role
+      - content
+      - timestamp
+      properties:
+        role:
+          $ref: '#/components/schemas/ChatMessageRole'
+        content:
+          description: Message body text.
+          type: string
+        timestamp:
+          description: When the message was sent.
+          type: string
+          format: date-time
+    HubspotUser:
+      title: HubspotUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: Email of the linked HubSpot user.
+        id:
+          description: Identifier of the linked HubSpot user.
+          type: integer
+          format: int64
+    PaginatedResult_Workspace:
+      title: PaginatedResult_Workspace
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workspace'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+      properties: {}
+    SalesforceUser:
+      title: SalesforceUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: Email of the linked Salesforce user.
+        id:
+          description: Identifier of the linked Salesforce user.
+          type: string
+          pattern: ^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$
+        name:
+          description: Display name of the linked Salesforce user, when known.
+          type: string
+          minLength: 1
+        active:
+          description: Whether the linked Salesforce user is active, when known.
+          type: boolean
+    ChatConversationMeeting:
+      title: ChatConversationMeeting
+      type: object
+      required:
+      - assigneeId
+      - origin
+      - scheduledAt
+      properties:
+        assigneeId:
+          $ref: '#/components/schemas/UserId'
+          description: Rep the meeting was booked with.
+        origin:
+          description: How the meeting was booked (e.g. chat, form).
+          type: string
+        scheduledAt:
+          description: When the meeting is scheduled to start.
+          type: string
+          format: date-time
+    ChatTranscriptSender:
+      title: ChatTranscriptSender
+      type: string
+      enum:
+      - Bot
+      - Guest
+      - Rep
+    Tier:
+      title: Tier
+      type: string
+      enum:
+      - RoutingAndScheduling
+      - Experiences
+      - ChiliDataPlatform
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string
+    ChatAssignment:
+      title: ChatAssignment
+      type: object
+      required:
+      - assigneeId
+      - method
+      - assignmentType
+      properties:
+        assigneeId:
+          $ref: '#/components/schemas/UserId'
+          description: Assignee (rep) user id.
+        method:
+          description: Assignment method that selected this assignee, e.g. FlexibleRoundRobin.
+          type: string
+        assignmentType:
+          description: Whether this assignee took the Conversation (live chat) or the Meeting.
+          type: string
+    ChatTranscriptCursor:
+      title: ChatTranscriptCursor
+      type: object
+      required:
+      - before
+      properties:
+        before:
+          description: 'Boundary timestamp: the oldest message time of the page this cursor came from.'
+          type: string
+          format: date-time
+        seenIds:
+          description: Message-archive ids already returned at `before`; echoed back as `beforeSeenId`
+            to skip the overlap.
+          type: array
+          items:
+            type: string
+    ChatTranscriptPage:
+      title: ChatTranscriptPage
+      type: object
+      properties:
+        messages:
+          description: Messages in this page, ordered newest-first.
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatTranscriptMessage'
+        nextCursor:
+          $ref: '#/components/schemas/ChatTranscriptCursor'
+    ChatTranscriptMessage:
+      title: ChatTranscriptMessage
+      type: object
+      required:
+      - sender
+      - text
+      - timestamp
+      properties:
+        sender:
+          $ref: '#/components/schemas/ChatTranscriptSender'
+        text:
+          description: Message body text; a reply-button selection reads as "<label> [Shortcut]".
+          type: string
+        timestamp:
+          description: When the message was sent.
+          type: string
+          format: date-time

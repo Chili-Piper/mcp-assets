@@ -3,7 +3,7 @@
 openapi: 3.1.0
 info:
   title: Chili Piper — User Copy Actions
-  version: 1.494.0
+  version: 1.742.0
   description: GPT Actions for the user-copy GPT — a subset of the Chili Piper Edge API. Authenticate
     with a Bearer API key (Admin Center → API Keys).
 servers:
@@ -704,6 +704,93 @@ components:
       name: Authorization
       in: header
   schemas:
+    AvailabilityFailure:
+      title: AvailabilityFailure
+      description: 'Per-user reason the availability engine could not compute slots for that user (returned
+        in the `failures` map, keyed by userId). Values:
+
+        - NoTimezone: the user has no timezone configured. Set the user''s timezone and retry.
+
+        - ExternalCalendarIntegrationFailure: the user''s external calendar (Google/Microsoft) free/busy
+        could not be read for the requested window. This is most often NOT a broken calendar connection
+        — it usually means the requested time window reaches beyond the calendar provider''s free/busy
+        horizon (providers only return free/busy a limited distance into the future). Narrow the request
+        to a shorter, nearer time interval and retry. Only if the failure persists for a near-term window
+        is the calendar connection itself the problem (reconnect the calendar).
+
+        - Other: an unspecified failure while computing this user''s availability; retry, and if it persists
+        contact support.'
+      oneOf:
+      - $ref: '#/components/schemas/AvailabilityFailure_ExternalCalendarIntegrationFailure'
+      - $ref: '#/components/schemas/AvailabilityFailure_NoTimezone'
+      - $ref: '#/components/schemas/AvailabilityFailure_Other'
+      discriminator:
+        propertyName: type
+        mapping:
+          ExternalCalendarIntegrationFailure: '#/components/schemas/AvailabilityFailure_ExternalCalendarIntegrationFailure'
+          NoTimezone: '#/components/schemas/AvailabilityFailure_NoTimezone'
+          Other: '#/components/schemas/AvailabilityFailure_Other'
+    WorkingHours:
+      title: WorkingHours
+      type: object
+      properties:
+        monday:
+          description: Working intervals on Monday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        tuesday:
+          description: Working intervals on Tuesday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        wednesday:
+          description: Working intervals on Wednesday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        thursday:
+          description: Working intervals on Thursday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        friday:
+          description: Working intervals on Friday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        saturday:
+          description: Working intervals on Saturday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+        sunday:
+          description: Working intervals on Sunday; empty means unavailable.
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkInterval'
+    AvailabilityFailure_ExternalCalendarIntegrationFailure:
+      title: AvailabilityFailure_ExternalCalendarIntegrationFailure
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: ExternalCalendarIntegrationFailure
+    WorkInterval:
+      title: WorkInterval
+      type: object
+      required:
+      - start
+      - end
+      properties:
+        start:
+          description: Start of the working interval as a local time (HH:mm), in the schedule timezone.
+          type: string
+        end:
+          description: End of the working interval as a local time (HH:mm); must be after start.
+          type: string
     User:
       title: User
       type: object
@@ -770,88 +857,6 @@ components:
           examples:
           - America/New_York
           type: string
-    AvailabilityFailure:
-      title: AvailabilityFailure
-      description: 'Per-user reason the availability engine could not compute slots for that user (returned
-        in the `failures` map, keyed by userId). Values:
-
-        - NoTimezone: the user has no timezone configured. Set the user''s timezone and retry.
-
-        - ExternalCalendarIntegrationFailure: the user''s external calendar (Google/Microsoft) free/busy
-        could not be read for the requested window. This is most often NOT a broken calendar connection
-        — it usually means the requested time window reaches beyond the calendar provider''s free/busy
-        horizon (providers only return free/busy a limited distance into the future). Narrow the request
-        to a shorter, nearer time interval and retry. Only if the failure persists for a near-term window
-        is the calendar connection itself the problem (reconnect the calendar).
-
-        - Other: an unspecified failure while computing this user''s availability; retry, and if it persists
-        contact support.'
-      oneOf:
-      - $ref: '#/components/schemas/AvailabilityFailure_ExternalCalendarIntegrationFailure'
-      - $ref: '#/components/schemas/AvailabilityFailure_NoTimezone'
-      - $ref: '#/components/schemas/AvailabilityFailure_Other'
-      discriminator:
-        propertyName: type
-        mapping:
-          ExternalCalendarIntegrationFailure: '#/components/schemas/AvailabilityFailure_ExternalCalendarIntegrationFailure'
-          NoTimezone: '#/components/schemas/AvailabilityFailure_NoTimezone'
-          Other: '#/components/schemas/AvailabilityFailure_Other'
-    HubspotUser:
-      title: HubspotUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-          description: Email of the linked HubSpot user.
-        id:
-          description: Identifier of the linked HubSpot user.
-          type: integer
-          format: int64
-    AddUsersToTeamRequest:
-      title: AddUsersToTeamRequest
-      type: object
-      required:
-      - teamId
-      - userIds
-      properties:
-        teamId:
-          $ref: '#/components/schemas/TeamId'
-          description: Team to add the users to.
-        userIds:
-          description: User ids to add to the team.
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/UserId'
-    Tier:
-      title: Tier
-      type: string
-      enum:
-      - RoutingAndScheduling
-      - Experiences
-      - ChiliDataPlatform
-    CallerRef:
-      title: CallerRef
-      description: stringified caller reference in format $type/$id
-      examples:
-      - user/17a3d4563d5a67a3d456ad635
-      type: string
-    WorkInterval:
-      title: WorkInterval
-      type: object
-      required:
-      - start
-      - end
-      properties:
-        start:
-          description: Start of the working interval as a local time (HH:mm), in the schedule timezone.
-          type: string
-        end:
-          description: End of the working interval as a local time (HH:mm); must be after start.
-          type: string
     Workspace:
       title: Workspace
       type: object
@@ -874,69 +879,6 @@ components:
           type: string
         metadata:
           $ref: '#/components/schemas/SimpleMetadata'
-    Map_Refined_String_Refinement_V:
-      title: Map_Refined_String_Refinement_V
-      type: object
-      additionalProperties:
-        $ref: '#/components/schemas/AvailabilityFailure'
-      properties: {}
-    UpdateLicensesRequest:
-      title: UpdateLicensesRequest
-      type: object
-      required:
-      - update
-      properties:
-        update:
-          $ref: '#/components/schemas/Map_Refined_String_Refinement_V'
-          description: Map of user id to the full set of licenses to assign that user, replacing their
-            current licenses.
-    AvailabilityFailure_NoTimezone:
-      title: AvailabilityFailure_NoTimezone
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: NoTimezone
-    AvailabilityFailure_ExternalCalendarIntegrationFailure:
-      title: AvailabilityFailure_ExternalCalendarIntegrationFailure
-      type: object
-      required:
-      - type
-      properties:
-        type:
-          type: string
-          const: ExternalCalendarIntegrationFailure
-    WorkspaceId:
-      title: WorkspaceId
-      examples:
-      - b7263a5d-89cb-4f50-a532-ea4aff74688e
-      type: string
-      pattern: '[^\s\\/]+'
-    PaginatedResult_User:
-      title: PaginatedResult_User
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/User'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
     UserPersonalDetails:
       title: UserPersonalDetails
       type: object
@@ -970,15 +912,41 @@ components:
         customCompanyLogoUrl:
           description: URL of a custom company logo shown on the user's booking pages.
           type: string
-    AvailabilityFailure_Other:
-      title: AvailabilityFailure_Other
+    PaginatedResult_User:
+      title: PaginatedResult_User
       type: object
       required:
-      - type
+      - total
+      - page
+      - pageSize
       properties:
-        type:
-          type: string
-          const: Other
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    WorkspaceId:
+      title: WorkspaceId
+      examples:
+      - b7263a5d-89cb-4f50-a532-ea4aff74688e
+      type: string
+      pattern: '[^\s\\/]+'
+    UserId:
+      title: UserId
+      examples:
+      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
+      type: string
+      pattern: '[^\s\\/]+'
     UserLicenses:
       title: UserLicenses
       type: object
@@ -1006,45 +974,12 @@ components:
           type: boolean
         tier:
           $ref: '#/components/schemas/Tier'
-    WorkingHours:
-      title: WorkingHours
-      type: object
-      properties:
-        monday:
-          description: Working intervals on Monday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        tuesday:
-          description: Working intervals on Tuesday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        wednesday:
-          description: Working intervals on Wednesday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        thursday:
-          description: Working intervals on Thursday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        friday:
-          description: Working intervals on Friday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        saturday:
-          description: Working intervals on Saturday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
-        sunday:
-          description: Working intervals on Sunday; empty means unavailable.
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkInterval'
+    Email:
+      title: Email
+      examples:
+      - john.doe@acme.com
+      type: string
+      pattern: .+@.+
     FindAllRequest:
       title: FindAllRequest
       type: object
@@ -1076,62 +1011,6 @@ components:
           items:
             type: string
             pattern: '[^\s\\/]+'
-    UserId:
-      title: UserId
-      examples:
-      - 64ee0722-c7c6-4b48-bc89-356c99f1d25d
-      type: string
-      pattern: '[^\s\\/]+'
-    PaginatedResult_Workspace:
-      title: PaginatedResult_Workspace
-      type: object
-      required:
-      - total
-      - page
-      - pageSize
-      properties:
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Workspace'
-        total:
-          type: integer
-          format: int64
-        page:
-          type: integer
-          format: int64
-          minimum: 0
-        pageSize:
-          type: integer
-          format: int64
-          exclusiveMinimum: 0
-    SalesforceUser:
-      title: SalesforceUser
-      type: object
-      required:
-      - email
-      - id
-      properties:
-        email:
-          $ref: '#/components/schemas/Email'
-          description: Email of the linked Salesforce user.
-        id:
-          description: Identifier of the linked Salesforce user.
-          type: string
-          pattern: '[^\s\\/]+'
-        name:
-          description: Display name of the linked Salesforce user, when known.
-          type: string
-          minLength: 1
-        active:
-          description: Whether the linked Salesforce user is active, when known.
-          type: boolean
-    Map_String:
-      title: Map_String
-      type: object
-      additionalProperties:
-        type: string
-      properties: {}
     SimpleMetadata:
       title: SimpleMetadata
       type: object
@@ -1155,6 +1034,28 @@ components:
         revision:
           type: integer
           format: int32
+    TeamId:
+      title: TeamId
+      examples:
+      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
+      type: string
+      pattern: '[^\s\\/]+'
+    AddUsersToTeamRequest:
+      title: AddUsersToTeamRequest
+      type: object
+      required:
+      - teamId
+      - userIds
+      properties:
+        teamId:
+          $ref: '#/components/schemas/TeamId'
+          description: Team to add the users to.
+        userIds:
+          description: User ids to add to the team.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/UserId'
     CreateTeamRequest:
       title: CreateTeamRequest
       type: object
@@ -1174,6 +1075,101 @@ components:
           items:
             type: string
             pattern: '[^\s\\/]+'
+    AddUsersToWorkspaceRequest:
+      title: AddUsersToWorkspaceRequest
+      type: object
+      required:
+      - workspaceId
+      - userIds
+      properties:
+        workspaceId:
+          $ref: '#/components/schemas/WorkspaceId'
+          description: Workspace to add the users to.
+        userIds:
+          description: User ids to add to the workspace.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/UserId'
+    Map_Refined_String_Refinement_V:
+      title: Map_Refined_String_Refinement_V
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/AvailabilityFailure'
+      properties: {}
+    HubspotUser:
+      title: HubspotUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: Email of the linked HubSpot user.
+        id:
+          description: Identifier of the linked HubSpot user.
+          type: integer
+          format: int64
+    SalesforceUser:
+      title: SalesforceUser
+      type: object
+      required:
+      - email
+      - id
+      properties:
+        email:
+          $ref: '#/components/schemas/Email'
+          description: Email of the linked Salesforce user.
+        id:
+          description: Identifier of the linked Salesforce user.
+          type: string
+          pattern: ^[A-Za-z0-9]{15}([A-Za-z0-9]{3})?$
+        name:
+          description: Display name of the linked Salesforce user, when known.
+          type: string
+          minLength: 1
+        active:
+          description: Whether the linked Salesforce user is active, when known.
+          type: boolean
+    Map_String:
+      title: Map_String
+      type: object
+      additionalProperties:
+        type: string
+      properties: {}
+    PaginatedResult_Workspace:
+      title: PaginatedResult_Workspace
+      type: object
+      required:
+      - total
+      - page
+      - pageSize
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workspace'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        pageSize:
+          type: integer
+          format: int64
+          exclusiveMinimum: 0
+    AvailabilityFailure_Other:
+      title: AvailabilityFailure_Other
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: Other
     Team:
       title: Team
       type: object
@@ -1199,28 +1195,6 @@ components:
             type: string
             pattern: '[^\s\\/]+'
         metadata: {}
-    AddUsersToWorkspaceRequest:
-      title: AddUsersToWorkspaceRequest
-      type: object
-      required:
-      - workspaceId
-      - userIds
-      properties:
-        workspaceId:
-          $ref: '#/components/schemas/WorkspaceId'
-          description: Workspace to add the users to.
-        userIds:
-          description: User ids to add to the workspace.
-          type: array
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/UserId'
-    TeamId:
-      title: TeamId
-      examples:
-      - 2a9c3f1e-8b7d-4a5c-9e6f-1b2c3d4e5f6a
-      type: string
-      pattern: '[^\s\\/]+'
     PaginatedResult_Team:
       title: PaginatedResult_Team
       type: object
@@ -1244,9 +1218,35 @@ components:
           type: integer
           format: int64
           exclusiveMinimum: 0
-    Email:
-      title: Email
-      examples:
-      - john.doe@acme.com
+    Tier:
+      title: Tier
       type: string
-      pattern: .+@.+
+      enum:
+      - RoutingAndScheduling
+      - Experiences
+      - ChiliDataPlatform
+    UpdateLicensesRequest:
+      title: UpdateLicensesRequest
+      type: object
+      required:
+      - update
+      properties:
+        update:
+          $ref: '#/components/schemas/Map_Refined_String_Refinement_V'
+          description: Map of user id to the full set of licenses to assign that user, replacing their
+            current licenses.
+    CallerRef:
+      title: CallerRef
+      description: stringified caller reference in format $type/$id
+      examples:
+      - user/17a3d4563d5a67a3d456ad635
+      type: string
+    AvailabilityFailure_NoTimezone:
+      title: AvailabilityFailure_NoTimezone
+      type: object
+      required:
+      - type
+      properties:
+        type:
+          type: string
+          const: NoTimezone
