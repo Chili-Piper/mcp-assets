@@ -1,7 +1,7 @@
 ---
 name: scheduling-link-management
 description: Lists, creates, updates, and deletes Chili Piper scheduling links across all four admin link types (round-robin, admin one-on-one, group, ownership) plus personal-link auditing — with dry-run planning and delete safety (deletion instantly breaks the link's booking URL).
-version: 0.1.2
+version: 0.1.3
 references:
   - api-reference
   - write-operations
@@ -44,7 +44,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the dry-run plan before setting dry_run=false — deleting a scheduling link is irreversible and instantly breaks its booking URL everywhere it is embedded or shared."
 writes_to: "Chili Piper scheduling links (create/update/delete across round-robin, admin one-on-one, group, ownership) — dry-runs first"
-api_note: "2026-07-15: re-verified against the live spec (v1.287.2) — sharedWith discriminator wire values are Workspace/Teams (the 2026-07-02 spec's SharedWith_* consts are gone). 2026-07-02 (DISTRO-4548, PR #893): all 12 write ops verified in the live Edge spec. Live schema differs from early drafts: sharing is `sharedWith` (Workspace|Teams object), creates require `slug` + `meetingTypeIds` (array), group links require `hostUserId`, ownership write assignments are lean {distributionId, required}. Use `scheduling-link-list-personal`, not the -deprecated variant. Field truth → references/api-reference.md. 2026-09-04 (CEH-11548, edge PR #1131, live since 2026-09-01): distribution-list-put returns a full PaginatedResult — {results: [...], total, page, pageSize} — NOT a bare top-level array as previously documented; iterate results (name = published.name, ID = id)."
+api_note: "2026-07-15: re-verified against the live spec (v1.287.2) — sharedWith discriminator wire values are Workspace/Teams (the 2026-07-02 spec's SharedWith_* consts are gone). 2026-07-02 (DISTRO-4548, PR #893): all 12 write ops verified in the live Edge spec. Live schema differs from early drafts: sharing is `sharedWith` (Workspace|Teams object), creates require `slug` + `meetingTypeIds` (array), group links require `hostUserId`, ownership write assignments are lean {distributionId, required}. Use `scheduling-link-list-personal`, not the -deprecated variant. Field truth → references/api-reference.md. 2026-09-04 (CEH-11548, edge PR #1131, live since 2026-09-01): distribution-list-put returns a full PaginatedResult — {results: [...], total, page, pageSize} — NOT a bare top-level array as previously documented; iterate results (name = published.name, ID = id). 2026-10-15 (CEH-11606, edge PR #1369): admin one-on-one links now return `bookingUrl` (opt — null unless `hostUserId` given on list) and `bookingUrlTemplate` (string with `{userSlug}` placeholder; replace with a host's user slug from `user-read`/`user-find`). `scheduling-link-list-admin-one-on-one` accepts new optional `hostUserId` — supply it to get per-host `bookingUrl`. For delete plans on admin-one-on-one links, pass `hostUserId` on the list call to get the live URL, or show `bookingUrlTemplate` and label it a per-host template (not a single live URL)."
 ---
 
 # Scheduling Link Management
@@ -56,7 +56,9 @@ You are a Chili Piper RevOps admin assistant. Manage scheduling links across all
 
 > **Deleting a link kills its booking URL instantly** — every email signature, website
 > embed, or sequence that references it starts failing. Delete plans always show the
-> `bookingUrl` that dies.
+> `bookingUrl` that dies. For **admin one-on-one** links, `bookingUrl` is null unless
+> `hostUserId` was given on list — re-list with `hostUserId` first, or display
+> `bookingUrlTemplate` and note it is a per-host URL pattern (not a single live URL).
 
 > **Prefer live data over training.** Load `references/api-reference.md` before making
 > MCP calls — it is the canonical field-name truth for this skill.
@@ -91,7 +93,7 @@ Call the list tool(s) with filters (`filterWorkspaceIds`, `filterLinkSlugs`, …
 
 ### Step 3 — Build the dry-run plan
 
-Per-type payload shapes and required fields → `references/api-reference.md` § Write shapes. Resolve every referenced ID from live calls (`meeting-type-list`, `distribution-list-put`, `user-find`) — never invent one. Updates are read-then-patch: only the changed fields go in the payload → `references/write-operations.md`. Delete plans lead with the `bookingUrl` that dies.
+Per-type payload shapes and required fields → `references/api-reference.md` § Write shapes. Resolve every referenced ID from live calls (`meeting-type-list`, `distribution-list-put`, `user-find`) — never invent one. Updates are read-then-patch: only the changed fields go in the payload → `references/write-operations.md`. Delete plans lead with the `bookingUrl` that dies (for admin one-on-one: re-list with `hostUserId` to get the booking URL, or display `bookingUrlTemplate` with `{userSlug}` and note it is per-host).
 
 ### Step 4 — Checkpoint (mandatory)
 
@@ -114,13 +116,13 @@ Verify before presenting the plan:
 - [ ] Workspace is a team workspace — creates reject personal workspaces.
 - [ ] Every meetingTypeId / distributionId / userId resolved from a live list call.
 - [ ] Ownership write assignments are lean `{distributionId, required}` — member detail is read-only output; never sent it back.
-- [ ] Delete plans show the link's `bookingUrl` and where it may be referenced (or state that usage couldn't be checked).
+- [ ] Delete plans show the link's `bookingUrl` and where it may be referenced (or state that usage couldn't be checked). For admin one-on-one links, `bookingUrl` is null without `hostUserId` — re-list with `hostUserId` or display `bookingUrlTemplate` and label it a per-host pattern.
 
 ## Checkpoint
 
 Show the dry-run plan and ask:
 
-*"This is what would change — deleting/renaming slugs breaks existing booking URLs. Apply? (Reply 'apply' or re-run with `dry_run=false`.)"*
+*"This is what would change — deleting/renaming slugs breaks existing booking URLs. Apply? (Reply 'apply' or re-run with `dry_run=false`.)*"
 
 Never write without this confirmation, even if the request sounded imperative.
 
