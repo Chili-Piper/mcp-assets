@@ -122,7 +122,7 @@ Verify before presenting the plan:
 
 Show the dry-run plan and ask:
 
-*"This is what would change — deleting/renaming slugs breaks existing booking URLs. Apply? (Reply 'apply' or re-run with `dry_run=false`.)*"
+*"This is what would change — deleting/renaming slugs breaks existing booking URLs. Apply? (Reply 'apply' or re-run with `dry_run=false`.)"*
 
 Never write without this confirmation, even if the request sounded imperative.
 
