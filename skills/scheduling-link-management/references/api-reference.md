@@ -1,6 +1,6 @@
 # API reference — scheduling-link-management
 
-Field names verified against the live public Edge API spec, 2026-07-02. The tools' own text descriptions are unreliable — treat this file as the truth for this skill.
+Field names verified against the live public Edge API spec, 2026-07-02 (CEH-11606 updates 2026-10-15). The tools' own text descriptions are unreliable — treat this file as the truth for this skill.
 
 ## List tools
 
@@ -8,7 +8,7 @@ Field names verified against the live public Edge API spec, 2026-07-02. The tool
 |------|------|-------|
 | `scheduling-link-list-personal-v2` | `GET /v1/org/schedulingLinks/list-personal-v2/{userId}` | Personal links for one user → `{links: [...]}` (**list-only** — no write tools exist). Do **not** use the deprecated `scheduling-link-list-personal` (bare array, DO-4340) or `scheduling-link-list-personal-deprecated` |
 | `scheduling-link-list-round-robin` | `POST /v1/org/schedulingLinks/list-round-robin` | Body filters: `filterWorkspaceIds`, `filterLinkSlugs`, `filterMeetingTypeId`, `filterDistributionIds` |
-| `scheduling-link-list-admin-one-on-one` | `POST /v1/org/schedulingLinks/list-admin-one-on-one` | Same filter style |
+| `scheduling-link-list-admin-one-on-one` | `POST /v1/org/schedulingLinks/list-admin-one-on-one` | Same filter style; optional `hostUserId` — supply a user's ID to receive per-host `bookingUrl` in the response (admin one-on-one URLs embed the host's slug; omit to get `bookingUrlTemplate` only) |
 | `scheduling-link-list-group` | `POST /v1/org/schedulingLinks/list-group` | Same filter style |
 | `scheduling-link-list-ownership` | `POST /v1/org/schedulingLinks/list-ownership` | Same filter style |
 
@@ -16,17 +16,17 @@ Helper tools: `workspace-list` (items use `id`), `meeting-type-list`, `distribut
 
 ## Detail shapes (list/create/update responses)
 
-All four admin types include `{workspaceId, linkId, name, slug, meetingTypeIds, bookingUrl}` plus type extras:
+Round-robin, group, and ownership links include `{workspaceId, linkId, name, slug, meetingTypeIds, bookingUrl}` plus type extras. Admin one-on-one links differ — see below:
 
-| Type | Extra fields |
-|------|--------------|
-| round-robin | `assignments: [{distributionId, required, members?}]`, `members` (read-only detail) |
-| admin-one-on-one | — |
-| group | (host/members appear via create/update inputs) |
-| ownership | `ownership` (invitation), `distribution` (invitation with assignments), `pageConfig`, `sharedWith` |
+| Type | Response fields |
+|------|-----------------|
+| round-robin | `{workspaceId, linkId, name, slug, meetingTypeIds, bookingUrl}` + `assignments: [{distributionId, required, members?}]`, `members` (read-only detail) |
+| admin-one-on-one | `{workspaceId, linkId, name, slug, meetingTypeIds, bookingUrl (opt), bookingUrlTemplate}` — `bookingUrl` is non-null only when `hostUserId` was given on list; `bookingUrlTemplate` always present (contains `{userSlug}` placeholder — replace with a host's user slug from `user-read`/`user-find`) |
+| group | `{workspaceId, linkId, name, slug, meetingTypeIds, bookingUrl}` |
+| ownership | `{workspaceId, linkId, name, slug, meetingTypeIds, bookingUrl}` + `ownership` (invitation), `distribution` (invitation with assignments), `pageConfig`, `sharedWith` |
 | personal | `{slug, meetingTypeId, meetingTypeName, bookingUrl}` only |
 
-`bookingUrl` is the live public URL — quote it in every delete plan.
+`bookingUrl` is the live public URL — quote it in every delete plan. **Exception — admin one-on-one (CEH-11606):** `bookingUrl` is `null` unless `hostUserId` was passed on list; use `bookingUrlTemplate` (always present, contains `{userSlug}`) to get the URL pattern, or re-list with `hostUserId` to get a specific host's live URL.
 
 ## Write shapes (create / update)
 
@@ -53,6 +53,7 @@ Update = read-then-patch: same fields as create, all optional — send only what
 - **`slug` is required on create** and becomes part of the booking URL — changing it on update breaks existing shared URLs (flag in the plan).
 - Unknown `linkId` → typed `SchedulingLinkNotFound` (404) — re-resolve via the list tool.
 - Round-robin and ownership updates run on the V2 update path server-side — same request shape, occasionally different validation messages; surface them verbatim.
+- **Admin one-on-one `bookingUrl` is per-host (CEH-11606):** the list response sets `bookingUrl` only when `hostUserId` was passed; otherwise it is `null`. `bookingUrlTemplate` is always returned and contains `{userSlug}` — replace it with a user's slug (from `user-read`/`user-find`) to construct a per-host URL.
 
 ## Permissions
 
