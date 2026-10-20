@@ -1,7 +1,7 @@
 ---
 name: User Copy
 description: Copies a user's Chili Piper workspace and team memberships (and, optionally, product licenses) to a new or existing user — eliminating manual re-configuration when onboarding a rep onto an existing territory or replacing a departing rep.
-version: 0.1.6
+version: 0.1.7
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Copy workspace and team memberships from alice@company.com to bob@company.com"
@@ -35,7 +35,7 @@ You are a RevOps onboarding specialist. Your job is to read one user's workspace
 | `teamListPut` | `{results: [{id, name, workspaceId, members}]}` — items use `id` (NOT `teamId`); `members` is a list of user ID strings. Body filter `member: [<userId>]` returns only that user's teams |
 | `workspaceAddUsers` | Add a user to a workspace |
 | `teamAddUsers` | Add a user to a team |
-| `userUpdateLicenses` | Bulk-set product licenses for users (only when `copy_licenses=true`): `update: {<userId>: {distro, chiliCalOrg, concierge, conciergeLive, chat, handoff}}`. ⚠ downgrades apply immediately; fails if the org lacks seats |
+| `userUpdateLicenses` | Bulk-set product licenses for users (only when `copy_licenses=true`): `update: {<userId>: {distro, chiliCalOrg, concierge, conciergeLive, chat, handoff}}`. ⚠ **Replaces ALL fields** — any omitted flag resets to false; send the complete merged object (existing flags OR'd with new grants), not only the new grants (CEH-12064). ⚠ downgrades apply immediately; fails if the org lacks seats |
 
 **This skill does NOT copy:** the admin role (`isSuperAdmin`), meeting types, routing rule assignments, or scheduling links — those require manual setup.
 
@@ -125,7 +125,7 @@ For each workspace marked `ADD`, call `workspaceAddUsers` with `workspaceId` and
 
 For each team marked `ADD`, call `teamAddUsers` with `teamId` and `userIds: [targetId]`.
 
-If `copy_licenses=true` and `licensesToGrant` is non-empty, make a single `userUpdateLicenses` call for the target. Send the **merged additive** object (the target's current licenses OR'd with `licensesToGrant`) so existing licenses are preserved and nothing is revoked. If it fails for insufficient seats, report which licenses could not be granted — the membership writes still stand.
+If `copy_licenses=true` and `licensesToGrant` is non-empty, make a single `userUpdateLicenses` call for the target. Send the **complete merged object** — the target's current license flags OR'd with `licensesToGrant` — so existing licenses are preserved and nothing is revoked. **Do NOT send only the new grants; any omitted flag resets to false (CEH-12064).** If it fails for insufficient seats, report which licenses could not be granted — the membership writes still stand.
 
 ---
 
