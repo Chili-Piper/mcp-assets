@@ -1,7 +1,7 @@
 ---
 name: user-copy
 description: Copies a user's Chili Piper workspace and team memberships (and, optionally, product licenses) to a new or existing user — eliminating manual re-configuration when onboarding a rep onto an existing territory or replacing a departing rep
-version: 0.1.6
+version: 0.1.7
 references:
   - api-reference
   - output-format
@@ -37,7 +37,7 @@ outputs:
 tools_required: [chili-piper-mcp]
 human_decision_point: "Review the plan before setting dry_run=false — confirm the target user is correctly identified and the workspace/team list (and any licenses to grant) is what you expect"
 writes_to: "Chili Piper workspace and team membership records, and — when copy_licenses=true — user license assignments"
-api_note: "This skill reads source memberships via workspace-list-users and team-list-put, then writes via workspace-add-users and team-add-users. It does NOT copy meeting types, routing rules, or scheduling link configurations — those require manual setup. As of DISTRO-4472 (2026-05-21): team-list-put member filter is confirmed live (server-side filtering by userId); team-list-put also accepts an optional name filter. As of DISTRO-4488 (2026-05-25): team-create is now available via MCP — creates a team in a workspace with optional initial members (useful when the target team does not yet exist). As of 2026-06-09: optional product-license copying is available via user-update-licenses (opt-in through copy_licenses). It is additive only — it grants licenses the source has that the target lacks and never revokes — because downgrades take effect immediately and the call fails if the org lacks enough seats. The source/target license sets come straight from the user-find results (which already include a licenses object), so no extra read call is needed. The admin role (isSuperAdmin) is never copied."
+api_note: "This skill reads source memberships via workspace-list-users and team-list-put, then writes via workspace-add-users and team-add-users. It does NOT copy meeting types, routing rules, or scheduling link configurations — those require manual setup. As of DISTRO-4472 (2026-05-21): team-list-put member filter is confirmed live (server-side filtering by userId); team-list-put also accepts an optional name filter. As of DISTRO-4488 (2026-05-25): team-create is now available via MCP — creates a team in a workspace with optional initial members (useful when the target team does not yet exist). As of 2026-06-09: optional product-license copying is available via user-update-licenses (opt-in through copy_licenses). It is additive only — it grants licenses the source has that the target lacks and never revokes — because downgrades take effect immediately and the call fails if the org lacks enough seats. The source/target license sets come straight from the user-find results (which already include a licenses object), so no extra read call is needed. The admin role (isSuperAdmin) is never copied. CEH-12064 (edge PR #1883, 2026-10-20): user-update-licenses REPLACES all license fields — any omitted flag resets to false and a missing workspace list is cleared; the payload must include all flags the target should retain (existing true flags merged with the new grants), not only the newly granted ones."
 ---
 
 # User Copy
@@ -111,7 +111,10 @@ layout → `references/output-format.md` § Plan template.
 
 If `dry_run=true`, stop here (see Checkpoint). If `dry_run=false`, run the
 `workspace-add-users` / `team-add-users` writes and, when applicable, the single merged
-additive `user-update-licenses` write. Procedure → `references/copy-procedure.md`
+additive `user-update-licenses` write. When calling `user-update-licenses`, send the
+complete merged object — the target's current license flags OR'd with the newly granted
+ones — so existing licenses are preserved. Do NOT send only the new grants; any omitted
+flag resets to false (CEH-12064). Procedure → `references/copy-procedure.md`
 § Execute. Exact license payload → `references/api-reference.md`
 § Licenses — `user-update-licenses`.
 
@@ -128,7 +131,7 @@ Verify before mutating data. Every line must be a clear pass/fail:
 - [ ] Both `source_user` and `target_user` resolved to exactly one user each (names → IDs); the target already exists.
 - [ ] Field names and identifiers taken from `references/api-reference.md` (workspace/team identifier is `id`, not `workspaceId`/`teamId`), not guessed.
 - [ ] `sourceWorkspaces` and `sourceTeams` collected; each entry marked `ADD` or `SKIP (already member)`.
-- [ ] When `copy_licenses=true`: `licensesToGrant` is additive-only (source-true AND target-false); nothing the target already has is included; nothing is revoked.
+- [ ] When `copy_licenses=true`: `licensesToGrant` is additive-only (source-true AND target-false); nothing the target already has is included; nothing is revoked; the user-update-licenses payload includes ALL flags (not only the new grants).
 - [ ] **Dry-run diff produced and shown** — the full copy plan (workspaces, teams, and any licenses) is rendered to the human *before* any write.
 - [ ] No write performed while `dry_run=true`.
 
