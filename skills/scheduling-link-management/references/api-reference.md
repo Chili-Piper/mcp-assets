@@ -1,6 +1,6 @@
 # API reference — scheduling-link-management
 
-Field names verified against the live public Edge API spec, 2026-07-02 (CEH-11606 updates 2026-10-15). The tools' own text descriptions are unreliable — treat this file as the truth for this skill.
+Field names verified against the live public Edge API spec, 2026-07-02 (CEH-11606 updates 2026-10-15; CEH-12224 updates 2026-10-27). The tools' own text descriptions are unreliable — treat this file as the truth for this skill.
 
 ## List tools
 
@@ -21,8 +21,8 @@ Round-robin, group, and ownership links include `{workspaceId, linkId, name, slu
 | Type | Response fields |
 |------|-----------------|
 | round-robin | `{workspaceId, linkId, name, slug, meetingTypeIds, bookingUrl}` + `assignments: [{distributionId, required, members?}]`, `members` (read-only detail) |
-| admin-one-on-one | `{workspaceId, linkId, name, slug, meetingTypeIds, bookingUrl (opt), bookingUrlTemplate}` — `bookingUrl` is non-null only when `hostUserId` was given on list; `bookingUrlTemplate` always present (contains `{userSlug}` placeholder — replace with a host's user slug from `user-read`/`user-find`) |
-| group | `{workspaceId, linkId, name, slug, meetingTypeIds, bookingUrl}` |
+| admin-one-on-one | `{workspaceId, linkId, name, slug, meetingTypeIds, bookingUrl (opt), bookingUrlTemplate, hostMeetingLimit?}` — `bookingUrl` is non-null only when `hostUserId` was given on list; `bookingUrlTemplate` always present (contains `{userSlug}` placeholder — replace with a host's user slug from `user-read`/`user-find`); `hostMeetingLimit` is `null` when no limit is set (CEH-12224) |
+| group | `{workspaceId, linkId, name, slug, meetingTypeIds, bookingUrl, hostMeetingLimit?}` — `hostMeetingLimit` is `null` when no limit is set (CEH-12224) |
 | ownership | `{workspaceId, linkId, name, slug, meetingTypeIds, bookingUrl}` + `ownership` (invitation), `distribution` (invitation with assignments), `pageConfig`, `sharedWith` |
 | personal | `{slug, meetingTypeId, meetingTypeName, bookingUrl}` only |
 
@@ -34,9 +34,9 @@ Update = read-then-patch: same fields as create, all optional — send only what
 
 **round-robin** — create: `{workspaceId*, name*, slug*, meetingTypeIds*[], distributionIds*[], sharedWith?}`
 
-**admin-one-on-one** — create: `{workspaceId*, name*, slug*, meetingTypeIds*[], sharedWith?}`
+**admin-one-on-one** — create: `{workspaceId*, name*, slug*, meetingTypeIds*[], sharedWith?, hostMeetingLimit?}`
 
-**group** — create: `{workspaceId*, name*, slug*, meetingTypeIds*[], hostUserId*, requiredMemberIds?[], optionalMemberIds?[], sharedWith?}`
+**group** — create: `{workspaceId*, name*, slug*, meetingTypeIds*[], hostUserId*, requiredMemberIds?[], optionalMemberIds?[], sharedWith?, hostMeetingLimit?}`
 
 **ownership** — create: `{workspaceId*, name*, slug*, meetingTypeIds*[], ownership*, distribution*, sharedWith?, pageConfig?}`
 - `ownership: {ownershipSettings*, host*, bookerInvitation*, alwaysInvitedUsers?}` — who owns the record and hosts
@@ -54,6 +54,7 @@ Update = read-then-patch: same fields as create, all optional — send only what
 - Unknown `linkId` → typed `SchedulingLinkNotFound` (404) — re-resolve via the list tool.
 - Round-robin and ownership updates run on the V2 update path server-side — same request shape, occasionally different validation messages; surface them verbatim.
 - **Admin one-on-one `bookingUrl` is per-host (CEH-11606):** the list response sets `bookingUrl` only when `hostUserId` was passed; otherwise it is `null`. `bookingUrlTemplate` is always returned and contains `{userSlug}` — replace it with a user's slug (from `user-read`/`user-find`) to construct a per-host URL.
+- **`hostMeetingLimit` (CEH-12224) — admin one-on-one and group only:** a per-host meeting cap that limits how many meetings the host can be booked into over a reset period. Shape: `{type: "NoMeetingLimit"}` or `{type: "SetMeetingLimit", maximumMeetingsCount: int, reset: {type: "Daily"|"Weekly"|"Monthly", every: int, startsOn: "YYYY-MM-DD", timezone: string}}`. On read, the field is present and `null` when no limit applies. On create: omit to default to `NoMeetingLimit`. On update: omit to keep the current limit; send `{type: "NoMeetingLimit"}` to remove it. Round-robin and ownership links do not have this field — their per-host caps live on the referenced distribution.
 
 ## Permissions
 
