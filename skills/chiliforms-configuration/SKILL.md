@@ -1,7 +1,7 @@
 ---
 name: chiliforms-configuration
 description: Builds a ChiliForms embed, a web form Chili Piper generates from a Concierge router, for customers without a form of their own. Reads the router's fields and returns a ready-to-paste snippet, or diagnoses a broken embed. Read-only.
-version: 0.1.0
+version: 0.1.1
 references:
   - api-reference
   - embed-reference
