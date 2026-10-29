@@ -4,6 +4,12 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 
 ## [Unreleased]
 
+### Changed
+- **`chiliforms-configuration` 0.1.1:** matches ChiliForms' final submit-trigger rules
+  (Chili-Piper/frontend#18596). A ThirdPartyForm mapping counts as coverage only when each entry
+  files the field under that same data field reference, and a single misfiling or ambiguous entry
+  rules the trigger out. `options.trigger` is honoured only for `ThirdPartyForm` / `RouterLink`.
+
 ### Added
 - **`chiliforms-configuration` skill (new, read-only) + paired GPT +
   `/configure-chiliforms` command.** Turns a Concierge router into a working

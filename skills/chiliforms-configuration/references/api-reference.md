@@ -80,14 +80,15 @@ references, and every field left after `overrides.exclude` has to be covered, hi
 
 | Order | Trigger | Covers a field when (case-insensitive) | Booking opens |
 |:----:|---------|----------------------------------------|---------------|
-| 1 | ThirdPartyForm | some `mapping[].name` **or** `mapping[].dataFieldRef` equals the field's reference | **modal** over the page |
+| 1 | ThirdPartyForm | an entry whose `name` or `dataFieldRef` matches the field **and** whose `dataFieldRef` is that same reference. One bad entry disqualifies the whole trigger (below) | **modal** over the page |
 | 2 | RouterLink | some `mapping[].dataField` equals the field's reference | **full-page** booking |
 | — | neither covers every field | ChiliForms **refuses to render** (`no ThirdPartyForm or RouterLink trigger covering every field`) | — |
 
 - A **ChiliForm** trigger is never a submit trigger, because Concierge maps nothing through it. A webform-only router therefore can't take a generated form. Hand off: add a Router Link with the same fields (it coexists with the webform).
 - A form built **from** a RouterLink is always covered by that same RouterLink, so it at least opens full-page. For a modal, the router also needs a ThirdPartyForm mapping that covers the same data fields, which is only possible on a router without a Chili webform.
+- **ThirdPartyForm disqualifiers:** an entry whose `name` equals a form field but whose `dataFieldRef` is a different field (it would file the value under the wrong data field), or an entry that matches two form fields. Either one rules out ThirdPartyForm entirely, and the form falls back to RouterLink.
 - Excluding a field with `overrides.exclude` removes it from the coverage check. Offer that when a single stray field is all that blocks the modal.
-- `options.trigger` pins the submit trigger and skips the check. A pinned trigger that doesn't cover the fields sends an empty `fields` map, which Concierge rejects (`NonEmptyMap … 'fields'`). Only pin one when asked, and verify its coverage first.
+- `options.trigger` pins the submit trigger. Only `'ThirdPartyForm'` and `'RouterLink'` are honoured: they skip the coverage check with a console warning. Any other value (`'ChiliForm'`, `'InAppButton'`, a typo) still gets the refusal. A pinned trigger that doesn't cover the fields sends an empty `fields` map, which Concierge rejects (`NonEmptyMap … 'fields'`). Only pin one when asked, and verify its coverage first.
 
 ## Data fields
 
