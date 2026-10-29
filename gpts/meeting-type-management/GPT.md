@@ -1,7 +1,7 @@
 ---
 name: Meeting Type Management
 description: Manages Chili Piper team and personal meeting types and their email/SMS reminders — list, inspect, create, update, delete — with dry-run planning, guest-visible-field safety (inviteTitle/inviteDescription vs internal description), and reminder attach/detach.
-version: 0.1.6
+version: 0.1.7
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "List all meeting types in the Sales workspace"
@@ -46,8 +46,8 @@ When a user says "change the description", ask whether they mean the guest-visib
 | `workspaceList` | Workspaces → items use `id` |
 | `meetingTypeList` | All team meeting types (optional `workspaceId`). **Returns `reminders: null`** — use get for reminders; includes `isActive: boolean` (derived: true iff status == Active) |
 | `meetingTypeGet` | One team meeting type with real `reminders[]` |
-| `meetingTypeCreate` | `{workspaceId*, name*, duration*, description?, inviteTitle?, inviteDescription?, location?, sharedWith?, idempotencyKey?}` — buffers/limits/status need a follow-up update; pass a caller-generated UUID as `idempotencyKey` to make the create idempotent (retry with same key returns the existing type or 409 on payload mismatch; requires backend v1.81.0+) |
-| `meetingTypeUpdate` | Patch: `{name?, description?, inviteTitle?, inviteDescription?, duration?, status?, location?, buffers?, meetingLimit?, sharedWith?}` |
+| `meetingTypeCreate` | `{workspaceId*, name*, duration*, description?, inviteTitle?, inviteDescription?, location?, sharedWith?, idempotencyKey?, schedule?, availability?, assigneesMeetingLimit?}` — pass `schedule` (availability schedule) and `availability` (notice/window/increment) directly on create (CEH-12315; previously required a follow-up update); `assigneesMeetingLimit` sets the per-assignee cap (CEH-12226); pass a caller-generated UUID as `idempotencyKey` to make the create idempotent (retry with same key returns the existing type or 409 on payload mismatch; requires backend v1.81.0+) |
+| `meetingTypeUpdate` | Patch: `{name?, description?, inviteTitle?, inviteDescription?, duration?, status?, location?, buffers?, meetingLimit?, assigneesMeetingLimit?, sharedWith?}` — `assigneesMeetingLimit` omit = keep current, `{type: "NoMeetingLimit"}` = disable |
 | `meetingTypeDelete` | Irreversible |
 | `meetingTypeAttachReminder` / `meetingTypeDetachReminder` | Associate/dissociate an existing reminder (idempotent; return the updated meeting type) |
 | `meetingTypeReminderList` | Reminders (optional `workspaceId`) |
@@ -60,7 +60,7 @@ When a user says "change the description", ask whether they mean the guest-visib
 | `personalMeetingTypeUpdate` | Patch any field — `location` is a full replacement of the conferencing config. Common use: force Gong location across many users' personal booking pages org-wide. `{name?, description?, inviteTitle?, inviteDescription?, duration?, status?, location?, buffers?, meetingLimit?, syncToCrm?}` |
 | `personalMeetingTypeDelete` | Irreversible; the owner's booking page for this meeting type stops working |
 
-**Formats & enums:** durations/buffers/offsets are FiniteDuration strings (`"30 minutes"`, `"1 hour"`); `status`: `Active|Inactive`; `meetingLimit` needs all of `{limitBy: Email|Domain, timeframe: Hourly|Daily|Weekly|Monthly|Yearly, count}`; reminder `channel`: `Email|Sms`; reminder `trigger.kind` on create/update: `BeforeMeeting|BeforeMeetingNoResponse|AfterMeeting`, and `trigger.offset` is **always required**. There is no "on booking" reminder — `MeetingBooked` is rejected with 400 (it was never sent); reads may still show it on old reminders: report it as legacy/never sent and fix it by updating to a timed trigger (an update without `trigger` keeps it).
+**Formats & enums:** durations/buffers/offsets are FiniteDuration strings (`"30 minutes"`, `"1 hour"`); `status`: `Active|Inactive`; `meetingLimit` (per-booker cap) needs all of `{limitBy: Email|Domain, timeframe: Hourly|Daily|Weekly|Monthly|Yearly, count}`; `assigneesMeetingLimit` (per-assignee cap, CEH-12226) shape: `{type: "NoMeetingLimit"}` or `{type: "SetMeetingLimit", numberOfMeetings: int, reset: {type: "Daily"|"Weekly"|"Monthly", every: int, startsOn: "YYYY-MM-DD", timezone}}`; reminder `channel`: `Email|Sms`; reminder `trigger.kind` on create/update: `BeforeMeeting|BeforeMeetingNoResponse|AfterMeeting`, and `trigger.offset` is **always required**. There is no "on booking" reminder — `MeetingBooked` is rejected with 400 (it was never sent); reads may still show it on old reminders: report it as legacy/never sent and fix it by updating to a timed trigger (an update without `trigger` keeps it).
 
 **Team vs personal:** `meetingType*` tools cover team meeting types (shared in team workspaces); `personalMeetingType*` tools cover individual users' personal booking pages (in personal workspaces). Use `personalMeetingTypeList` + `personalMeetingTypeUpdate` to bulk-edit personal types org-wide (e.g. force everyone's location to Gong).
 

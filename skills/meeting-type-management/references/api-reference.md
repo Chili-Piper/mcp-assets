@@ -1,6 +1,6 @@
 # API reference — meeting-type-management
 
-Field names verified against the live public Edge API spec, 2026-07-02. The tools' own text descriptions are unreliable — treat this file as the truth for this skill.
+Field names verified against the live public Edge API spec, 2026-07-02 (CEH-12226/CEH-12315 updates 2026-10-27). The tools' own text descriptions are unreliable — treat this file as the truth for this skill.
 
 ## Tools
 
@@ -9,7 +9,7 @@ Field names verified against the live public Edge API spec, 2026-07-02. The tool
 | `workspace-list` | — | Workspaces → items use `id` (not `workspaceId`) |
 | `meeting-type-list` | `GET /v1/org/meeting-types/list` | All team meeting types; optional `workspaceId` query filter |
 | `meeting-type-get` | `GET /v1/org/meeting-types/{meetingTypeId}` | One meeting type with `reminders` populated |
-| `meeting-type-create` | `POST /v1/org/meeting-types` | Create (body: `MeetingTypeCreate`) |
+| `meeting-type-create` | `POST /v1/org/meeting-types` | Create (body: `MeetingTypeCreate`; now also accepts `schedule` and `availability` — CEH-12315) |
 | `meeting-type-update` | `PUT /v1/org/meeting-types/{meetingTypeId}` | Patch (body: `MeetingTypeUpdate` — only send fields to change) |
 | `meeting-type-delete` | `DELETE /v1/org/meeting-types/{meetingTypeId}` | Delete — irreversible |
 | `meeting-type-attach-reminder` | `PUT /v1/org/meeting-types/{mtId}/reminders/{reminderId}` | Associate an existing reminder (idempotent) |
@@ -21,7 +21,7 @@ Field names verified against the live public Edge API spec, 2026-07-02. The tool
 
 ## MeetingType (response shape)
 
-`{id, workspaceId, name, description?, inviteTitle, inviteDescription, status, duration, location, buffers, meetingLimit?, sharedWith?, reminders?}`
+`{id, workspaceId, name, description?, inviteTitle, inviteDescription, status, duration, location, buffers, meetingLimit?, assigneesMeetingLimit?, sharedWith?, reminders?}`
 
 ## Field glossary — internal vs guest-visible
 
@@ -46,7 +46,10 @@ Field names verified against the live public Edge API spec, 2026-07-02. The tool
 |-------|-----------------|
 | `status` | `Active` \| `Inactive` |
 | `duration`, `buffers.before/after`, `trigger.offset` | Scala FiniteDuration strings — `"30 minutes"`, `"1 hour"` |
-| `meetingLimit` | `{limitBy: Email\|Domain, timeframe: Hourly\|Daily\|Weekly\|Monthly\|Yearly, count}` (all three required when set) |
+| `meetingLimit` | `{limitBy: Email\|Domain, timeframe: Hourly\|Daily\|Weekly\|Monthly\|Yearly, count}` (all three required when set) — per-booker cap |
+| `assigneesMeetingLimit` | `{type: "NoMeetingLimit"}` or `{type: "SetMeetingLimit", numberOfMeetings: int, reset: {type: "Daily"\|"Weekly"\|"Monthly", every: int, startsOn: "YYYY-MM-DD", timezone: string}}` — per-assignee cap ("Meeting limit for Assignees" in admin UI; CEH-12226); on update, omit to keep current, send `{type: "NoMeetingLimit"}` to disable |
+| `schedule` (create/update) | Availability schedule object — reference the schedule the meeting type should use for host availability (CEH-12315; previously update-only, now accepted on create) |
+| `availability` (create/update) | Availability configuration — minimum notice, booking window, slot increment (CEH-12315; previously update-only, now accepted on create) |
 | `location` | `{default, others?[]}`; each location is one of: `AskTheGuest`, `CalendarPlatformConference`, `DefinedInMeetingType`, `HostsDefaultConferenceDetails`, `HostsDefaultPhysicalLocation`, `ZoomOneTimeLink`, `TeamsMeetingLink`, `GoToMeetingLink`, `WebexLink`, `RingCentralLink`, `GongLink` (discriminated by `type`) |
 | `sharedWith` | `{type: "Workspace"}` or `{type: "Teams", teamIds?}` — discriminated by `type`; the wire values are `Workspace`/`Teams` (the 2026-07-02 spec's `SharedWith_Workspace`/`SharedWith_Teams` consts are gone — sending them is rejected) |
 | Reminder `channel` | `Email` \| `Sms` — **immutable after creation** |
