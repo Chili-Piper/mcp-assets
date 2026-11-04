@@ -30,10 +30,6 @@ inputs:
     type: string
     description: How well the customer knows Chili Piper (new / some / expert). Sets how much each asset is explained. Asked first when omitted.
     required: false
-  - name: dry_run
-    type: boolean
-    description: Defaults to true. Read, interview and plan only; Phase 3 writes nothing until the customer replies "build" at the plan checkpoint, or the session started with dry_run=false.
-    required: false
 outputs:
   - name: onboarding_plan
     description: The agreed plan, from references/onboarding-plan-template.md.
@@ -76,8 +72,6 @@ Connection guide: help article [50430350863635](https://help.chilipiper.com/hc/e
 |-------|:--------:|---------|------------------|
 | `workspace` | no | read in Phase 0 | Where every asset is built. Used directly if the tenant has one workspace, asked otherwise |
 | `familiarity` | no | asked first | How much each asset is explained as it is built |
-| `dry_run` | no | `true` | Plan only. Nothing is written until the customer replies "build" at the plan checkpoint |
-
 ## Operating principles
 
 1. **Self-serve.** The person running this is the customer, often not an Admin. Detect access in Phase 0, adapt to it, and never promise a build this session cannot perform. A Workspace Admin builds only in their own workspaces and hands users, licences and data fields to a Super Admin.
@@ -115,8 +109,7 @@ Connection guide: help article [50430350863635](https://help.chilipiper.com/hc/e
 
 1. **Run the plan preflight** (below). Any blank goes back to the customer.
 2. **Write the Onboarding Plan** → `references/onboarding-plan-template.md`. Size shared assets against every motion → `references/shared-assets.md` § What shares with what. Include the standing defaults → `references/standing-defaults.md` § Built in this session, § Handed over as links.
-3. **Checkpoint:** present the plan and get explicit confirmation. With `dry_run` true (the default), end on: "Build it now? Reply 'build', or keep this plan and build later."
-
+3. **Checkpoint:** present the plan and get explicit confirmation.
 ### Phase 3 - Build (write-capable session)
 
 - **The session cannot write:** go to Phase 4 with the plan, plus the ask for a write-scoped key.
@@ -168,7 +161,7 @@ Emit the who / what / why list for anything this session could not do (`referenc
 
 Two stops, matching `human_decision_point`:
 
-1. **The plan.** Nothing is created until the customer has confirmed the Onboarding Plan and, under the default `dry_run: true`, replied "build".
+1. **The plan.** Nothing is created until the customer has confirmed the Onboarding Plan.
 2. **Every write.** Each create or update goes through the client's approval prompt; never suppress it. Adding users gets its own stop before the first invite (`references/dimensions.md` § 4). A Concierge router and a Chat web experience publish live on create, so confirm those on their own.
 
 ## Executor dispatch

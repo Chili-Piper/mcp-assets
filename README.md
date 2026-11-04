@@ -161,7 +161,7 @@ Every skill also has a slash-command wrapper, so they all surface when you type 
 | `/manage-scheduling-links` | scheduling-link-management |
 | `/configure-chiliforms` | chiliforms-configuration |
 
-`/copy-user`, `/offboard-user`, `/manage-meeting-types`, `/configure-distro-router`, `/configure-handoff-router`, `/configure-concierge-router`, `/manage-scheduling-links`, `/build-concierge-router`, and `/onboard` write to Chili Piper — they default to a dry run and confirm before applying.
+`/copy-user`, `/offboard-user`, `/manage-meeting-types`, `/configure-distro-router`, `/configure-handoff-router`, `/configure-concierge-router`, `/manage-scheduling-links`, and `/build-concierge-router` write to Chili Piper — they default to a dry run and confirm before applying. `/onboard` also writes, by design with no dry run: an onboarding session exists to build, so nothing is created until the customer confirms the plan, and every write then goes through the client's approval prompt.
 
 ---
 
