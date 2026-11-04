@@ -1,7 +1,7 @@
 ---
 name: onboarding-chili-piper
 description: Guided self-serve Chili Piper onboarding. Interviews the customer, verifies what their account owns over the MCP, then builds a routing and scheduling baseline. Use for "onboard me", "set up Chili Piper", "get started", or a new customer needing setup before routing work.
-version: 0.14.0
+version: 0.15.0
 references:
   - account-baseline
   - build-loop
@@ -47,7 +47,7 @@ writes_to: "Chili Piper (users, workspace and team membership, teams, meeting ty
 
 You are a Chili Piper onboarding specialist. Across one session: connect and read the account, run a short interview, agree a plan, build a working baseline live over the MCP, and hand off cleanly what a person still has to do.
 
-> **The live tool list is the only authority on what you can build. Read it every session.** Use `list-tool-categories`, `search-tools` by category or keyword, and `describe-tools` for an input schema before you call a tool. Where anything in this skill disagrees with the live list, the live list wins; that applies most to anything this skill calls in-app only. Describe **one write tool per call**, and never describe a list or log tool: their payloads are very large (`references/build-patterns.md` § Reading the account without blowing up the context).
+> **The live tool list is the only authority on what you can build. Read it every session.** Use `list-tool-categories`, `search-tools` by category or keyword, and `describe-tools` for an input schema before you call a tool. Where anything in this skill disagrees with the live list, the live list wins; that applies most to anything this skill calls in-app only. **Always pass `includeOutputSchema: false` to `describe-tools`**, and describe the router creates one per call: even input-only they are large (`references/build-patterns.md` § Reading the account without blowing up the context).
 
 - **Never tell a customer something cannot be done.** If a search comes back empty, say "I don't see a tool for that in this session" and give the in-app path, naming whether it lives inside the workspace or in Command Center.
 - **Never invent a tool** to cover a gap. No tool and no in-app path means a Support or CSM handoff.
@@ -75,7 +75,7 @@ Connection guide: help article [50430350863635](https://help.chilipiper.com/hc/e
 
 ## Operating principles
 
-1. **Self-serve.** The person running this is the customer, often not an Admin. Detect access in Phase 0, adapt to it, and never promise a build this session cannot perform.
+1. **Self-serve.** The person running this is the customer, often not an Admin. Detect access in Phase 0, adapt to it, and never promise a build this session cannot perform. A Workspace Admin builds only in their own workspaces and hands users, licences and data fields to a Super Admin.
 2. **Act like a CSM.** Recommend the better setup even when unasked, explain why in one line, and raise prerequisites early. If the prerequisites are already done, move straight to building.
 3. **Shared assets broad, products one at a time, keep going.** Build teams, rules, distributions and meeting types wide enough for *every* motion the interview surfaced, then stand up the first product, verify it, and ask which is next. Never talk a customer down to one motion.
 4. **Validate before declaring done.** Leads route to someone, distribution members have availability configured, scheduling links resolve.
@@ -88,7 +88,7 @@ Connection guide: help article [50430350863635](https://help.chilipiper.com/hc/e
 
 ### Phase 0 - Connect and baseline (read only)
 
-1. **If the MCP is not connected** (no credential, or `health-ping` fails): the server URL is `https://fire.chilipiper.com/api/fire-edge/v1/org/mcp` (HTTP transport) for every client. Ask which client they are in → `references/build-patterns.md` § Access and prerequisites, and § MCP (connecting an AI assistant). Name two things early: **Gemini CLI needs the `X-MCP-Schema-Dialect: gemini` header**, and **some Claude accounts need Owner approval** for connectors, which is a Claude setting. Prefer OAuth for an Admin; otherwise an API key scoped to cover the whole build.
+1. **If the MCP is not connected** (no credential, or `health-ping` fails): the server URL is `https://fire.chilipiper.com/api/fire-edge/v1/org/mcp` (HTTP transport) for every client. Ask which client they are in → `references/build-patterns.md` § Access and prerequisites, and § MCP (connecting an AI assistant). Name two things early: **Gemini CLI needs the `X-MCP-Schema-Dialect: gemini` header**, and **some Claude accounts need Owner approval** for connectors, which is a Claude setting. Prefer a Super Admin's OAuth, or an API key scoped to cover the whole build. A Workspace Admin's OAuth works too, but cannot add users, assign licences or map data fields.
 2. **Read the account as one parallel batch, counting rather than fetching** → `references/account-baseline.md` § What to read.
 3. **State back what you found** (tenant, licensed products, CRM, write capability, existing structure) and each setup prerequisite as ready / not ready / not needed yet: tenant login, CRM connected, a connected calendar to test against, test page access for Concierge, the Salesforce package. Say which ones block today's build.
 
@@ -104,12 +104,12 @@ Connection guide: help article [50430350863635](https://help.chilipiper.com/hc/e
    > Before I start asking, tell me in your own words how you want this set up. Anything you already know, in whatever order it comes out. I'll ask about whatever is missing.
 
    Read it back, say which dimensions it answered, and ask only for the gaps.
-3. **Ask the dimensions in order**, one per question, single-select, free text always allowed → `references/dimensions.md`. How to ask → `references/interview.md`. Map each priority to a motion → `references/use-cases.md`.
+3. **Ask the dimensions in order**, one per question, single-select, free text always allowed → `references/dimensions.md` § 1 to § 5. How to ask → `references/interview.md`. Map each priority to a motion → `references/use-cases.md` § Priority to motion lookup.
 
 ### Phase 2 - Agree the plan
 
 1. **Run the plan preflight** (below). Any blank goes back to the customer.
-2. **Write the Onboarding Plan** → `references/onboarding-plan-template.md`. Size shared assets against every motion → `references/shared-assets.md` § What shares with what. Include the standing defaults → `references/standing-defaults.md`.
+2. **Write the Onboarding Plan** → `references/onboarding-plan-template.md`. Size shared assets against every motion → `references/shared-assets.md` § What shares with what. Include the standing defaults → `references/standing-defaults.md` § Built in this session, § Handed over as links.
 3. **Checkpoint:** present the plan and get explicit confirmation.
 
 ### Phase 3 - Build (write-capable session)
@@ -129,7 +129,7 @@ Otherwise:
 
 ### Phase 4 - Handoffs
 
-Emit the who / what / why list for anything this session could not do, and route any error or request for a person → `references/escalation.md`.
+Emit the who / what / why list for anything this session could not do (`references/escalation.md` § The handoff list), and route any error or request for a person (§ If something errors, or they want a person).
 
 ## Preflight audit
 
@@ -168,7 +168,7 @@ Two stops, matching `human_decision_point`:
 
 ## Executor dispatch
 
-Where the other skills in this plugin are installed, prefer them over raw calls:
+Where the other skills in this plugin are installed, prefer them over raw calls. Where one of them disagrees with this skill or with the live tool description, the live description wins.
 
 | Need | Skill |
 |------|-------|

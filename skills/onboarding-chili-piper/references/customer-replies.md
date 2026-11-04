@@ -14,4 +14,4 @@ The reader is often not an Admin and often new to Chili Piper. **Do the full ver
 
 For example, asked whether lead conversion can be part of the build, the reply is:
 
-> Yes, and the piece you want is Distro's Lead Conversion node. I can't set that one up from here, but it takes a couple of minutes in the app and I'll give you the link. Shall I add it to your handover list and carry on with the rest of the router?
+> Yes. It runs in Distro when a Lead is routed, so I'll add it to that router. Which Lead Status should a converted Lead get?

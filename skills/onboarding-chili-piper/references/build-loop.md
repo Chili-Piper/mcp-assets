@@ -52,4 +52,4 @@ The build is not transactional, so everything before the failure stays.
 1. **Stop.** Do not create things that depend on what failed.
 2. **Say what exists so far**, with ids and links, and what failed, with the error.
 3. **Offer the two options**: fix the cause and resume, reusing what is built, or stop and hand over a cleanup list. Never start again alongside a half-built config.
-4. **A 422 on a Concierge router publish** leaves an unpublished draft, and retrying mints another. Fix the cause, then have the customer delete the leftover in the app (`build-patterns.md` § Typed errors).
+4. **A 422 on a router create** (Concierge, Handoff or Distro) leaves nothing behind: the create is all-or-nothing and the error carries the reason. Fix the cause and retry (`build-patterns.md` § Typed errors).

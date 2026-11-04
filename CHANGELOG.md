@@ -5,6 +5,18 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Changed
+- **`onboarding-chili-piper` 0.15.0:** follows the late-October Edge/MCP changes. Router creates
+  are all-or-nothing, so a failed publish is fixed and retried rather than hunted as a draft.
+  Concierge and Distro ownership rows use the `Owner` assignment; Handoff, which has none, builds
+  the row and proves it with `handoff-init` before handing it to the flow builder. Super Admin OAuth stays preferred; Workspace Admin OAuth sessions build only in their own
+  workspaces and hand users, licences and data fields to a Super Admin. Schemas are described
+  with `includeOutputSchema: false`, Distro triggers are read with `distro-router-get`, and the
+  `workspace-list` / `data-field-list` filters are used. Distro lead conversion is built as the
+  route-level `convertLead` rather than handed over; Concierge `ConvertLead` is rejected by the API
+  and Concierge updates on MCP-built routers replace the full row set; the nonexistent
+  `rule-list` `ruleBuilderVersion` filter is removed. Removes the `routing-data` reference loop
+  and points Process steps at sections. README notes that `/onboard` writes with no dry run by
+  design (the confirmed plan plus per-write approval is the gate). QA row reset to pending static review.
 - **`chiliforms-configuration` 0.1.1:** matches ChiliForms' final submit-trigger rules
   (Chili-Piper/frontend#18596). A ThirdPartyForm mapping counts as coverage only when each entry
   files the field under that same data field reference, and a single misfiling or ambiguous entry

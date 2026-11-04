@@ -101,8 +101,6 @@ In the workspace:
 - [ ] No-show recovery: /workspaces/{wsId}/orchestrator/flows
 - [ ] Meeting Prep brief: /workspaces/{wsId}/chili-agents/meeting-prep-agent
 - [ ] Spam Checker scoring settings: /workspaces/{wsId}/chili-agents/spam-checker - the step itself is built into the router; only the thresholds are in-app, and they are shared with Chat
-- [ ] Distro Lead Conversion node, if conversion was asked for - in-app only
-
 In Command Center (org level):
 - [ ] Enrichment provider: Integrations > Data Providers - **a prerequisite, not a follow-up, if any segment routes on enriched data**
 - Credit note given: {yes | n/a}
@@ -117,7 +115,7 @@ In Command Center (org level):
 
 ### Handoffs (human / CSM)
 - [ ] Write-scoped API key (if read-only session)
-- [ ] OAuth enablement (if browser login wanted)
+- [ ] Super Admin for tenant-wide steps (if a Workspace Admin session): {users to invite, licences, data fields}
 - [ ] End-user training with CSM (rep calendar + availability + ChiliCal extension)
 - [ ] Tier upgrade for: {unlicensed use cases}
 
