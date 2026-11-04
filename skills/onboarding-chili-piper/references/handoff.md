@@ -43,8 +43,9 @@ Handoff paths take the same post-booking `crmActions` chain as Concierge, and an
 ## Build
 
 - Segment paths with ownership-first and a configured fallback rep, per the universal routing pattern in `shared-assets.md`.
+- **Ownership paths may not be writable here yet.** Unlike Concierge, the Handoff `assignment` has had no `Owner` type: only `Distribution`, `User` and `UseAssignmentTable`. Check the live schema. If `Owner` is still missing, build the other rows and hand the ownership row over as a flow-builder step at the deep link. Do not put an ownership rule on a Distribution row and assume it books the owner; `handoff-init` against an owned record is the only proof.
 - `handoff-router-create` publishes live and returns `id` + `workspaceId`; deep link at `/workspaces/<wsId>/handoff/handoff-router/<id>/flow-builder`. Its schema is very large; if your client cannot hold it, use the fallback in `concierge.md` § Verify.
-- **A failed publish leaves an unpublished draft**, and retrying the create mints a second one. Fix or delete the leftover in the Handoff app rather than retrying.
+- **A failed create leaves nothing behind.** A rejected publish deletes the router again and returns a 422 with the reason, so fix it and retry.
 - **Before updating an existing router**, run `handoff-router-get` and read `routing.representable`. On an app-built router, your rows are overlaid by `ruleId` and its app-only settings are kept. **Every update publishes the router's current draft**, so unpublished edits someone made in the app go live with it, even on a rename. Ask before updating a router the customer has been editing.
 - **Some settings are in the app only.** The Display Calendar settings are not in the create schema: Schedule with Another Team Member on ownership paths, where the meeting is created (the booker's calendar with the assignee invited, or the assignee's with the booker optionally invited, plus auto-decline for the booker), Additional Invitees, and the Handoff Live options node. Check the live schema first. If they are still missing, ask which the customer wants and hand them over as flow-builder steps at the deep link.
 

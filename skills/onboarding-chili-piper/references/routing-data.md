@@ -32,4 +32,4 @@ A segment meant to cover both needs either the field on the form, live enrichmen
 
 **Distro is not affected.** It fires off a CRM record that already exists, so CRM values are there when the decision runs; route on whatever field the customer wants.
 
-**Handoff mostly is not.** There is no form, so `DF` rules have nothing to read, and a rep booking a prospect already in the CRM routes on any CRM field. But the trigger is just a guest email, so a rep can book someone the CRM has never seen, and that prospect matches no `SF` / `HS` rule. Give them a destination at the catch-all (`handoff.md`).
+**Handoff mostly is not.** There is no form, so `DF` rules have nothing to read, and a rep booking a prospect already in the CRM routes on any CRM field. But the trigger is just a guest email, so a rep can book someone the CRM has never seen, and that prospect matches no `SF` / `HS` rule. Give them a destination at the catch-all.

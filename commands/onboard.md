@@ -1,6 +1,6 @@
 ---
 description: Guided Chili Piper onboarding, reads your account, interviews you, agrees a plan, then builds your routing and scheduling baseline with a confirmation before anything is created.
-argument-hint: "[workspace]"
+argument-hint: "[workspace] [--build]"
 allowed-tools: [Read]
 ---
 
@@ -19,7 +19,9 @@ Run a guided Chili Piper setup using the `onboarding-chili-piper` skill.
 2. Check that the Chili Piper MCP is connected, call `health-ping`. If it fails, output the
    setup instructions from `mcp-servers/chili-piper/README.md` and stop.
 3. If the user provided a workspace name as the argument, pass it as the `workspace` input.
-   Otherwise the skill reads it from the account.
+   Otherwise the skill reads it from the account. `--build` → `dry_run: false`.
+   **Without `--build`, always run with `dry_run: true`**: the build waits for the customer to
+   reply "build" at the plan checkpoint.
 4. Execute the phases in order, Phase 0 baseline, Phase 1 interview, Phase 2 plan (STOP for
    confirmation), Phase 3 build, Phase 4 handoffs.
 5. Tip: to build a single Concierge router without the full onboarding, use

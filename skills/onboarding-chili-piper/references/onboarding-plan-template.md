@@ -117,7 +117,7 @@ In Command Center (org level):
 
 ### Handoffs (human / CSM)
 - [ ] Write-scoped API key (if read-only session)
-- [ ] OAuth enablement (if browser login wanted)
+- [ ] Super Admin for tenant-wide steps (if a Workspace Admin session): {users to invite, licences, data fields}
 - [ ] End-user training with CSM (rep calendar + availability + ChiliCal extension)
 - [ ] Tier upgrade for: {unlicensed use cases}
 

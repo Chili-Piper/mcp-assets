@@ -5,6 +5,15 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Changed
+- **`onboarding-chili-piper` 0.15.0:** follows the late-October Edge/MCP changes. Router creates
+  are all-or-nothing, so a failed publish is fixed and retried rather than hunted as a draft.
+  Concierge ownership paths use the `Owner` assignment; Handoff ownership rows are handed to the
+  flow builder until Handoff gets one. Workspace Admin OAuth sessions build only in their own
+  workspaces and hand users, licences and data fields to a Super Admin. Schemas are described
+  with `includeOutputSchema: false`, Distro triggers are read with `distro-router-get`, and the
+  `workspace-list` / `data-field-list` filters are used. Adds `dry_run` (default true) and
+  `/onboard --build`, removes the `routing-data` reference loop, and points Process steps at
+  sections. QA row reset to pending static review.
 - **`chiliforms-configuration` 0.1.1:** matches ChiliForms' final submit-trigger rules
   (Chili-Piper/frontend#18596). A ThirdPartyForm mapping counts as coverage only when each entry
   files the field under that same data field reference, and a single misfiling or ambiguous entry

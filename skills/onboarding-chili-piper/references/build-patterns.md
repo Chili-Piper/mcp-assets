@@ -25,13 +25,10 @@ Two failure modes, same cause: fetching everything when you needed a number or a
 
 In Phase 0 you want **counts, not bodies**. `rule-list` returns `total`, so `pageSize: 1` gives you the count for free. `distribution-list-put` returns only `items` with no `total`, so probe with a small page rather than assuming a count is available. Once the target workspace is known, scope every subsequent read to it and fetch bodies only for what you are about to reuse.
 
-**Schemas.** `search-tools` returns `_meta` with `chilipiper.com/schemaTokens`. This is a namespaced `_meta` key, not a URL. **Read it before calling `describe-tools`.** Some list and log tools are very large to describe, and the number tells you which.
+**Schemas.** **Always call `describe-tools` with `includeOutputSchema: false`.** The output schema is most of the payload (several meeting tools each carry the same ~75KB meeting record) and you never need it to make a call. `search-tools` returns two namespaced `_meta` keys: `chilipiper.com/schemaTokens` (the full payload) and `chilipiper.com/inputSchemaTokens` (what an input-only describe returns). Read the second before describing.
 
-That number is the **whole `describe-tools` payload**, not the input shape. Most of it is `outputSchema`, which you do not need to construct a call. So a big number means the response is expensive, not that the call is hard. Three rules follow.
-
-- **One name per `describe-tools` call.** Batching sums the payloads, and several tools share one huge output schema: `meeting-get`, `meeting-patch`, `meeting-list-put`, `meeting-cancel-post`, `meeting-noshow-post`, `crm-get`, `crm-cancel-post` and `crm-noshow-post` each carry the same ~75KB meeting record, so a batch of eight returns those bytes eight times.
-- **Do not describe a read, list or log tool.** Their payloads are almost entirely output schema, and their inputs are a few obvious fields. `concierge-logs` takes `workspaceId`, `routerId`, `start`, `end` (all required, ISO-8601, 30-day max window) plus optional `page` and `pageSize`; `concierge-list-routers` and `handoff-router-list` take `workspaceId` plus pagination. Per the capability rule these shapes are a starting point and not authority: if a call 4xxs, describe the tool then and accept the cost.
-- **Describe the write tools freely.** Their input schemas are small; `web-experience-create` / `-update` and the router creates are the largest. A write tool quoting an unusually large number is worth a second look before you call it.
+- **Most tools are then cheap to describe**, list and log tools included, so batch freely.
+- **The router creates stay large even input-only** (`concierge-router-create`, `handoff-router-create`, `web-experience-create` / `-update`). Describe each on its own.
 
 In a client that cannot save large tool results to a file (Claude Desktop, ChatGPT), an oversized result cannot be recovered, so these rules are what keep the skill working in every client.
 
@@ -97,7 +94,7 @@ Where a route is not in this table, link the list page rather than guessing a de
 
 ## Access and prerequisites
 
-- **Set up the MCP.** Steps per client are in help article 50430350863635. OAuth (Claude Desktop, claude.ai, Claude Code, ChatGPT) needs an Admin on a paid account and stores no key. API key (Cursor, Codex, Gemini CLI, CI, or a narrower scope) is generated at `fire.chilipiper.com/fire/admin/integrations/credentials`, Credentials tab, API Access Tokens sub-tab (not HTTP Auth), scoped to what that session needs and shown once.
+- **Set up the MCP.** Steps per client are in help article 50430350863635. OAuth (Claude Desktop, claude.ai, Claude Code, ChatGPT) works for a Super Admin or a Workspace Admin on a paid account and stores no key. A Workspace Admin reaches only the workspaces they manage, and tenant-wide tools (user invites, licences, data fields, webhooks) stay Super Admin only. API key (Cursor, Codex, Gemini CLI, CI, or a narrower scope) is generated at `fire.chilipiper.com/fire/admin/integrations/credentials`, Credentials tab, API Access Tokens sub-tab (not HTTP Auth), scoped to what that session needs and shown once.
 - **Connect a CRM.** Salesforce or HubSpot at `fire.chilipiper.com/fire/admin/integrations/built-in`. If both are connected, use the sales reps' source of truth (Salesforce when sales runs Salesforce and marketing runs HubSpot).
 - **Entitlement.** Read the `tier` on the per-user `licenses` object; `tenant-get` does not carry it. The tier is a bundle and is the entitlement, so the per-product booleans are not the check and a false one is not a gap. Offer what the tier covers; anything else is a tier-upgrade handoff.
 - **Licence the Admin running the session, first.** An operator with no tier cannot be a host, has no availability, and cannot be booked, so nothing you build can be tested end to end. `user-update-licenses` **replaces** a user's full licence set rather than patching it (`chiliCalOrg` and `handoff` are required in the payload), so read the current set with `user-find` and send it back with the additions, or you will silently strip licences. A downgrade takes effect immediately, and the call fails if the org has no free seats: if it does, that is a seat-count conversation for the CSM, not a retry.
@@ -126,11 +123,11 @@ Where a route is not in this table, link the list page rather than guessing a de
 
 Per-client setup steps are in help article 50430350863635. Give the customer that link rather than reciting the steps. What the article will not tell you:
 
-- **Prefer OAuth where the client supports it and the person is an Admin**: no stored key, and it grants everything the account can use. Claude Desktop, claude.ai and ChatGPT are OAuth only; Cursor, Codex and Gemini CLI are API key only; Claude Code does both. A non-Admin has no OAuth path on any client, and a key's scopes cap what can be built.
+- **Prefer OAuth where the client supports it and the person is a Super Admin or Workspace Admin**: no stored key, and it grants everything that role can use. Claude Desktop, claude.ai and ChatGPT are OAuth only; Cursor, Codex and Gemini CLI are API key only; Claude Code does both. Other users have no OAuth path yet, and a key's scopes cap what can be built.
 - Every MCP tool returns typed structured output (`outputSchema` + `structuredContent`).
 - **Gemini needs `X-MCP-Schema-Dialect: gemini`.** Without the header, rules, distributions, routers, meeting types and Handoff fail to load, and one failed tool takes the whole list down; simple tools still answer, so it looks connected. Same requirement for the Gen AI SDK, ADK and Gemini Enterprise. Gemini's web and mobile apps and Gems do not currently accept custom MCP servers, so Gemini users go through the CLI.
 - **ChatGPT**: the MCP connects as a plugin (Plugins - + - Server URL + OAuth), which reaches every tool the account can use; scope it down with an API-key client instead if that is too broad. Custom GPTs are a different mechanism, calling the REST API through GPT Actions rather than this server.
-- Limits: OAuth is Admin-only on paid accounts; some Claude accounts need Owner approval before a connector can be used; writes require approval; all calls are org-scoped; distribution weight adjustments are additive not absolute (a +50 on a weight of 100 gives 150).
+- Limits: OAuth is Super Admin and Workspace Admin only, on paid accounts; some Claude accounts need Owner approval before a connector can be used; writes require approval; all calls are org-scoped; distribution weight adjustments are additive not absolute (a +50 on a weight of 100 gives 150).
 
 ## Typed errors
 
@@ -141,7 +138,7 @@ What a failure code means and what to do about it. Check here before hypothesisi
 | Invalid `dataField` | 400 | The field does not exist. Use a standard default or a real UUID; never invent one. |
 | Missing `teamId` on an ownership rule | 400 | `teamId` is required. An ownership rule without a team can never match. |
 | Missing `ownership` on an `OwnershipCondition` | 400 `OwnershipConditionMissingReference` | Every OwnershipCondition needs `{source, object, field}`, e.g. `{source: "SF", object: "Account", field: "OwnerId"}`. Send it even where the schema shows it as optional. |
-| Publish failure | 422 | The router is saved as an **unpublished draft**, so nothing is live. **Do not retry the create**: each retry mints another draft. Fix the cause, then delete the leftover draft in the Concierge app. |
+| Publish failure on a router create | 422 | **Nothing is left behind.** Concierge, Handoff and Distro creates are all-or-nothing: a rejected publish deletes the router again and the 422 carries the backend reason. Fix the cause and retry. |
 | `RouterWorkspaceNotManageable` | 4xx | The workspace is not a team workspace, or this credential cannot manage it. |
 | Rule revision conflict | 409 | Re-fetch with `rule-list` and retry that one rule. Revisions go stale fast. |
 | `DecodingFailure at .x.y` | 400 | Input validation, rejected before anything was created. Nothing left behind, safe to retry. Often a missing `type` discriminator on a union branch: **`type` equals the variant's schema title**; set it explicitly on every union branch. |
@@ -165,6 +162,8 @@ Mirrors Chili Piper's official Admin Setup order (help article 37194718584211, "
 **Before each step, search the live tool list.** Build it over the MCP where a tool exists. Guide the in-app path only where your search comes back empty, and say that is what happened. Do not carry an assumption from one session into the next.
 
 Most of what you build lands **inside a workspace**: teams, rules, distributions, meeting types, routers, links. The **Command Center** layer above it (integrations, users and licences, workspaces) has historically needed a person, which is why steps 0 to 2 below lean manual while steps 5 onwards are tool calls. Search before you assume that still holds for any given step.
+
+On a Workspace Admin session, steps 3 and 4 (data fields, inviting users, licences) are Super Admin only, so they become a handoff: name them early, since an unlicensed operator blocks testing.
 
 Steps 1 to 5 are built once and serve every product. Steps 6 and 7 are per-product, and they are the loop: after verifying one, ask which motion is next and run them again.
 

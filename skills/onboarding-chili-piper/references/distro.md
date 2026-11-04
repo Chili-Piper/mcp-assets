@@ -16,7 +16,7 @@ Three rules that stop a Distro build and are not obvious from the Concierge expe
 - **Every route and the catch-all needs at least one action.** A row that assigns a distribution but carries no action fails to publish. The distribution decides *who*; the actions decide *what happens to them*.
 - **`trigger.evaluation` is the entry gate, and it is the only way to not route something.** A ruleId whose failures are dropped before the matrix runs. With a mandatory catch-all, records that fail it are the only ones that go nowhere. This is the most important structural idea in a Distro build: disqualification happens at the entrance, not at the end.
 
-The reassuring half: **create is all-or-nothing.** Unlike a Concierge 422, a failed Distro create leaves nothing behind, so there is no orphan to hunt and a retry is safe once the cause is fixed.
+The reassuring half: **create is all-or-nothing**, as on Concierge and Handoff. A failed create leaves nothing behind, so a retry is safe once the cause is fixed.
 
 ## Build
 
@@ -41,7 +41,7 @@ Routers can be created inactive and activated separately (`distro-router-activat
 
 **There is no Distro equivalent of `concierge-route-by-slug`.** Concierge can be verified by running the router against a synthetic lead; Distro cannot, so verification here is a config read-back plus Preview Mode in the app. Say that rather than implying the same standard of proof: it is an honest asymmetry, and a customer who watched the Concierge router get tested will expect the same.
 
-**Read the trigger back with `distro-list-routers`, not `distro-router-get`.** `distro-router-get` and both the create and update responses omit `trigger` entirely: object type, event types, and `evaluation`, which is the entry gate and the only way this product declines to route something. `distro-list-routers` carries it, but it takes **no arguments at all** (no router id, no workspace filter), so confirming one trigger means listing every router in the org. On a mature tenant that is a large read: pull it once, find your router by id, and do not repeat it per asset.
+**Read the trigger back with `distro-router-get`.** It returns `trigger` (object type, event types, and `evaluation`, which is the entry gate and the only way this product declines to route something) along with status and routing. Read it back rather than trusting the create response.
 
 **A read-back can look lossy without anything being wrong.** A router containing app-only nodes reads back as `routing: {known: true, representable: false, rows: [{ruleId, outcome: {kind: "side-effect", type: "Unrepresentable"}}], catchAll: null}`. That is a reporting limit, not data loss. `distro-router-update` is an overlay matched by `ruleId`, and it preserves matchers, SLAs, campaign addition, lead-to-contact conversion, send-to-routers, duplicate matching and any app-only actions on that route. Say both halves if a customer sees it: the config is intact, the API just cannot render those nodes.
 

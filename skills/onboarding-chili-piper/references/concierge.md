@@ -6,9 +6,9 @@ Inbound form routing. Read `shared-assets.md` first: teams, rules, distributions
 
 **Gate before `concierge-router-create`:** is the mapping table filled (field names, submitted values, CRM targets)? Do you have a URL for **every** Redirect, including the catch-all, from the customer rather than a placeholder? Is the catch-all outcome one they chose? Does every Schedule path carry the `crmActions` the plan agreed, including record creation for net-new and the ownership update if they asked for it? The create publishes live, so there is no draft to fix afterwards.
 
-`concierge-router-create` publishes live in one step. **Concierge and Handoff routers cannot be created inactive**, so a successful create is live immediately. (A publish that fails is the exception: it leaves an unpublished draft behind; see Verify.) Distro is the exception: `distro-router-activate` / `-deactivate` let a Distro router be built inactive and reviewed before it fires on live records.
+`concierge-router-create` publishes live in one step. **Concierge and Handoff routers cannot be created inactive**, so a successful create is live immediately. A create that fails to publish leaves nothing behind: the router is deleted again and a 422 names the reason, so fix it and retry. Distro is the exception: `distro-router-activate` / `-deactivate` let a Distro router be built inactive and reviewed before it fires on live records.
 
-In the app a router is a flow of nodes; the MCP exposes it flattened, as an ordered `routing` matrix plus trigger config. For exact field shapes on `routing`, `assignment`, `timeout`, `crmActions` and the four trigger kinds (`form`, `thirdPartyForm`, `inAppButton`, `routerLink`), read the live schema with `describe-tools` on `concierge-router-create` rather than working from memory. Describe it on its own, never batched with the router list or log tools, which are very large to describe (`build-patterns.md` § Reading the account). The gotchas the schema will not warn you about:
+In the app a router is a flow of nodes; the MCP exposes it flattened, as an ordered `routing` matrix plus trigger config. For exact field shapes on `routing`, `assignment`, `timeout`, `crmActions` and the four trigger kinds (`form`, `thirdPartyForm`, `inAppButton`, `routerLink`), read the live schema with `describe-tools` on `concierge-router-create` rather than working from memory. Describe it on its own with `includeOutputSchema: false`; even input-only it is large (`build-patterns.md` § Reading the account). The gotchas the schema will not warn you about:
 
 - **Use only the CRM action family matching the connected CRM.** The schema exposes both Salesforce and HubSpot families and will not stop you choosing wrong (`build-patterns.md` § One CRM).
 - **`thirdPartyForm` and `form` are mutually exclusive**, and writing one onto a router configured for the other converts it. Never send both.
@@ -17,6 +17,7 @@ In the app a router is a flow of nodes; the MCP exposes it flattened, as an orde
 - **`hidden` on a form field is a prefilled value**, not a show/hide flag.
 - Every trigger kind must include `PersonEmail`, and a `dataField` that does not exist is rejected with a 400.
 - `ruleId` is required on every row. An always-match route is the `catchAll`; a router with neither rows nor a catchAll is rejected.
+- **An ownership path is an ownership rule plus `assignment: {type: "Owner"}`.** A row's path type follows its rule, so that row books the record owner the rule found. `Owner` on a row whose rule is not an ownership rule, or on the catch-all, is a 400. Read it back with `concierge-router-get`: the row shows `owner: true`. A router built over the MCP before November 2026 may have saved an ownership row as a plain path that books the round robin instead, so read back any inherited router before relying on it.
 - Supplying no trigger at all auto-generates a minimal email-only Chili webform.
 
 The customer's form platform being HubSpot or Marketo says nothing about their CRM. A HubSpot form routes into a Salesforce-connected org with no HubSpot integration at all.
@@ -134,7 +135,7 @@ Two HubSpot gotchas that stop the calendar appearing even with a correct snippet
 
 ## Verify
 
-**Run the router rather than re-reading it.** `concierge-route-by-slug` takes a slug and a lead, evaluates the rules and returns the resolved assignment, which proves the matrix end to end without waiting for real traffic. Send one lead per segment plus one that should be disqualified, and read `distributionIds` / `assignments` against what you intended. A disqualified lead comes back `schedulingAllowed: false` with no distribution.
+**Run the router rather than re-reading it.** `concierge-route-by-slug` takes a slug and a lead, evaluates the rules and returns the resolved assignment, which proves the matrix end to end without waiting for real traffic. Send one lead per segment plus one that should be disqualified, and read `distributionIds` / `assignments` against what you intended. A disqualified lead comes back `schedulingAllowed: false` with no distribution. For an ownership row, send the email of a CRM record whose owner you know and check the assignee is that owner.
 
 Two things decide whether that test is worth anything:
 
@@ -142,8 +143,7 @@ Two things decide whether that test is worth anything:
 - **An interval is necessary and not sufficient, because a Flexible pool fails loudly only when it fails completely.** If **every** host lacks a calendar you get a hard error naming the userIds. If **some** do, they are silently dropped from availability and the call returns `schedulingAllowed: true`, a full slot list, and an empty `failures` object. The router reports healthy while routing to a subset, and a weighted pool can be routing to nobody. So read the returned attendees against the pool roster and check the count, rather than trusting a green result: a pool of six answering with three bookable hosts is a finding, not a pass.
 - **Only supply values the form genuinely sends.** You are filling in the `form` map yourself, so a rule that reads a field the customer's form does not populate will match perfectly in your test and never fire in production. If the mapping gate left a field unconfirmed, that segment is untested no matter what the call returns, and saying so is the honest report.
 
-Then check Concierge logs and the CRM (including Booking Status for no-book leads). `concierge-logs` and `concierge-list-routers` carry very large schemas, so read `schemaTokens` before describing them.
-
-**If `describe-tools` on `concierge-router-create` is too large for your client.** Where the client saves the payload to a file, read only the tool's `description` and `inputSchema.properties` from it. Where it does not, build from the `routing`, outcome and trigger shapes documented above, and expect to correct a field name on the first 400. Remember that a failed publish leaves an unpublished draft and a retry mints a second one, so fix or delete the leftover in the Concierge app rather than retrying.
+Then check Concierge logs and the CRM (including Booking Status for no-book leads).
+**If `describe-tools` on `concierge-router-create` is too large for your client.** Where the client saves the payload to a file, read only the tool's `description` and `inputSchema.properties` from it. Where it does not, build from the `routing`, outcome and trigger shapes documented above, and expect to correct a field name on the first 400. A failed create leaves nothing behind, so a corrected retry is safe.
 
 **Did not fire on submit:** check the snippet is actually live (view source); check field mapping; check the trigger and routing conditions; check Spam Checker did not disqualify.

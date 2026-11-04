@@ -7,7 +7,7 @@ What goes on the Phase 4 handoff list, and how to route a customer to help.
 A list, as who / what / why, of anything this session could not do:
 
 - **Write-scoped API key** if the session was read only (an Admin generates it at `/fire/admin/integrations/credentials/access-tokens`).
-- **OAuth enablement** if they want browser login (Admin only, enabled per tenant by Chili Piper).
+- **A Super Admin** for anything tenant-wide when the session is a Workspace Admin: inviting users, assigning licences, mapping data fields. List the exact users, licences and fields.
 - **End-user training** with their CSM: each rep connects their own calendar and meeting location, sets availability, and installs the ChiliCal Co-Pilot extension. This is what turns "0 calendars connected" into real availability.
 - **Tier upgrade** for any use case the org's tier does not cover (`chilipiper.com/pricing`), and a **licence check** only where the tier could not be read (`account-baseline.md`).
 - **In-app setup** for anything you could not build, with a deep link and where it lives. **In the workspace:** Orchestrator journeys, Meeting Prep briefs, Spam Checker scoring. **In Command Center:** workspaces, enrichment providers, integrations, users and licences.
