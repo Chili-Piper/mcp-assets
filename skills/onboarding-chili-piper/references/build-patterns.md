@@ -21,7 +21,7 @@ Two failure modes, same cause: fetching everything when you needed a number or a
 **Responses.** `distribution-list-put` and `rule-list` both default to `pageSize` 200. On a tenant with history that response can be too large to return. Both take filters, so use them:
 
 - `distribution-list-put`: `workspaceIds[]`, `pagination {page, pageSize}`, `name`, `assignmentType`.
-- `rule-list`: `pagination`, `filter.workspaceId`, `filter.name`, `filter.type[]`, `filter.ruleBuilderVersion` (required).
+- `rule-list`: `pagination`, `filter.workspaceId`, `filter.name`, `filter.type[]`. There is no `ruleBuilderVersion` filter; sending one is rejected by clients that validate inputs.
 
 In Phase 0 you want **counts, not bodies**. `rule-list` returns `total`, so `pageSize: 1` gives you the count for free. `distribution-list-put` returns only `items` with no `total`, so probe with a small page rather than assuming a count is available. Once the target workspace is known, scope every subsequent read to it and fetch bodies only for what you are about to reuse.
 

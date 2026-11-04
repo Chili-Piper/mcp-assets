@@ -10,6 +10,7 @@ Inbound form routing. Read `shared-assets.md` first: teams, rules, distributions
 
 In the app a router is a flow of nodes; the MCP exposes it flattened, as an ordered `routing` matrix plus trigger config. For exact field shapes on `routing`, `assignment`, `timeout`, `crmActions` and the four trigger kinds (`form`, `thirdPartyForm`, `inAppButton`, `routerLink`), read the live schema with `describe-tools` on `concierge-router-create` rather than working from memory. Describe it on its own with `includeOutputSchema: false`; even input-only it is large (`build-patterns.md` § Reading the account). The gotchas the schema will not warn you about:
 
+- **An update replaces the rows on a router built over the MCP.** Where `concierge-router-get` shows `routing.representable: true`, `routes` on `concierge-router-update` is the full row set: send every row, because one you leave out is deleted. On an app-built router (`representable: false`) rows are overlaid by `ruleId` and the rest are kept.
 - **Use only the CRM action family matching the connected CRM.** The schema exposes both Salesforce and HubSpot families and will not stop you choosing wrong (`build-patterns.md` § One CRM).
 - **`thirdPartyForm` and `form` are mutually exclusive**, and writing one onto a router configured for the other converts it. Never send both.
 - **`formFieldName` is the name the external form submits, not the label the visitor sees.** HubSpot has two shapes and which one you get depends on the embed: the older form payload looks like `0-1/email`, while the current `marketing.js` embed passes `submissionValues` keyed by plain property name (`email`, `firstname`, `country`). Check which snippet is on the page before writing the mapping. Read the submitted names from the customer's form platform; Pardot and HubSpot name them differently and that is where mapping mistakes come from. The same trap applies one level down, to a picklist's **option values**: a `<select>` option labelled `51-100` may carry `value="50-100"`, and Chili Piper receives the value, so a rule written from the label never matches and nothing errors. Ask the customer to paste the field's HTML and both problems disappear at once.
@@ -85,7 +86,7 @@ Worth raising in the same breath, since it is one conversation:
 
 **Use only the family matching the connected CRM.** The schema exposes both and will not stop you picking wrong (`build-patterns.md` § One CRM).
 
-**Do not build `ConvertLead`.** Lead conversion is a Distro capability, and a Convert Lead action on a Concierge router does not appear in the flow builder, so an admin would have no way to see or maintain it. So a customer who asks about converting leads on booking wants the Distro Lead Conversion node instead (`distro.md`), and the honest answer names that rather than shipping a step nobody can find. If a router you inherit already has one, it can be read and removed through `concierge-router-get` / `-update`.
+**Do not build `ConvertLead`.** Lead conversion is a Distro capability: Concierge does not execute it, and the API rejects adding it with a 400. A customer who asks about converting leads on booking wants Distro lead conversion instead (`distro.md`). If a router you inherit already has one, it can be read and removed through `concierge-router-get` / `-update`.
 
 ## Data timing
 
