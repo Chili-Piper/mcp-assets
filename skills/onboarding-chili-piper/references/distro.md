@@ -35,7 +35,7 @@ Routers can be created inactive and activated separately (`distro-router-activat
 
 **Lead conversion is an in-app node.** The Lead Conversion node is real, it is what a customer means when they ask about converting on routing, and it has its own settings including which Lead Status performs the conversion. It is not one of the actions the API exposes, so it is a handover: build the rest, give them the router link, and say it is a couple of minutes in the app. The audit trail is the `Distro_Converted_CP` checkbox the Distro for Salesforce package adds to the Contact, which auto-checks when Distro converts a Lead and therefore needs the package installed (help 34424043095443).
 
-**Naming a Record distribution:** a router row needs a `distributionId` even where the row routes by ownership and the distribution only supplies the team to resolve the owner against. So one distribution often serves two rows that mean different things, and a name describing either path fits the other badly. Name it after the team rather than the path (`Accounts - All Reps`, not `Unowned Accounts`).
+**Ownership rows use `assignee: {type: "Owner"}`**, which keeps the record's current owner, so they need no distribution. The catch-all is the exception: it takes only a `distributionId`. Name a Record distribution after the team rather than the path (`Accounts - All Reps`, not `Unowned Accounts`), since the catch-all and several rows often share it.
 
 ## Verify
 

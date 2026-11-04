@@ -7,8 +7,8 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ### Changed
 - **`onboarding-chili-piper` 0.15.0:** follows the late-October Edge/MCP changes. Router creates
   are all-or-nothing, so a failed publish is fixed and retried rather than hunted as a draft.
-  Concierge ownership paths use the `Owner` assignment; Handoff ownership rows are handed to the
-  flow builder until Handoff gets one. Workspace Admin OAuth sessions build only in their own
+  Concierge and Distro ownership rows use the `Owner` assignment; Handoff, which has none, builds
+  the row and proves it with `handoff-init` before handing it to the flow builder. Super Admin OAuth stays preferred; Workspace Admin OAuth sessions build only in their own
   workspaces and hand users, licences and data fields to a Super Admin. Schemas are described
   with `includeOutputSchema: false`, Distro triggers are read with `distro-router-get`, and the
   `workspace-list` / `data-field-list` filters are used. Removes the `routing-data` reference loop

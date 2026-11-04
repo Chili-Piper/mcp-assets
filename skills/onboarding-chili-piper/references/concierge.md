@@ -17,7 +17,7 @@ In the app a router is a flow of nodes; the MCP exposes it flattened, as an orde
 - **`hidden` on a form field is a prefilled value**, not a show/hide flag.
 - Every trigger kind must include `PersonEmail`, and a `dataField` that does not exist is rejected with a 400.
 - `ruleId` is required on every row. An always-match route is the `catchAll`; a router with neither rows nor a catchAll is rejected.
-- **An ownership path is an ownership rule plus `assignment: {type: "Owner"}`.** A row's path type follows its rule, so that row books the record owner the rule found. `Owner` on a row whose rule is not an ownership rule, or on the catch-all, is a 400. Read it back with `concierge-router-get`: the row shows `owner: true`. A router built over the MCP before November 2026 may have saved an ownership row as a plain path that books the round robin instead, so read back any inherited router before relying on it.
+- **An ownership path is an ownership rule plus `assignment: {type: "Owner"}`.** A row's path type follows its rule, so that row books the record owner the rule found. `Owner` on a row whose rule is not an ownership rule, or on the catch-all, is a 400. Read any router back with `concierge-router-get`, including one you inherit, and confirm each ownership row assigns to the owner before relying on it.
 - Supplying no trigger at all auto-generates a minimal email-only Chili webform.
 
 The customer's form platform being HubSpot or Marketo says nothing about their CRM. A HubSpot form routes into a Salesforce-connected org with no HubSpot integration at all.
@@ -63,7 +63,7 @@ Whichever mix you build, set the catch-all deliberately. The API allows omitting
 
 `crmActions` on a Schedule outcome is an ordered chain that runs after the booking. It is the only place these behaviours can be set, so an omitted chain is a decision, not a default.
 
-**A publish can fail on the contents of a `crmActions` chain without saying which action.** `Failed to publish draft` can come back while the draft reads back looking correct. Not every action is valid on every outcome type: the assignment is the required part of a Schedule outcome, and an action that is merely useful can still be the thing being rejected. So when a publish fails and the draft looks right, **narrow it by removing the chain and adding it back a piece at a time** rather than reasoning about what should be allowed. That usually finds it in a couple of calls.
+**A publish can fail on the contents of a `crmActions` chain without saying which action.** `Failed to publish draft` can come back without naming the action. Not every action is valid on every outcome type: the assignment is the required part of a Schedule outcome, and an action that is merely useful can still be the thing being rejected. So when a publish fails and the chain looks right, **narrow it by removing the chain and adding it back a piece at a time** rather than reasoning about what should be allowed. That usually finds it in a couple of calls.
 
 **Logging the meeting on the record is a `crmAction`, so build it.** This is the Create Event node in the app (help 28522554434323), and it writes an activity for every scheduled meeting.
 
@@ -144,6 +144,7 @@ Two things decide whether that test is worth anything:
 - **Only supply values the form genuinely sends.** You are filling in the `form` map yourself, so a rule that reads a field the customer's form does not populate will match perfectly in your test and never fire in production. If the mapping gate left a field unconfirmed, that segment is untested no matter what the call returns, and saying so is the honest report.
 
 Then check Concierge logs and the CRM (including Booking Status for no-book leads).
+
 **If `describe-tools` on `concierge-router-create` is too large for your client.** Where the client saves the payload to a file, read only the tool's `description` and `inputSchema.properties` from it. Where it does not, build from the `routing`, outcome and trigger shapes documented above, and expect to correct a field name on the first 400. A failed create leaves nothing behind, so a corrected retry is safe.
 
 **Did not fire on submit:** check the snippet is actually live (view source); check field mapping; check the trigger and routing conditions; check Spam Checker did not disqualify.

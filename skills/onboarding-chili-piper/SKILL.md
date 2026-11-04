@@ -72,6 +72,7 @@ Connection guide: help article [50430350863635](https://help.chilipiper.com/hc/e
 |-------|:--------:|---------|------------------|
 | `workspace` | no | read in Phase 0 | Where every asset is built. Used directly if the tenant has one workspace, asked otherwise |
 | `familiarity` | no | asked first | How much each asset is explained as it is built |
+
 ## Operating principles
 
 1. **Self-serve.** The person running this is the customer, often not an Admin. Detect access in Phase 0, adapt to it, and never promise a build this session cannot perform. A Workspace Admin builds only in their own workspaces and hands users, licences and data fields to a Super Admin.
@@ -87,7 +88,7 @@ Connection guide: help article [50430350863635](https://help.chilipiper.com/hc/e
 
 ### Phase 0 - Connect and baseline (read only)
 
-1. **If the MCP is not connected** (no credential, or `health-ping` fails): the server URL is `https://fire.chilipiper.com/api/fire-edge/v1/org/mcp` (HTTP transport) for every client. Ask which client they are in → `references/build-patterns.md` § Access and prerequisites, and § MCP (connecting an AI assistant). Name two things early: **Gemini CLI needs the `X-MCP-Schema-Dialect: gemini` header**, and **some Claude accounts need Owner approval** for connectors, which is a Claude setting. Prefer OAuth for a Super Admin or Workspace Admin; otherwise an API key scoped to cover the whole build.
+1. **If the MCP is not connected** (no credential, or `health-ping` fails): the server URL is `https://fire.chilipiper.com/api/fire-edge/v1/org/mcp` (HTTP transport) for every client. Ask which client they are in → `references/build-patterns.md` § Access and prerequisites, and § MCP (connecting an AI assistant). Name two things early: **Gemini CLI needs the `X-MCP-Schema-Dialect: gemini` header**, and **some Claude accounts need Owner approval** for connectors, which is a Claude setting. Prefer a Super Admin's OAuth, or an API key scoped to cover the whole build. A Workspace Admin's OAuth works too, but cannot add users, assign licences or map data fields.
 2. **Read the account as one parallel batch, counting rather than fetching** → `references/account-baseline.md` § What to read.
 3. **State back what you found** (tenant, licensed products, CRM, write capability, existing structure) and each setup prerequisite as ready / not ready / not needed yet: tenant login, CRM connected, a connected calendar to test against, test page access for Concierge, the Salesforce package. Say which ones block today's build.
 
@@ -110,6 +111,7 @@ Connection guide: help article [50430350863635](https://help.chilipiper.com/hc/e
 1. **Run the plan preflight** (below). Any blank goes back to the customer.
 2. **Write the Onboarding Plan** → `references/onboarding-plan-template.md`. Size shared assets against every motion → `references/shared-assets.md` § What shares with what. Include the standing defaults → `references/standing-defaults.md` § Built in this session, § Handed over as links.
 3. **Checkpoint:** present the plan and get explicit confirmation.
+
 ### Phase 3 - Build (write-capable session)
 
 - **The session cannot write:** go to Phase 4 with the plan, plus the ask for a write-scoped key.
@@ -166,7 +168,7 @@ Two stops, matching `human_decision_point`:
 
 ## Executor dispatch
 
-Where the other skills in this plugin are installed, prefer them over raw calls:
+Where the other skills in this plugin are installed, prefer them over raw calls. Where one of them disagrees with this skill or with the live tool description, the live description wins.
 
 | Need | Skill |
 |------|-------|
