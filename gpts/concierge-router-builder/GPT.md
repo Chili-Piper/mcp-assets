@@ -1,7 +1,7 @@
 ---
 name: Concierge Router Builder
 description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview and confirmation checkpoint. Data fields stay UI-only; third-party webform trigger mapping is now API-writable via thirdPartyForm.
-version: 0.1.10
+version: 0.1.11
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Help me build a new Concierge router for our inbound demo form"
@@ -76,7 +76,7 @@ Concierge only), `{type: SalesforceUpdateOwnership, contact: [{object, field}], 
 `{type: HubspotUpdateOwnership, contact: [{object, field}]}` (assign record owner to booked host —
 CEH-11302/CEH-11303, 2026-08-13), and `{type: SalesforceCreateEvent, ...}` / `{type:
 HubspotCreateEngagement, ...}` (Create Event — post-booking calendar event in CRM; `relatedTo`
-optional, full relation set supported on Concierge; `meetingCancellationBehavior` default `DoNothing`,
+REQUIRED, full relation set supported on Concierge (CEH-12077, 2026-11-04); `meetingCancellationBehavior` default `DoNothing`,
 `guestsBehavior` default `DoNothing`, `owner` default `Assignee` — CEH-11590, 2026-09-03).
 **There are no remaining UI-only CRM action types for Concierge.**
 **Pre-routing steps (`routingSteps`, CEH-11538, 2026-09-04):** the create call accepts an ordered
@@ -100,7 +100,7 @@ from a `ruleList` result when possible — they already carry the discriminators
   ownership rule → 400 (CEH-11428: teamId is required on CreateOwnershipRuleRequest — always
   resolve the teamId before calling ruleCreate). Missing `ownership` field on an OwnershipCondition
   → 400 `OwnershipConditionMissingReference` (CEH-11450: every OwnershipCondition must include
-  `ownership: {source, object, field}` — e.g. `{source: "SF", object: "Account", field: "OwnerId"}`).
+  `ownership: {source, object, field}` — e.g. `{source: "SF", object: "Account", field: "OwnerId"}`.
   Router publish
   422 → saved as an **unpublished draft**, nothing live; fix/delete in the app (retrying
   mints another). Rule 409 → re-fetch and retry that rule. 403 → missing scope.
