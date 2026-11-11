@@ -23,7 +23,9 @@ Offer the first four the account can use, in that order. Drop what the tier does
 Two separate questions, using their CRM's own object names. First:
 
 Salesforce:
-> If the person who books, or their company, already exists in Salesforce, we can send them to whoever owns that record. Which of these should we respect: the Lead owner, the Contact owner, the Account owner?
+> If the person who books, or their company, already exists in Salesforce, we can send them to whoever owns that record. Which of these should we respect: the Lead owner, the Contact owner, the Account owner, the owner of the Account a new Lead is matched to?
+
+The last one is Matched Account, Chili Piper's Lead to Account match. It only resolves when L2A matching is on in the Matching Hub (help 14008379577491), so check that before offering it as working.
 
 HubSpot:
 > If the person who books, or their company, already exists in HubSpot, we can send them to whoever owns that record. Which should we respect: the Contact owner, the Company owner?
@@ -32,6 +34,8 @@ Then, only if they named more than one:
 > When more than one of those applies to the same person, which wins?
 
 Offer their own selection back in a couple of orders and say any order is fine. Ask whether anything else must be true alongside ownership, but do not hunt for it.
+
+Their answer is the order of one ownership rule, not a set of rules (`shared-assets.md` § Rules). Play it back that way: "One rule checks Account, then Contact, then Matched Account, then Lead, and routes to the first owner it finds."
 
 Ownership resolves on the CRM user's email, so unmapped CRM users are not a blocker (`shared-assets.md` § Rules).
 
