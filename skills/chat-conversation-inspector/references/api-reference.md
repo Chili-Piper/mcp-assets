@@ -17,12 +17,12 @@ Items are `[{id, name, emoji, logo, metadata, nrOfUsers}]`. The identifier is **
 
 | Param | Required | Notes |
 |-------|:--------:|-------|
-| `workspaceId` | ✅ | From `workspace-list` `id` |
+| `workspaceId` | — | From `workspace-list` `id`; **now optional** (CEH-12091, 2026-11-11) — omit to return tenant-wide logs, or pass to filter to one workspace |
 | `start` | ✅ | ISO-8601 date-time, e.g. `2026-06-25T00:00:00.000Z` |
 | `end` | ✅ | ISO-8601 date-time |
 | `playbookId` | — | Playbook UUID(s); **repeatable** (array). Omit → all playbooks in the workspace |
 | `guestEmail` | — | Server-side narrow to one guest — **case-insensitive exact match** (DISTRO-4612) |
-| `guestId` | — | Exact match on the guest UUID |
+| `guestId` | — | Exact match on the guest's `GuestId` — a plain opaque string (not necessarily a UUID since CEH-12091, 2026-11-11); stable for existing UUID values |
 | `ruleId` | — | Exact match on any routing rule executed in the session; **stable across rule renames** |
 | `ruleName` | — | Exact match on a routing rule's display name (breaks if the rule is renamed — prefer `ruleId`) |
 | `page` | — | **0-indexed** (first page is `0`); default `0` |
@@ -34,7 +34,7 @@ Response envelope: `{results: [ChatConversationLog], total, page, pageSize}`. Pa
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `guestId` | uuid | Always present |
+| `guestId` | string | Always present (plain opaque string — not necessarily UUID since CEH-12091, 2026-11-11) |
 | `sessionId` | integer | Always present (int64, not a string) |
 | `playbookId` | uuid | The playbook (chat analog of a router) that ran |
 | `guestEmail` | string? | Absent when the guest never identified themselves |
@@ -57,7 +57,7 @@ Response envelope: `{results: [ChatConversationLog], total, page, pageSize}`. Pa
 - **Empty results are a valid answer, not an error.** Since 2026-07-03 (DISTRO-4608) a workspace whose chat backend has no sessions returns an **empty page** (`{results: [], total: 0}`) instead of failing the call. Report "no chat conversations in this window", never a fetch failure.
 - **Rule attribution can be absent.** `ruleId`/`ruleName` are both absent when no routing rule executed in the session — group those conversations as "(no rule matched)" in rule breakdowns.
 - **Booked meetings carry no `meetingId`.** `meetings[]` items are only `{assigneeId, origin, scheduledAt}` — chat-platform's data model has no meeting ID. To correlate with meeting-level skills (e.g. meeting-inspector), match on assignee + `scheduledAt`; say so explicitly in output.
-- **Assignee is singular.** Early drafts of this API described an `assignees` array; the live field is `conversationAssigneeId` (one user ID, optional). Resolve display names via `user-find-by-ids` only when the human asks for names.
+- **Assignee roster is `assignments[]`.** The primary assignee is `conversationAssigneeId` (one user ID, retained for backwards compatibility). The full roster — every conversation and meeting assignee under double round-robin — is in `assignments[]` (`{assigneeId, method, assignmentType}`). Added CEH-11625 (2026-09-08). Resolve display names via `user-find-by-ids` only when the human asks for names.
 - **`role` enum is exactly `Bot` and `Guest`** — rep messages sent after `repJoined` also appear in the transcript; don't invent a `Rep` role.
 - **`sessionId` is an integer** — don't format it as a UUID.
 
@@ -67,5 +67,5 @@ Response envelope: `{results: [ChatConversationLog], total, page, pageSize}`. Pa
 |-------|-------|
 | Time window per call | 30 days max (same validator as `concierge-logs`) — chunk longer ranges |
 | `pageSize` | 50 max |
-| Scope | One `workspaceId` per call |
+| Scope | `workspaceId` is optional — omit for tenant-wide, pass to filter to one workspace (CEH-12091, 2026-11-11) |
 | Permission | API key needs `logs.read` — a 403 means the key lacks it (fix: Admin Center → API Keys) |
