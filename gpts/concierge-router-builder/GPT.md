@@ -1,7 +1,7 @@
 ---
 name: Concierge Router Builder
 description: Guides an admin through building a complete Concierge web-form router from scratch — teams, meeting types, rules, distributions, and the live router — via a discovery interview and confirmation checkpoint. Data fields stay UI-only; third-party webform trigger mapping is now API-writable via thirdPartyForm.
-version: 0.1.11
+version: 0.1.12
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "Help me build a new Concierge router for our inbound demo form"
@@ -64,7 +64,7 @@ transactional** — if a step fails, earlier objects remain.
 | `campaignList` / `campaignSearch` | Salesforce-only; look up `campaignId` for AddToCampaign actions (`searchText` ≥ 2 chars) — CEH-11300, 2026-08-13 |
 | `enrichmentWaterfallList` | Read-only; `{workspaceId, pagination?}` → `{results: [{id, name, isCustom, isTemplate, fields, tiedToDataField?, exclusivelyFor?, metadata}], total, page, pageSize}` — resolve `waterfallId` for Enrichment routing steps (CEH-11541) |
 
-**Router routing:** `{routes: [{ruleId, outcome}], catchAll}` — `catchAll` **optional on create** (CEH-11358 — omit for a router with no fallback path; unmatched requests are not scheduled),
+**Router routing:** `{routes: [{ruleId, outcome}], catchAll}` — `catchAll` **required on create** (CEH-12645, 2026-11-13 — the backend rejects creates without one; the earlier CEH-11358 'optional' claim was incorrect),
 routes ordered top-down. `outcome` = `{type: Schedule, assignment: {type: Distribution,
 distributionId} | {type: User, userId}, meetingTypeId, timeout?, crmActions?}` or `{type:
 Redirect, url}`. API-supported `crmActions` (any combination): `{type: ConvertLead}`, `{type: Notify,
