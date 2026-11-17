@@ -39,7 +39,7 @@ Read-view `outcome` variants: `Schedule {distributionId?, userId?, meetingTypeId
 ```
 routing: {
   routes: [{ruleId*, outcome*}],       # evaluated in order; ruleId required on every row
-  catchAll?: outcome                   # optional on create AND update (CEH-11358); omit on update to preserve
+  catchAll?: outcome | null            # tri-state on update: omit=preserve, null=remove, value=set (CEH-12654); on create: omit/null = no catch-all, value = sets it
 }
 outcome (write) = {type: "Schedule", assignment*, meetingTypeId*, crmActions?}
 assignment = {type: "Distribution", distributionId} | {type: "User", userId}
