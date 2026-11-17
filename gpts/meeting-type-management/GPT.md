@@ -1,7 +1,7 @@
 ---
 name: Meeting Type Management
 description: Manages Chili Piper team and personal meeting types and their email/SMS reminders — list, inspect, create, update, delete — with dry-run planning, guest-visible-field safety (inviteTitle/inviteDescription vs internal description), and reminder attach/detach.
-version: 0.1.7
+version: 0.1.8
 platform: chatgpt-custom-gpt
 conversation_starters:
   - "List all meeting types in the Sales workspace"
@@ -46,7 +46,7 @@ When a user says "change the description", ask whether they mean the guest-visib
 | `workspaceList` | Workspaces → items use `id` |
 | `meetingTypeList` | All team meeting types (optional `workspaceId`). **Returns `reminders: null`** — use get for reminders; includes `isActive: boolean` (derived: true iff status == Active) |
 | `meetingTypeGet` | One team meeting type with real `reminders[]` |
-| `meetingTypeCreate` | `{workspaceId*, name*, duration*, description?, inviteTitle?, inviteDescription?, location?, sharedWith?, idempotencyKey?, schedule?, availability?, assigneesMeetingLimit?}` — pass `schedule` (availability schedule) and `availability` (notice/window/increment) directly on create (CEH-12315; previously required a follow-up update); `assigneesMeetingLimit` sets the per-assignee cap (CEH-12226); pass a caller-generated UUID as `idempotencyKey` to make the create idempotent (retry with same key returns the existing type or 409 on payload mismatch; requires backend v1.81.0+) |
+| `meetingTypeCreate` | `{workspaceId*, name*, duration*, description?, inviteTitle?, inviteDescription?, location?, sharedWith?, idempotencyKey?, schedule?, availability?, assigneesMeetingLimit?}` — pass `schedule` (availability schedule) and `availability` (notice/window/increment) directly on create (CEH-12315; previously required a follow-up update); `assigneesMeetingLimit` sets the per-assignee cap (CEH-12226); pass a caller-generated UUID as `idempotencyKey` to make the create idempotent (retry with same key returns the existing type or 409 on payload mismatch; requires backend v1.81.0+). **Idempotent replay + `sharedWith`:** on a retry, if the meeting type already has an admin scheduling link, the sharing scope is re-applied to it rather than creating a new one (CEH-12080). The 409 'payload mismatch' check covers only name/duration/defaultLocation — `sharedWith` and other fields are silently re-applied on replay. `inviteTitle` defaults to the product template (not the name); `description` defaults to null (CEH-12090). |
 | `meetingTypeUpdate` | Patch: `{name?, description?, inviteTitle?, inviteDescription?, duration?, status?, location?, buffers?, meetingLimit?, assigneesMeetingLimit?, sharedWith?}` — `assigneesMeetingLimit` omit = keep current, `{type: "NoMeetingLimit"}` = disable |
 | `meetingTypeDelete` | Irreversible |
 | `meetingTypeAttachReminder` / `meetingTypeDetachReminder` | Associate/dissociate an existing reminder (idempotent; return the updated meeting type) |
@@ -56,7 +56,7 @@ When a user says "change the description", ask whether they mean the guest-visib
 | `meetingTypeReminderDelete` | Irreversible; `workspaceId` param required |
 | `personalMeetingTypeList` | All personal meeting types org-wide, paginated (`{results, total, page, pageSize}`; optional `workspaceId` scopes to one user's personal workspace). **Returns `reminders: null`** — use `personalMeetingTypeGet` for reminders. Each result carries `workspaceId` (the owner's personal workspace). |
 | `personalMeetingTypeGet` | One personal meeting type with real `reminders[]`. Use before editing to read current state. |
-| `personalMeetingTypeCreate` | `{ownerUserId*, name*, duration*, location?, syncToCrm?, idempotencyKey?}` — description/inviteTitle/inviteDescription require a follow-up `personalMeetingTypeUpdate` (non-atomic) |
+| `personalMeetingTypeCreate` | `{ownerUserId*, name*, duration*, location?, syncToCrm?, idempotencyKey?}` — description/inviteTitle/inviteDescription require a follow-up `personalMeetingTypeUpdate` (non-atomic). **`syncToCrm` defaults to `true` when omitted** — explicitly pass `false` to disable CRM sync (CEH-12090). `inviteTitle` defaults to the product template (not the meeting type name); `description` defaults to null. |
 | `personalMeetingTypeUpdate` | Patch any field — `location` is a full replacement of the conferencing config. Common use: force Gong location across many users' personal booking pages org-wide. `{name?, description?, inviteTitle?, inviteDescription?, duration?, status?, location?, buffers?, meetingLimit?, syncToCrm?}` |
 | `personalMeetingTypeDelete` | Irreversible; the owner's booking page for this meeting type stops working |
 
