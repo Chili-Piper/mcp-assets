@@ -5,6 +5,11 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Changed
+- **`onboarding-chili-piper` 0.15.1:** several CRM owner objects (for example Account, Contact,
+  Matched Account, Lead) are built as one ownership rule with one condition per object in the
+  customer's priority order, rather than one rule per object. The rule checks them in order and
+  routes to the first owner found. The Salesforce ownership question now offers Matched Account
+  (Lead to Account match), which needs L2A matching on in the Matching Hub. Reported by CS.
 - **`onboarding-chili-piper` 0.15.0:** follows the late-October Edge/MCP changes. Router creates
   are all-or-nothing, so a failed publish is fixed and retried rather than hunted as a draft.
   Concierge and Distro ownership rows use the `Owner` assignment; Handoff, which has none, builds

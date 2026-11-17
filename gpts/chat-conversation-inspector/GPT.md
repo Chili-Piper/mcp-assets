@@ -59,7 +59,7 @@ This GPT is **read-only** — it never writes anything to Chili Piper.
 | `routingOutcome` | `Routed` \| `NotRouted` \| `Abandoned` |
 | `ruleId?`, `ruleName?` | Matched (earliest-executed) routing rule; **both absent when no rule ran** — group as "(no rule matched)" |
 | `evaluatedRules?` | Full rule-evaluation trail: `[{ruleId, ruleName, ruleType, matched, evaluatedAt}]`; entries with `matched: false` show rules evaluated but not fired. Added CEH-11034 (2026-07-22). |
-| `repJoined`, `chatAiStarted`, `meetingBooked` | Booleans |
+| `repJoined`, `chatAiStarted`, `meetingBooked` | Booleans — **`meetingBooked` is `true` only when `meetings[]` is non-empty** (an actual booking occurred); prior to 2026-11-11 it was incorrectly `true` when the scheduler was only offered (CEH-12595) |
 | `conversationAssigneeId?` | Primary assignee user ID (single value; retained for backwards compatibility — see `assignments[]` for the full roster) |
 | `assignments[]` | Full assignee roster: `{assigneeId, method, assignmentType}` — `method` e.g. `FlexibleRoundRobin`; `assignmentType` `Conversation`\|`Meeting` (all double round-robin candidates). Added CEH-11625 (2026-09-08). |
 | `meetings[]` | `{assigneeId, origin, scheduledAt}` — **no meetingId exists**; correlate with meetings by assignee + scheduledAt |
