@@ -105,7 +105,7 @@ Verify before presenting the plan:
 
 - [ ] `known` confirmed `true`; `routing.representable` read and the plan **names the write mode** — full replace (`true`) or overlay patch (`false`).
 - [ ] Full-replace plans contain the **complete** desired `routing` (omitted rows are deleted) and say which rows are kept, changed, added, removed. Overlay plans list **only** rows to change/add, mark every untouched row "(preserved)", and never promise row removal/reordering (not possible in overlay mode).
-- [ ] Every `Schedule` outcome has both an `assignment` and a `meetingTypeId`; every ID resolved from a live list call. For `UseAssignmentTable` assignments: only on route rows (not catchAll); `ruleId` must match the row's own `ruleId` (both resolved via `rule-list`).
+- [ ] Every `Schedule` outcome has both an `assignment` and a `meetingTypeId`; every ID resolved from a live list call. For `UseAssignmentTable` assignments: only on route rows (not catchAll); `ruleId` must match the row's own `ruleId` (both resolved via `rule-list`). For `Owner` assignments (CEH-12614): only on route rows (not catchAll); the row's rule must be an ownership rule (verify type via `rule-list`).
 - [ ] `catchAll` is optional on both create and update — always state in the plan whether a catch-all is included, preserved, or removed; on update, `catchAll` is tri-state: omit=preserve, null=remove, value=set.
 - [ ] The plan states in bold that changes go **live immediately** on apply.
 - [ ] Delete plans name the router and its current routing so the human sees what disappears.
