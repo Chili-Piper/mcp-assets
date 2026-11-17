@@ -1,7 +1,7 @@
 ---
 name: onboarding-chili-piper
 description: Guided self-serve Chili Piper onboarding. Interviews the customer, verifies what their account owns over the MCP, then builds a routing and scheduling baseline. Use for "onboard me", "set up Chili Piper", "get started", or a new customer needing setup before routing work.
-version: 0.15.0
+version: 0.15.1
 references:
   - account-baseline
   - build-loop
