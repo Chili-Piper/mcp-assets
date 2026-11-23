@@ -10,12 +10,14 @@ Maintained by Chili Piper. These are ready-to-use AI specialists — meeting dia
 
 > **Sponsored and maintained by Chili Piper.** This repository lives under the verified [`Chili-Piper`](https://github.com/Chili-Piper) GitHub organization.
 
+> 💻 **Also available as a CLI:** [`chili-piper-cli`](https://github.com/Chili-Piper/homebrew-tap) is a command-line client for the same Chili Piper API — a good fit for shell scripts, CI pipelines, and power users who prefer a terminal. Install with `brew install chili-piper/tap/chili-piper-cli` (macOS/Linux) or Scoop (Windows).
+
 ---
 
 ## What's in here
 
 | Folder | What it is |
-|--------|-----------|
+|--------|----------|
 | [`skills/`](skills/) | **Agent Skills for Claude and OpenAI Codex** — drop-in specialists that call the Chili Piper MCP. One job each, done well. |
 | [`gpts/`](gpts/) | **ChatGPT Custom GPTs** — the ChatGPT equivalent of each skill, with a GPT Actions schema. |
 | [`mcp-servers/chili-piper/`](mcp-servers/chili-piper/) | **MCP setup guide** — connect the Chili Piper MCP via API key or OAuth. |
