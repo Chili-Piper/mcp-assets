@@ -1,1 +1,244 @@
-IyBDaGlsaSBQaXBlciBTa2lsbHMKCioqT2ZmaWNpYWwsIGZpcnN0LXBhcnR5IFNraWxscyBhbmQgQ2hhdEdQVCBHUFRzIGZvciB0aGUgW0NoaWxpIFBpcGVyXShodHRwczovL2NoaWxpcGlwZXIuY29tKSBNQ1Agc2VydmVyLioqCgpNYWludGFpbmVkIGJ5IENoaWxpIFBpcGVyLiBUaGVzZSBhcmUgcmVhZHktdG8tdXNlIEFJIHNwZWNpYWxpc3RzIOKAlCBtZWV0aW5nIGRpYWdub3N0aWNzLCByb3V0aW5nIGF1ZGl0cywgdXNlciBvbmJvYXJkaW5nL29mZmJvYXJkaW5nLCBuby1zaG93IGFuYWx5c2lzLCBhbmQgbW9yZSDigJQgdGhhdCBydW4gYWdhaW5zdCB5b3VyIG93biBDaGlsaSBQaXBlciBhY2NvdW50IHRocm91Z2ggdGhlIG9mZmljaWFsIENoaWxpIFBpcGVyIE1DUC4KCioqVHdvIHBpZWNlcywgb25lIHdvcmtmbG93LioqIFRoZSBbQ2hpbGkgUGlwZXIgTUNQXShtY3Atc2VydmVycy9jaGlsaS1waXBlci8pIGlzIHRoZSAqY29ubmVjdGlvbiogaW50byB5b3VyIGFjY291bnQg4oCUIHNldCBpdCB1cCBvbmNlLiAqKlNraWxscyoqIGFyZSB0aGUgdmV0dGVkICpyZWNpcGVzKiB0aGF0IHVzZSBpdCB3ZWxsLiBDb25uZWN0IHRoZSBNQ1AsIGluc3RhbGwgdGhlIHNraWxscywgdGhlbiBqdXN0IGFzay4KCj4g8J+TmiAqKk9uIHRoZSBIZWxwIENlbnRlcjoqKiBbSG93IGRvIEkgY29ubmVjdCBDaGlsaSBQaXBlciB2aWEgTUNQP10oaHR0cHM6Ly9oZWxwLmNoaWxpcGlwZXIuY29tL2hjL2VuLXVzL2FydGljbGVzLzUwNDMwMzUwODYzNjM1LUhvdy1kby1JLWNvbm5lY3QtQ2hpbGktUGlwZXItdmlhLU1DUCkg4oCUIHBsdXMgdGhlIGNvbXBhbmlvbiAqKkNoaWxpIFBpcGVyIFNraWxscyAoQUkgcmVjaXBlcykqKiBhcnRpY2xlICoocHVibGlzaGluZyBzb29uKSouCgo+ICoqU3BvbnNvcmVkIGFuZCBtYWludGFpbmVkIGJ5IENoaWxpIFBpcGVyLioqIFRoaXMgcmVwb3NpdG9yeSBsaXZlcyB1bmRlciB0aGUgdmVyaWZpZWQgW2BDaGlsaS1QaXBlcmBdKGh0dHBzOi8vZ2l0aHViLmNvbS9DaGlsaS1QaXBlcikgR2l0SHViIG9yZ2FuaXphdGlvbi4KCj4g8J+SuyAqKkFsc28gYXZhaWxhYmxlIGFzIGEgQ0xJOioqIFtgY2hpbGktcGlwZXItY2xpYF0oaHR0cHM6Ly9naXRodWIuY29tL0NoaWxpLVBpcGVyL2hvbWVicmV3LXRhcCkgaXMgYSBjb21tYW5kLWxpbmUgY2xpZW50IGZvciB0aGUgc2FtZSBDaGlsaSBQaXBlciBBUEkg4oCUIGEgZ29vZCBmaXQgZm9yIHNoZWxsIHNjcmlwdHMsIENJIHBpcGVsaW5lcywgYW5kIHBvd2VyIHVzZXJzIHdobyBwcmVmZXIgYSB0ZXJtaW5hbC4gSW5zdGFsbCB3aXRoIGBicmV3IGluc3RhbGwgY2hpbGktcGlwZXIvdGFwL2NoaWxpLXBpcGVyLWNsaWAgKG1hY09TL0xpbnV4KSBvciBTY29vcCAoV2luZG93cykuCgotLS0KCiMjIFdoYXQncyBpbiBoZXJlCgp8IEZvbGRlciB8IFdoYXQgaXQgaXMgfAp8LS0tLS0tLS18LS0tLS0tLS0tLS18CnwgW2Bza2lsbHMvYF0oc2tpbGxzLykgfCAqKkFnZW50IFNraWxscyBmb3IgQ2xhdWRlIGFuZCBPcGVuQUkgQ29kZXgqKiDigJQgZHJvcC1pbiBzcGVjaWFsaXN0cyB0aGF0IGNhbGwgdGhlIENoaWxpIFBpcGVyIE1DUC4gT25lIGpvYiBlYWNoLCBkb25lIHdlbGwuIHwKfCBbYGdwdHMvYF0oZ3B0cy8pIHwgKipDaGF0R1BUIEN1c3RvbSBHUFRzKiog4oCUIHRoZSBDaGF0R1BUIGVxdWl2YWxlbnQgb2YgZWFjaCBza2lsbCwgd2l0aCBhIEdQVCBBY3Rpb25zIHNjaGVtYS4gfAp8IFtgbWNwLXNlcnZlcnMvY2hpbGktcGlwZXIvYF0obWNwLXNlcnZlcnMvY2hpbGktcGlwZXIvKSB8ICoqTUNQIHNldHVwIGd1aWRlKiog4oCUIGNvbm5lY3QgdGhlIENoaWxpIFBpcGVyIE1DUCB2aWEgQVBJIGtleSBvciBPQXV0aC4gfAp8IFtgZ2VtaW5pL2BdKGdlbWluaS8pIHwgKipHb29nbGUgR2VtaW5pIGd1aWRlKiog4oCUIGNvbm5lY3QgdmlhIEdlbWluaSBDTEksIEdlbiBBSSBTREsgLyBBREssIG9yIEdlbWluaSBFbnRlcnByaXNlLiB8CnwgW2AuY2xhdWRlLXBsdWdpbi9gXSguY2xhdWRlLXBsdWdpbi8pIMK3IFtgLmN1cnNvci1wbHVnaW4vYF0oLmN1cnNvci1wbHVnaW4vKSB8ICoqUGx1Z2luIG1hbmlmZXN0cyoqIOKAlCB0aGUgQ2xhdWRlIGFuZCBDdXJzb3IgcGx1Z2lucyB0aGF0IGJ1bmRsZSB0aGUgTUNQIHdpdGggdGhlc2Ugc2tpbGxzIGFuZCBjb21tYW5kcy4gfAp8IFtgZG9jcy9gXShkb2NzLykgfCBBdXRob3JpbmcgbWV0aG9kb2xvZ3ksIFFBIHN0YXR1cyB0cmFja2VyLCBhbmQgb3JnLWxldmVsIGRlcGxveW1lbnQgZ3VpZGUuIHwKCkEgKipTa2lsbCoqIGlzIGEgc21hbGwsIHNlbGYtY29udGFpbmVkIGluc3RydWN0aW9uIHNldCB0aGF0IHRlYWNoZXMgYW4gQUkgYWdlbnQgaG93IHRvIGRvIG9uZSBDaGlsaSBQaXBlciB0YXNrIGNvcnJlY3RseSDigJQgd2hpY2ggTUNQIHRvb2xzIHRvIGNhbGwsIGluIHdoYXQgb3JkZXIsIGFuZCBob3cgdG8gZm9ybWF0IHRoZSByZXN1bHQuIFRoZSBzYW1lIEFnZW50IFNraWxscyBmb3JtYXQgd29ya3MgaW4gQ2xhdWRlIGFuZCBPcGVuQUkgQ29kZXguIEEgKipHUFQqKiBpcyBhIHNlcGFyYXRlIEN1c3RvbSBHUFQgcGFja2FnaW5nIG9mIHRoZSBjYXBhYmlsaXR5IGZvciBDaGF0R1BULgoKRXZlcnkgc2tpbGwgaXMgYnVpbHQgb24gKipbcHJvZ3Jlc3NpdmUgZGlzY2xvc3VyZV0oZG9jcy9tZXRob2RvbG9neS5tZCkqKiAoQW50aHJvcGljJ3MgQWdlbnQgU2tpbGxzIGNvbnZlbnRpb24pLCBzbyBhbiBhZ2VudCBsb2FkcyBvbmx5IHRoZSBzbGljZSBvZiBhIHNraWxsIHRoZSBjdXJyZW50IHN0ZXAgbmVlZHMuCgojIyMgQXZhaWxhYmxlIHNraWxscwoKfCBTa2lsbCB8IFdoYXQgaXQgZG9lcyB8IFJlYWQtb25seT8gfAp8LS0tLS0tLXwtLS0tLS0tLS0tLS0tfDotLS06fAp8IFttZWV0aW5nLWluc3BlY3Rvcl0oc2tpbGxzL21lZXRpbmctaW5zcGVjdG9yLykgfCBEZWVwLWRpdmUgYSBzaW5nbGUgbWVldGluZyDigJQgYm9va2luZyB0cmlnZ2VyLCByb3V0aW5nIHBhdGgsIHJlcCBhc3NpZ25tZW50LCBvdXRjb21lIHwg4pyFIHwKfCBbbm8tc2hvdy1hbmFseXplcl0oc2tpbGxzL25vLXNob3ctYW5hbHl6ZXIvKSB8IEFuYWx5emUgbm8tc2hvdyBwYXR0ZXJucyBieSB0cmlnZ2VyLCByb3V0ZSwgcmVwLCBvciB3b3Jrc3BhY2UgfCDinIUgfAp8IFtyb3V0aW5nLWF1ZGl0XShza2lsbHMvcm91dGluZy1hdWRpdC8pIHwgQXVkaXQgYWxsIGNvbmNpZXJnZSByb3V0ZXJzIGZvciBjb3ZlcmFnZSBnYXBzIGFuZCBzdGFsZSBydWxlcyB8IOKchSB8CnwgW2Rpc3RyaWJ1dGlvbi1hbmFseXNpc10oc2tpbGxzL2Rpc3RyaWJ1dGlvbi1hbmFseXNpcy8pIHwgQW5hbHl6ZSBhIHJvdW5kLXJvYmluIGRpc3RyaWJ1dGlvbiDigJQgbWVldGluZyBjb3VudHMgYnkgcmVwLCBpbWJhbGFuY2UgdnMuIHdlaWdodHMsIHNrZXcsIGNhbmNlbGxhdGlvbnMgfCDinIUgfAp8IFthdmFpbGFiaWxpdHktaW5zcGVjdG9yXShza2lsbHMvYXZhaWxhYmlsaXR5LWluc3BlY3Rvci8pIHwgRGlhZ25vc2Ugd2h5IGEgcmVwIG9yIHRlYW0gc2hvd3Mgbm8gYXZhaWxhYmxlIHNsb3RzIHwg4pyFIHwKfCBbY29uY2llcmdlLWRlYnVnZ2VyXShza2lsbHMvY29uY2llcmdlLWRlYnVnZ2VyLykgfCBUcmFjZSB3aHkgYSBzcGVjaWZpYyBsZWFkIGRpZG4ndCBib29rIHwg4pyFIHwKfCBbY29uY2llcmdlLXJvdXRlci1idWlsZGVyXShza2lsbHMvY29uY2llcmdlLXJvdXRlci1idWlsZGVyLykgfCBCdWlsZCBhIGNvbXBsZXRlIENvbmNpZXJnZSB3ZWItZm9ybSByb3V0ZXIgdGhyb3VnaCBhIGd1aWRlZCBkaXNjb3ZlcnkgYW5kIGNvbmZpcm1hdGlvbiB3b3JrZmxvdyB8IOKaoO+4jyB3cml0ZXMgfAp8IFtvbmJvYXJkaW5nLWNoaWxpLXBpcGVyXShza2lsbHMvb25ib2FyZGluZy1jaGlsaS1waXBlci8pIHwgR3VpZGVkIHNlbGYtc2VydmUgb25ib2FyZGluZzogcmVhZHMgdGhlIGFjY291bnQsIGludGVydmlld3MgdGhlIGN1c3RvbWVyLCBhZ3JlZXMgYSBwbGFuLCB0aGVuIGJ1aWxkcyB0aGUgcm91dGluZyBhbmQgc2NoZWR1bGluZyBiYXNlbGluZSBhY3Jvc3MgcHJvZHVjdHMgfCDimqDvuI8gd3JpdGVzIHwKfCBbZGlzdHJvLWRlYnVnZ2VyXShza2lsbHMvZGlzdHJvLWRlYnVnZ2VyLykgfCBEZWJ1ZyB3aHkgYSBDUk0gcmVjb3JkIHdhcyAob3Igd2Fzbid0KSByb3V0ZWQgdGhyb3VnaCBhIGRpc3RyaWJ1dGlvbiDigJQgcnVsZSBzdGFnZSBieSBydWxlIHN0YWdlIHwg4pyFIHwKfCBbY2hhdC1jb252ZXJzYXRpb24taW5zcGVjdG9yXShza2lsbHMvY2hhdC1jb252ZXJzYXRpb24taW5zcGVjdG9yLykgfCBJbnNwZWN0IENoYXQgQUkgY29udmVyc2F0aW9uIGxvZ3Mg4oCUIHJvdXRpbmcgb3V0Y29tZXMsIHRyYW5zY3JpcHRzLCBhYmFuZG9ubWVudCBhbmFseXNpcyB8IOKchSB8CnwgW29yZy1tZWV0aW5nXShza2lsbHMvb3JnLW1lZXRpbmcvKSB8IE9yZy13aWRlIG1lZXRpbmcgdm9sdW1lIGFuZCBoZWFsdGggc25hcHNob3QgfCDinIUgfAp8IFt1c2VyLWRldGFpbHNdKHNraWxscy91c2VyLWRldGFpbHMvKSB8IEZ1bGwgcHJvZmlsZSBmb3IgYW55IENoaWxpIFBpcGVyIHVzZXIgfCDinIUgfAp8IFt1c2VyLW1lZXRpbmdzXShza2lsbHMvdXNlci1tZWV0aW5ncy8pIHwgUmVwLWxldmVsIG1lZXRpbmcgdm9sdW1lIGFuZCBoZWFsdGggbWV0cmljcyB8IOKchSB8CnwgW3VzZXItY29weV0oc2tpbGxzL3VzZXItY29weS8pIHwgQ29weSBhIHVzZXIncyB3b3Jrc3BhY2UvdGVhbSBtZW1iZXJzaGlwcyB0byBhbm90aGVyIHVzZXIgfCDimqDvuI8gd3JpdGVzIHwKfCBbdXNlci1vZmZib2FyZGluZ10oc2tpbGxzL3VzZXItb2ZmYm9hcmRpbmcvKSB8IFNhZmVseSByZW1vdmUgYSBkZXBhcnRpbmcgcmVwLCB3aXRoIGFuIGF1ZGl0IHRyYWlsIHwg4pqg77iPIHdyaXRlcyB8CnwgW21lZXRpbmctdHlwZS1tYW5hZ2VtZW50XShza2lsbHMvbWVldGluZy10eXBlLW1hbmFnZW1lbnQvKSB8IE1hbmFnZSB0ZWFtIG1lZXRpbmcgdHlwZXMgYW5kIHRoZWlyIHJlbWluZGVycyDigJQgZHVyYXRpb25zLCBpbnZpdGUgdGV4dCwgYm9va2luZyBsaW1pdHMgfCDimqDvuI8gd3JpdGVzIHwKfCBbZGlzdHJvLXJvdXRlci1jb25maWd1cmF0aW9uXShza2lsbHMvZGlzdHJvLXJvdXRlci1jb25maWd1cmF0aW9uLykgfCBNYW5hZ2UgRGlzdHJvIGxlYWQtcm91dGluZyByb3V0ZXJzIOKAlCBjcmVhdGUsIHVwZGF0ZSwgYWN0aXZhdGUvZGVhY3RpdmF0ZSwgZGVsZXRlIHwg4pqg77iPIHdyaXRlcyB8CnwgW2hhbmRvZmYtcm91dGVyLWNvbmZpZ3VyYXRpb25dKHNraWxscy9oYW5kb2ZmLXJvdXRlci1jb25maWd1cmF0aW9uLykgfCBNYW5hZ2UgSGFuZG9mZiByb3V0ZXJzIOKAlCByZXAtdG8tcmVwIGhhbmRvZmYgcm91dGluZyBydWxlcyBhbmQgbWVldGluZyB0eXBlcyB8IOKaoO+4jyB3cml0ZXMgfAp8IFtjb25jaWVyZ2Utcm91dGVyLWNvbmZpZ3VyYXRpb25dKHNraWxscy9jb25jaWVyZ2Utcm91dGVyLWNvbmZpZ3VyYXRpb24vKSB8IE1hbmFnZSBDb25jaWVyZ2Ugcm91dGVycyDigJQgd2ViLWZvcm0gcm91dGluZyBydWxlcywgZm9ybXMsIGFuZCBicmFuZGluZyB8IOKaoO+4jyB3cml0ZXMgfAp8IFtzY2hlZHVsaW5nLWxpbmstbWFuYWdlbWVudF0oc2tpbGxzL3NjaGVkdWxpbmctbGluay1tYW5hZ2VtZW50LykgfCBNYW5hZ2Ugc2NoZWR1bGluZyBsaW5rcyDigJQgcm91bmQtcm9iaW4sIGFkbWluIG9uZS1vbi1vbmUsIGdyb3VwLCBvd25lcnNoaXAgfCDimqDvuI8gd3JpdGVzIHwKfCBbY2hpbGlmb3Jtcy1jb25maWd1cmF0aW9uXShza2lsbHMvY2hpbGlmb3Jtcy1jb25maWd1cmF0aW9uLykgfCBHZW5lcmF0ZSBhIENoaWxpRm9ybXMgZW1iZWQgKGEgQ2hpbGkgUGlwZXLigJNidWlsdCB3ZWIgZm9ybSkgZm9yIGEgY3VzdG9tZXIgd2l0aG91dCBhIGZvcm0gb2YgdGhlaXIgb3duLCBhcyBhIHJlYWR5LXRvLXBhc3RlIHNuaXBwZXQgfCDinIUgfAoKU2VlIFtgc2tpbGxzL1JFQURNRS5tZGBdKHNraWxscy9SRUFETUUubWQpIGZvciB0aGUgZnVsbCBpbmRleCB3aXRoIFFBL21hdHVyaXR5IHN0YXR1cywgYW5kIFtgZ3B0cy9SRUFETUUubWRgXShncHRzL1JFQURNRS5tZCkgZm9yIHRoZSBDaGF0R1BUIHZlcnNpb25zLgoKLS0tCgojIyBHZXQgc3RhcnRlZAoKIyMjIDEuIENvbm5lY3QgdGhlIENoaWxpIFBpcGVyIE1DUAoKRXZlcnkgc2tpbGwgdGFsa3MgdG8geW91ciBDaGlsaSBQaXBlciBhY2NvdW50IHRocm91Z2ggdGhlIG9mZmljaWFsIE1DUCBzZXJ2ZXIuIFNldCBpdCB1cCBvbmNlIOKAlCAqKkFQSSBrZXkqKiBvciAqKk9BdXRoKiog4oCUIGZvbGxvd2luZyBbYG1jcC1zZXJ2ZXJzL2NoaWxpLXBpcGVyL1JFQURNRS5tZGBdKG1jcC1zZXJ2ZXJzL2NoaWxpLXBpcGVyL1JFQURNRS5tZCkuCgojIyMgMi4gSW5zdGFsbCB0aGUgc2tpbGxzIOKAlCBwaWNrIHlvdXIgc3VyZmFjZQoKKipPcHRpb24gQSDigJQgQ2xhdWRlIERlc2t0b3Agb3IgY2xhdWRlLmFpIChwbHVnaW4sIGVhc2llc3Qg4oCUIG5vIHRlcm1pbmFsKToqKgoKSW5zdGFsbCB0aGUgd2hvbGUgcGx1Z2luIChldmVyeSBza2lsbCArIHRoZSBDaGlsaSBQaXBlciBNQ1AgY29uZmlnKSByaWdodCBpbnNpZGUgQ2xhdWRlOgoKMS4gT3BlbiAqKkN1c3RvbWl6ZSDihpIgUGx1Z2lucyoqIChvciAqKkNvbm5lY3RvcnMqKiksIGNsaWNrICoq77yLKiogbmV4dCB0byAqKlBlcnNvbmFsIHBsdWdpbnMqKiDihpIgKipDcmVhdGUgcGx1Z2luIOKGkiBBZGQgbWFya2V0cGxhY2UqKi4KMi4gUGFzdGUgYGh0dHBzOi8vZ2l0aHViLmNvbS9DaGlsaS1QaXBlci9tY3AtYXNzZXRzYCBhbmQgY2xpY2sgKipTeW5jKiouCjMuIEdvIHRvIHRoZSAqKkRpcmVjdG9yeSDihpIgUGx1Z2lucyoqICh0aGUgKipQZXJzb25hbCoqIHRhYiksIG9wZW4gdGhlICoqbWNwLWFzc2V0cyoqIG1hcmtldHBsYWNlLCBhbmQgY2xpY2sgKirvvIsqKiBvbiAqKkNoaWxpIFBpcGVyIFNraWxscyoqIHRvIGluc3RhbGwuCgo+ICoqQWRtaW5zOioqIGFkZCBpdCB1bmRlciAqKk9yZ2FuaXphdGlvbiBwbHVnaW5zKiogaW5zdGVhZCB0byBtYWtlIGl0IGF2YWlsYWJsZSB0byB5b3VyIHdob2xlIG9yZyBpbiBvbmUgc3RlcCDigJQgc2VlIFtEZXBsb3kgZm9yIHlvdXIgd2hvbGUgdGVhbV0oI2RlcGxveS1mb3IteW91ci13aG9sZS10ZWFtKS4KCioqT3B0aW9uIEIg4oCUIENsYXVkZSBDb2RlIENMSSAocGx1Z2luKToqKgoKSW4gdGhlIHN0YW5kYWxvbmUgQ2xhdWRlIENvZGUgdGVybWluYWwgQ0xJOgoKYGBgCi9wbHVnaW4gbWFya2V0cGxhY2UgYWRkIGh0dHBzOi8vZ2l0aHViLmNvbS9DaGlsaS1QaXBlci9tY3AtYXNzZXRzCi9wbHVnaW4gaW5zdGFsbCBjaGlsaS1waXBlci1za2lsbHNAY2hpbGktcGlwZXItc2tpbGxzCmBgYAoKPiBCb3RoIHRoZSBtYXJrZXRwbGFjZSBhbmQgcGx1Z2luIGFyZSBuYW1lZCAqKmBjaGlsaS1waXBlci1za2lsbHNgKiogKHRoZSByZWYgaXMgYHBsdWdpbi1uYW1lQG1hcmtldHBsYWNlLW5hbWVgKTsgb3IgcnVuIGAvcGx1Z2luYCBhbmQgcGljayBpdCBmcm9tIHRoZSAqKk1hcmtldHBsYWNlcyoqIG1lbnUuIGAvcGx1Z2luYCBpcyBDTEktb25seSDigJQgb24gRGVza3RvcC93ZWIgdXNlIE9wdGlvbiBBLgo+Cj4gKipTZWUgYSBgZ2l0QGdpdGh1Yi5jb206IFBlcm1pc3Npb24gZGVuaWVkYCAvIFNTSCBlcnJvcj8qKiBObyBrZXkgaXMgbmVlZGVkIGZvciB0aGlzIHB1YmxpYyByZXBvIOKAlCB0ZWxsIGdpdCB0byB1c2UgSFRUUFMgYW5kIHJldHJ5Ogo+IGBgYAo+IGdpdCBjb25maWcgLS1nbG9iYWwgdXJsLiJodHRwczovL2dpdGh1Yi5jb20vIi5pbnN0ZWFkT2YgImdpdEBnaXRodWIuY29tOiIKPiBgYGAKCk9wdGlvbnMgQSBhbmQgQiBpbnN0YWxsIHRoZSBmdWxsIHBsdWdpbiAoc2tpbGxzICsgc2xhc2ggY29tbWFuZHMgKyBNQ1AgY29uZmlnKSBhbmQga2VlcCBpdCB1cGRhdGVkIOKAlCBzZWUgW1N0YXlpbmcgdXAgdG8gZGF0ZV0oI3N0YXlpbmctdXAtdG8tZGF0ZSkuCgoqKk9wdGlvbiBDIOKAlCBKdXN0IG9uZSBza2lsbCAodXBsb2FkIGEgc2luZ2xlIGAuemlwYCk6KioKCldhbnQgb25seSBvbmUgc2tpbGwsIG9yIHRvIHB1c2ggYSBzaW5nbGUgc2tpbGwgYXMgYW4gKipPcmdhbml6YXRpb24gc2tpbGwqKj8gRG93bmxvYWQgaXQgZnJvbSB0aGUgW2xhdGVzdCByZWxlYXNlXShodHRwczovL2dpdGh1Yi5jb20vQ2hpbGktUGlwZXIvbWNwLWFzc2V0cy9yZWxlYXNlcy9sYXRlc3QpIChlLmcuIFtgbWVldGluZy1pbnNwZWN0b3IuemlwYF0oaHR0cHM6Ly9naXRodWIuY29tL0NoaWxpLVBpcGVyL21jcC1hc3NldHMvcmVsZWFzZXMvbGF0ZXN0L2Rvd25sb2FkL21lZXRpbmctaW5zcGVjdG9yLnppcCkpIGFuZCB1cGxvYWQgaXQgdmlhICoqQ3VzdG9taXplIOKGkiBTa2lsbHMg4oaSIO+8iyoqIChhZGRlZCBhcyBhIFBlcnNvbmFsIHNraWxsOyBhZG1pbnMgY2FuIGNob29zZSAqKk9yZ2FuaXphdGlvbioqICsgKipTaGFyZSoqKS4KCioqT3B0aW9uIEQg4oCUIE9wZW5BSSBDb2RleCAoc3RhbmRhbG9uZSBza2lsbHMpOioqCgpGaXJzdCBjb25uZWN0IHRoZSBDaGlsaSBQaXBlciBNQ1AgYXMgYSBwbHVnaW4gYnkgZm9sbG93aW5nIHRoZSBbQ2hhdEdQVC9Db2RleCBzZXR1cCBpbiB0aGUgSGVscCBDZW50ZXJdKGh0dHBzOi8vaGVscC5jaGlsaXBpcGVyLmNvbS9oYy9lbi11cy9hcnRpY2xlcy81MDQzMDM1MDg2MzYzNS1Ib3ctZG8tSS1jb25uZWN0LUNoaWxpLVBpcGVyLXZpYS1NQ1AjY29ubmVjdC1jaGF0Z3B0KS4gVGhlbiBhc2sgQ29kZXg6CgpgYGAKJHNraWxsLWluc3RhbGxlciBpbnN0YWxsIGV2ZXJ5IHNraWxsIGZyb20gaHR0cHM6Ly9naXRodWIuY29tL0NoaWxpLVBpcGVyL21jcC1hc3NldHMvdHJlZS9tYWluL3NraWxscwpgYGAKClN0YXJ0IGEgbmV3IENvZGV4IHRhc2sgYWZ0ZXIgaW5zdGFsbGF0aW9uLiBDb2RleCBjYW4gc2VsZWN0IGEgbWF0Y2hpbmcgc2tpbGwgYXV0b21hdGljYWxseSwgb3IgeW91IGNhbiBpbnZva2Ugb25lIGV4cGxpY2l0bHk6CgpgYGAKJG1lZXRpbmctaW5zcGVjdG9yIDxtZWV0aW5nLWlkPgpgYGAKClRoaXMgaW5zdGFsbHMgdGhlIHNraWxscyBmb3IgdGhlIGN1cnJlbnQgdXNlci4gVGhlIGluc3RhbGxlciB3aWxsIG5vdCBvdmVyd3JpdGUgYW4gZXhpc3Rpbmcgc2tpbGwgZm9sZGVyOyB0byB1cGRhdGUsIHJlbW92ZSB0aGUgb2xkIGluc3RhbGxlZCBjb3B5IGZpcnN0IG9yIG1haW50YWluIGEgR2l0IGNsb25lIGFuZCBzeW1saW5rIGl0cyBza2lsbCBmb2xkZXJzLgoKKipPcHRpb24gRSDigJQgQ2hhdEdQVDoqKgoKQ29ubmVjdCB0aGUgQ2hpbGkgUGlwZXIgTUNQIGFzIGEgcGx1Z2luIHVzaW5nIHRoZSBbSGVscCBDZW50ZXIgaW5zdHJ1Y3Rpb25zXShodHRwczovL2hlbHAuY2hpbGlwaXBlci5jb20vaGMvZW4tdXMvYXJ0aWNsZXMvNTA0MzAzNTA4NjM2MzUtSG93LWRvLUktY29ubmVjdC1DaGlsaS1QaXBlci12aWEtTUNQI2Nvbm5lY3QtY2hhdGdwdCkuIElmIHlvdSBwcmVmZXIgYSBkZWRpY2F0ZWQgQ3VzdG9tIEdQVCB3aXRoIHByZWRlZmluZWQgY29udmVyc2F0aW9uIHN0YXJ0ZXJzLCBkZXBsb3kgdGhlIG1hdGNoaW5nIEdQVCBmcm9tIFtgZ3B0cy9gXShncHRzL1JFQURNRS5tZCkuCgoqKk9wdGlvbiBGIOKAlCBDdXJzb3IgKHBsdWdpbik6KioKClRoaXMgcmVwbyBzaGlwcyBhIEN1cnNvciBwbHVnaW4gKGAuY3Vyc29yLXBsdWdpbi9wbHVnaW4uanNvbmAgKyBhIHJvb3QgYG1jcC5qc29uYCkgdGhhdCBidW5kbGVzIHRoZSBDaGlsaSBQaXBlciBNQ1Agd2l0aCB0aGUgc2FtZSBgc2tpbGxzL2AgYW5kIGBjb21tYW5kcy9gLgoKLSAqKkZyb20gdGhlIE1hcmtldHBsYWNlOioqIG9wZW4gKipDdXJzb3Ig4oaSIFNldHRpbmdzIOKGkiBQbHVnaW5zKiogKG9yIHRoZSBNYXJrZXRwbGFjZSkgYW5kIHNlYXJjaCAqKiJjaGlsaSBwaXBlciIqKiwgdGhlbiBpbnN0YWxsLiBJdCdzIGFsc28gZGlzY292ZXJhYmxlIGZyb20gdGhlIEdyb2sgYm90IHBsdWdpbiBsaXN0LgotICoqTG9jYWwgLyBwcmUtcmVsZWFzZToqKiBjb3B5IHRoaXMgcmVwbyBpbnRvIGB+Ly5jdXJzb3IvcGx1Z2lucy9sb2NhbC9jaGlsaS1waXBlcmAsIHJlbG9hZCBDdXJzb3IsIHRoZW4gaW5zdGFsbCBhbmQgbG9nIGluLgoKT24gZmlyc3QgdXNlIEN1cnNvciBydW5zIHRoZSBzYW1lIG9uZS1jbGljayAqKk9BdXRoKiogbG9naW4gdGhlIENoaWxpIFBpcGVyIE1DUCBhbHJlYWR5IHN1cHBvcnRzIOKAlCBubyBKU09OIHRvIHBhc3RlIGFuZCBubyBBUEkga2V5IHRvIG1hbmFnZS4gUHJlZmVyIGFuIEFQSSBrZXkgaW5zdGVhZD8gRm9sbG93IFtgbWNwLXNlcnZlcnMvY2hpbGktcGlwZXIvUkVBRE1FLm1kYF0obWNwLXNlcnZlcnMvY2hpbGktcGlwZXIvUkVBRE1FLm1kKSAoYENISUxJX1BJUEVSX0FQSV9LRVlgKS4KCiMjIyAzLiBSdW4gYSBza2lsbAoKSW4gQ2xhdWRlIENvZGU6CgpgYGAKL2luc3BlY3QtbWVldGluZyBndWVzdEBleGFtcGxlLmNvbQovYXVkaXQtcm91dGluZyAiQVBBQyBTYWxlcyIKYGBgCgpPciBqdXN0IGFzayBpbiBuYXR1cmFsIGxhbmd1YWdlIOKAlCB0aGUgYWdlbnQgbG9hZHMgdGhlIG1hdGNoaW5nIHNraWxsIGF1dG9tYXRpY2FsbHkuCgpFdmVyeSBza2lsbCBhbHNvIGhhcyBhIHNsYXNoLWNvbW1hbmQgd3JhcHBlciwgc28gdGhleSBhbGwgc3VyZmFjZSB3aGVuIHlvdSB0eXBlIGAvY2hpbGnigKZgICh0aGUgcGx1Z2luIG5hbWVzcGFjZSkuIFR5cGUgYC9gIHRvIGJyb3dzZToKCnwgQ29tbWFuZCB8IFNraWxsIHwKfC0tLXwtLS18CnwgYC9pbnNwZWN0LW1lZXRpbmdgIHwgbWVldGluZy1pbnNwZWN0b3IgfAp8IGAvYXVkaXQtcm91dGluZ2AgfCByb3V0aW5nLWF1ZGl0IHwKfCBgL2NoZWNrLWF2YWlsYWJpbGl0eWAgfCBhdmFpbGFiaWxpdHktaW5zcGVjdG9yIHwKfCBgL2RlYnVnLWNvbmNpZXJnZWAgfCBjb25jaWVyZ2UtZGVidWdnZXIgfAp8IGAvZGVidWctZGlzdHJvYCB8IGRpc3Ryby1kZWJ1Z2dlciB8CnwgYC9pbnNwZWN0LWNoYXRzYCB8IGNoYXQtY29udmVyc2F0aW9uLWluc3BlY3RvciB8CnwgYC9hbmFseXplLWRpc3RyaWJ1dGlvbmAgfCBkaXN0cmlidXRpb24tYW5hbHlzaXMgfAp8IGAvYW5hbHl6ZS1uby1zaG93c2AgfCBuby1zaG93LWFuYWx5emVyIHwKfCBgL29yZy1tZWV0aW5nLXJlcG9ydGAgfCBvcmctbWVldGluZyB8CnwgYC91c2VyLWRldGFpbHNgIHwgdXNlci1kZXRhaWxzIHwKfCBgL3VzZXItbWVldGluZ3NgIHwgdXNlci1tZWV0aW5ncyB8CnwgYC9jb3B5LXVzZXJgIHwgdXNlci1jb3B5IHwKfCBgL29mZmJvYXJkLXVzZXJgIHwgdXNlci1vZmZib2FyZGluZyB8CnwgYC9tYW5hZ2UtbWVldGluZy10eXBlc2AgfCBtZWV0aW5nLXR5cGUtbWFuYWdlbWVudCB8CnwgYC9jb25maWd1cmUtZGlzdHJvLXJvdXRlcmAgfCBkaXN0cm8tcm91dGVyLWNvbmZpZ3VyYXRpb24gfAp8IGAvY29uZmlndXJlLWhhbmRvZmYtcm91dGVyYCB8IGhhbmRvZmYtcm91dGVyLWNvbmZpZ3VyYXRpb24gfAp8IGAvY29uZmlndXJlLWNvbmNpZXJnZS1yb3V0ZXJgIHwgY29uY2llcmdlLXJvdXRlci1jb25maWd1cmF0aW9uIHwKfCBgL21hbmFnZS1zY2hlZHVsaW5nLWxpbmtzYCB8IHNjaGVkdWxpbmctbGluay1tYW5hZ2VtZW50IHwKfCBgL2NvbmZpZ3VyZS1jaGlsaWZvcm1zYCB8IGNoaWxpZm9ybXMtY29uZmlndXJhdGlvbiB8CnwgYC9idWlsZC1jb25jaWVyZ2Utcm91dGVyYCB8IGNvbmNpZXJnZS1yb3V0ZXItYnVpbGRlciB8CnwgYC9vbmJvYXJkYCB8IG9uYm9hcmRpbmctY2hpbGktcGlwZXIgfAoKYC9jb3B5LXVzZXJgLCBgL29mZmJvYXJkLXVzZXJgLCBgL21hbmFnZS1tZWV0aW5nLXR5cGVzYCwgYC9jb25maWd1cmUtZGlzdHJvLXJvdXRlcmAsIGAvY29uZmlndXJlLWhhbmRvZmYtcm91dGVyYCwgYC9jb25maWd1cmUtY29uY2llcmdlLXJvdXRlcmAsIGAvbWFuYWdlLXNjaGVkdWxpbmctbGlua3NgLCBhbmQgYC9idWlsZC1jb25jaWVyZ2Utcm91dGVyYCB3cml0ZSB0byBDaGlsaSBQaXBlciDigJQgdGhleSBkZWZhdWx0IHRvIGEgZHJ5IHJ1biBhbmQgY29uZmlybSBiZWZvcmUgYXBwbHlpbmcuIGAvb25ib2FyZGAgYWxzbyB3cml0ZXMsIGJ5IGRlc2lnbiB3aXRoIG5vIGRyeSBydW46IGFuIG9uYm9hcmRpbmcgc2Vzc2lvbiBleGlzdHMgdG8gYnVpbGQsIHNvIG5vdGhpbmcgaXMgY3JlYXRlZCB1bnRpbCB0aGUgY3VzdG9tZXIgY29uZmlybXMgdGhlIHBsYW4sIGFuZCBldmVyeSB3cml0ZSB0aGVuIGdvZXMgdGhyb3VnaCB0aGUgY2xpZW50J3MgYXBwcm92YWwgcHJvbXB0LgoKLS0tCgojIyBEZXBsb3kgZm9yIHlvdXIgd2hvbGUgdGVhbQoKQSBzaW5nbGUgYWRtaW4gY2FuIHJvbGwgdGhlc2Ugc2tpbGxzIG91dCB0byBhbiBlbnRpcmUgdGVhbSBvciBvcmcgc28gZXZlcnlvbmUgZ2V0cyB0aGUgc2FtZSB2ZXR0ZWQgc3BlY2lhbGlzdHMg4oCUIGFuZCBmb3IgYSBmaXJzdC1wYXJ0eSBzZXQgbGlrZSB0aGlzLCBvcmctd2lkZSBpcyBvZnRlbiB0aGUgcmlnaHQgY2FsbC4KCioqRWFzaWVzdCAoQ2xhdWRlIERlc2t0b3AgLyBjbGF1ZGUuYWkpOioqIGFkZCB0aGUgbWFya2V0cGxhY2UgdW5kZXIgKipPcmdhbml6YXRpb24gcGx1Z2lucyoqIChDdXN0b21pemUg4oaSICoqT3JnYW5pemF0aW9uIHBsdWdpbnMg4oaSIO+8iyDihpIgQ3JlYXRlIHBsdWdpbiDihpIgQWRkIG1hcmtldHBsYWNlKiog4oaSIGBodHRwczovL2dpdGh1Yi5jb20vQ2hpbGktUGlwZXIvbWNwLWFzc2V0c2Ag4oaSICoqU3luYyoqKS4gSXQgdGhlbiBzaG93cyB1cCBmb3IgZXZlcnlvbmUgaW4geW91ciBvcmcncyAqKkRpcmVjdG9yeSDigJIgWW91ciBvcmdhbml6YXRpb24qKiB0YWIuCgpGb3IgQ2xhdWRlIENvZGUgKHNldHRpbmdzLmpzb24pLCBtYW5hZ2VkL2VudGVycHJpc2Ugcm9sbG91dCwgYW5kIHRoZSBwcml2YXRlLWZvcmsgb3B0aW9uLCBzZWUgW2Bkb2NzL29yZy1kZXBsb3ltZW50Lm1kYF0oZG9jcy9vcmctZGVwbG95bWVudC5tZCkuCgotLS0KCiMjIFN0YXlpbmcgdXAgdG8gZGF0ZQoKV2UgYWN0aXZlbHkgaW1wcm92ZSB0aGVzZSBza2lsbHMsIGZpeCBjb3JyZWN0bmVzcyBpc3N1ZXMsIGFuZCBhZGQgbmV3IG9uZXMuIFRvIHN0YXkgY3VycmVudDoKCi0gKipDbGF1ZGUgRGVza3RvcCAvIGNsYXVkZS5haSAocGx1Z2luKToqKiB0aGUgcGx1Z2luIHVwZGF0ZXMgZnJvbSB0aGUgbWFya2V0cGxhY2UgYXV0b21hdGljYWxseTsgaWYgbmVlZGVkLCByZS1vcGVuICoqQWRkIG1hcmtldHBsYWNlKiogYW5kICoqU3luYyoqIHRvIHJlZnJlc2guCi0gKipDbGF1ZGUgQ29kZSBwbHVnaW46KiogcnVuIGAvcGx1Z2luIHVwZGF0ZSBjaGlsaS1waXBlci1za2lsbHNAY2hpbGktcGlwZXItc2tpbGxzYCAob3IgZW5hYmxlIGF1dG8tdXBkYXRlKS4KLSAqKlNpbmdsZSBza2lsbCBpbnN0YWxsZWQgdmlhIGAuemlwYDoqKiByZS1kb3dubG9hZCBmcm9tIHRoZSBbbGF0ZXN0IHJlbGVhc2VdKGh0dHBzOi8vZ2l0aHViLmNvbS9DaGlsaS1QaXBlci9tY3AtYXNzZXRzL3JlbGVhc2VzL2xhdGVzdCkgYW5kIHJlLXVwbG9hZCBpbiBDdXN0b21pemUg4oaSIFNraWxscy4KLSAqKk1hbnVhbCBpbnN0YWxsOioqIGBnaXQgcHVsbGAsIG9yIHJlLWRvd25sb2FkIHRoZSBza2lsbCBmb2xkZXIuCi0gKipXYXRjaCByZWxlYXNlczoqKiBjbGljayAqKldhdGNoIOKGkiBDdXN0b20g4oaSIFJlbGVhc2VzKiogb24gdGhpcyByZXBvIHRvIGJlIG5vdGlmaWVkIG9mIGV2ZXJ5IHZlcnNpb25lZCB1cGRhdGUuCi0gKipDaGFuZ2Vsb2c6KiogZXZlcnkgcmVsZWFzZSBpcyBsb2dnZWQgaW4gW2BDSEFOR0VMT0cubWRgXShDSEFOR0VMT0cubWQpLgotICoqRGlzY3Vzc2lvbnM6KiogYW5ub3VuY2VtZW50cyBhbmQgUSZBIGxpdmUgaW4gR2l0SHViIERpc2N1c3Npb25zLgoKRWFjaCBza2lsbCBjYXJyaWVzIGEgYHZlcnNpb25gIGluIGl0cyBmcm9udG1hdHRlciBhbmQgYSBtYXR1cml0eSBsZXZlbCAoYGRyYWZ0YCAvIGB0ZXN0ZWRgIC8gYHZlcmlmaWVkYCkgc28geW91IGFsd2F5cyBrbm93IGhvdyBiYXR0bGUtdGVzdGVkIGl0IGlzLgoKLS0tCgojIyBUcm91Ymxlc2hvb3RpbmcKCiMjIyBBZ2VudCByZXBvcnRzIGEgdG9vbCBhcyAibm90IGZvdW5kIiBvciBjYW4ndCBjYWxsIGl0IChDbGF1ZGUgQ29kZSwgQ3Vyc29yLCBXaW5kc3VyZiwgQ2xpbmUpCgoqKlN5bXB0b206KiogVGhlIGFnZW50IHNheXMgc29tZXRoaW5nIGxpa2UgIkkgY2FuJ3QgZmluZCB0aGUgYGNvbmNpZXJnZS1yb3V0ZXItY3JlYXRlYCB0b29sIiBvciByZWZ1c2VzIHRvIGNhbGwgYSB0b29sIGl0IHNob3VsZCBoYXZlIGFjY2VzcyB0byDigJQgZXZlbiB0aG91Z2ggdGhlIE1DUCBpcyBjb25uZWN0ZWQgYW5kIHRoZSBza2lsbCBpcyBpbnN0YWxsZWQuCgoqKkNhdXNlOioqIFRoZSBDaGlsaSBQaXBlciBNQ1Agc2VydmVyIHVzZXMgKipwcm9ncmVzc2l2ZSB0b29sIGRpc2Nsb3N1cmUqKiBieSBkZWZhdWx0IGZvciBrbm93biBBSSBjbGllbnRzIChDbGF1ZGUgQ29kZSwgQ2xhdWRlIERlc2t0b3AsIEN1cnNvciwgV2luZHN1cmYsIENsaW5lLCBDb250aW51ZSkuIEluc3RlYWQgb2YgcmV0dXJuaW5nIGV2ZXJ5IHRvb2wncyBmdWxsIGlucHV0IHNjaGVtYSBpbiBgdG9vbHMvbGlzdGAg4oCUIHdoaWNoIHdvdWxkIGJlIGh1bmRyZWRzIG9mIHRob3VzYW5kcyBvZiB0b2tlbnMgYWNyb3NzIDEwMCsgdG9vbHMg4oCUIHRoZSBsaXN0aW5nIHJldHVybnMgYSBjb21wYWN0IHN0dWIgZm9yIGVhY2ggdG9vbC4gVGhlIGZ1bGwgc2NoZW1hIG11c3QgYmUgZmV0Y2hlZCBvbiBkZW1hbmQuCgpXcml0ZSB0b29scyB0ZW5kIHRvIGhhdmUgdGhlIGxhcmdlc3Qgc2NoZW1hcy4gYGNvbmNpZXJnZS1yb3V0ZXItY3JlYXRlYCBpbiBwYXJ0aWN1bGFyIGlzIH43OCBLQiAofjI2IGsgdG9rZW5zKSwgc28gYW4gYWdlbnQgdGhhdCBza2lwcyBsb2FkaW5nIGl0cyBzY2hlbWEgZ2VudWluZWx5IGNhbm5vdCBjb25zdHJ1Y3QgYSB2YWxpZCBjYWxsLgoKKipGaXgg4oCUIGZldGNoIHRoZSBzY2hlbWEgZmlyc3Q6KioKCmBgYApkZXNjcmliZS10b29scyhuYW1lczogWyJjb25jaWVyZ2Utcm91dGVyLWNyZWF0ZSJdKQpgYGAKCk9yIGZldGNoIHNldmVyYWwgYXQgb25jZSBiZWZvcmUgc3RhcnRpbmcgYSB3b3JrZmxvdzoKCmBgYApkZXNjcmliZS10b29scyhuYW1lczogWyJjb25jaWVyZ2Utcm91dGVyLWNyZWF0ZSIsICJjb25jaWVyZ2Utcm91dGVyLXVwZGF0ZSIsICJydWxlLWxpc3QiXSkKYGBgCgpTa2lsbHMgaW4gdGhpcyByZXBvc2l0b3J5IGhhbmRsZSB0aGlzIGF1dG9tYXRpY2FsbHkg4oCUIHRoZSBza2lsbCBpbnN0cnVjdGlvbnMgdGVsbCB0aGUgYWdlbnQgdG8gY2FsbCBgZGVzY3JpYmUtdG9vbHNgIGFzIHBhcnQgb2YgaXRzIHNldHVwLiBJZiB5b3UncmUgY2FsbGluZyB0b29scyBkaXJlY3RseSB3aXRob3V0IGEgc2tpbGwsIGFkZCB0aGlzIHN0ZXAgbWFudWFsbHkgYmVmb3JlIHRoZSBmaXJzdCB0b29sIGNhbGwuCgoqKkFsdGVybmF0aXZlIOKAlCByZXZlcnQgdG8gdGhlIGxlZ2FjeSBmdWxsLXNjaGVtYSBsaXN0aW5nOioqCgpQYXNzIGBYLU1DUC1Ub29sLVNjaGVtYXM6IGZ1bGxgIGFzIGEgcmVxdWVzdCBoZWFkZXIgaW4geW91ciBNQ1AgY2xpZW50IGNvbmZpZ3VyYXRpb24uIFRoaXMgc2VuZHMgZXZlcnkgdG9vbCdzIGNvbXBsZXRlIHNjaGVtYSBpbiBldmVyeSBgdG9vbHMvbGlzdGAgcmVzcG9uc2UgKHRoZSBiZWhhdmlvdXIgYmVmb3JlIDIwMjYtMDktMDEpLiBOb3RlIHRoZSB0b2tlbiBvdmVyaGVhZCBpcyBzdWJzdGFudGlhbCBvbiBhIDEwMCsgdG9vbCBzZXJ2ZXIg4oCUIGBjb25jaWVyZ2Utcm91dGVyLWNyZWF0ZWAgYWxvbmUgYWRkcyB+MjYgayB0b2tlbnMgcGVyIGNhbGwuCgoqKk5vdCBhZmZlY3RlZDoqKiBDaGF0R1BUIEN1c3RvbSBHUFRzICh0aGV5IHVzZSBgb3BlbmFwaS55YW1sYCBkaXJlY3RseSwgbm90IGB0b29scy9saXN0YCkgYW5kIGFueSBNQ1AgY2xpZW50IG5vdCBpbiB0aGUgcHJvZ3Jlc3NpdmUtZGlzY2xvc3VyZSBhbGxvd2xpc3Qg4oCUIHRob3NlIHJlY2VpdmUgdGhlIGZ1bGwgc2NoZW1hIGxpc3RpbmcgdW5jaGFuZ2VkLgoKLS0tCgojIyBEYXRhICYgc2VjdXJpdHkKClRoaXMgcmVwb3NpdG9yeSBjb250YWlucyAqKnplcm8gY3VzdG9tZXIgZGF0YSoqIOKAlCBza2lsbHMgYXJlIGluc3RydWN0aW9ucyBvbmx5LiBZb3VyIGRhdGEgc3RheXMgaW4geW91ciBDaGlsaSBQaXBlciBhY2NvdW50IGFuZCBpcyBhY2Nlc3NlZCBsaXZlIHZpYSB0aGUgTUNQIHVzaW5nIHlvdXIgb3duIGNyZWRlbnRpYWxzLiBTZWUgW1NFQ1VSSVRZLm1kXShTRUNVUklUWS5tZCkuCgotLS0KCiMjIENvbnRyaWJ1dGluZyAmIHN1cHBvcnQKCkZvdW5kIGEgYnVnIG9yIHdhbnQgYSBuZXcgc2tpbGw/IE9wZW4gYW4gW2lzc3VlXShodHRwczovL2dpdGh1Yi5jb20vQ2hpbGktUGlwZXIvbWNwLWFzc2V0cy9pc3N1ZXMpLiBGb3IgcHJvZHVjdC9zZWN1cml0eSBxdWVzdGlvbnMgc2VlIFtTRUNVUklUWS5tZF0oU0VDVVJJVFkubWQpLgoKKipMaWNlbnNlOioqIE1JVCBmb3IgY29kZSDCtyBDQy1CWSA0LjAgZm9yIGNvbnRlbnQg4oCUIHNlZSBbTElDRU5TRV0oTElDRU5TRSkuCgotLS0KCipPZmZpY2lhbCBDaGlsaSBQaXBlciBTa2lsbHMuIFRoZSBNQ1AgaXMgdGhlIGRvb3IgaW50byB5b3VyIENoaWxpIFBpcGVyIGFjY291bnQg4oCUIHRoZXNlIHNraWxscyBhcmUgdGhlIHBsYXlib29rIGZvciB1c2luZyBpdCB3ZWxsLioK
+# Chili Piper Skills
+
+**Official, first-party Skills and ChatGPT GPTs for the [Chili Piper](https://chilipiper.com) MCP server.**
+
+Maintained by Chili Piper. These are ready-to-use AI specialists — meeting diagnostics, routing audits, user onboarding/offboarding, no-show analysis, and more — that run against your own Chili Piper account through the official Chili Piper MCP.
+
+**Two pieces, one workflow.** The [Chili Piper MCP](mcp-servers/chili-piper/) is the *connection* into your account — set it up once. **Skills** are the vetted *recipes* that use it well. Connect the MCP, install the skills, then just ask.
+
+> 📚 **On the Help Center:** [How do I connect Chili Piper via MCP?](https://help.chilipiper.com/hc/en-us/articles/50430350863635-How-do-I-connect-Chili-Piper-via-MCP) — plus the companion **Chili Piper Skills (AI recipes)** article *(publishing soon)*.
+
+> **Sponsored and maintained by Chili Piper.** This repository lives under the verified [`Chili-Piper`](https://github.com/Chili-Piper) GitHub organization.
+
+> 💻 **Also available as a CLI:** [`chili-piper-cli`](https://github.com/Chili-Piper/homebrew-tap) is a command-line client for the same Chili Piper API — a good fit for shell scripts, CI pipelines, and power users who prefer a terminal. Install with `brew install chili-piper/tap/chili-piper-cli` (macOS/Linux) or Scoop (Windows).
+
+---
+
+## What's in here
+
+| Folder | What it is |
+|--------|----------|
+| [`skills/`](skills/) | **Agent Skills for Claude and OpenAI Codex** — drop-in specialists that call the Chili Piper MCP. One job each, done well. |
+| [`gpts/`](gpts/) | **ChatGPT Custom GPTs** — the ChatGPT equivalent of each skill, with a GPT Actions schema. |
+| [`mcp-servers/chili-piper/`](mcp-servers/chili-piper/) | **MCP setup guide** — connect the Chili Piper MCP via API key or OAuth. |
+| [`gemini/`](gemini/) | **Google Gemini guide** — connect via Gemini CLI, Gen AI SDK / ADK, or Gemini Enterprise. |
+| [`.claude-plugin/`](.claude-plugin/) · [`.cursor-plugin/`](.cursor-plugin/) | **Plugin manifests** — the Claude and Cursor plugins that bundle the MCP with these skills and commands. |
+| [`docs/`](docs/) | Authoring methodology, QA status tracker, and org-level deployment guide. |
+
+A **Skill** is a small, self-contained instruction set that teaches an AI agent how to do one Chili Piper task correctly — which MCP tools to call, in what order, and how to format the result. The same Agent Skills format works in Claude and OpenAI Codex. A **GPT** is a separate Custom GPT packaging of the capability for ChatGPT.
+
+Every skill is built on **[progressive disclosure](docs/methodology.md)** (Anthropic's Agent Skills convention), so an agent loads only the slice of a skill the current step needs.
+
+### Available skills
+
+| Skill | What it does | Read-only? |
+|-------|-------------|:---:|
+| [meeting-inspector](skills/meeting-inspector/) | Deep-dive a single meeting — booking trigger, routing path, rep assignment, outcome | ✅ |
+| [no-show-analyzer](skills/no-show-analyzer/) | Analyze no-show patterns by trigger, route, rep, or workspace | ✅ |
+| [routing-audit](skills/routing-audit/) | Audit all concierge routers for coverage gaps and stale rules | ✅ |
+| [distribution-analysis](skills/distribution-analysis/) | Analyze a round-robin distribution — meeting counts by rep, imbalance vs. weights, skew, cancellations | ✅ |
+| [availability-inspector](skills/availability-inspector/) | Diagnose why a rep or team shows no available slots | ✅ |
+| [concierge-debugger](skills/concierge-debugger/) | Trace why a specific lead didn't book | ✅ |
+| [concierge-router-builder](skills/concierge-router-builder/) | Build a complete Concierge web-form router through a guided discovery and confirmation workflow | ⚠️ writes |
+| [onboarding-chili-piper](skills/onboarding-chili-piper/) | Guided self-serve onboarding: reads the account, interviews the customer, agrees a plan, then builds the routing and scheduling baseline across products | ⚠️ writes |
+| [distro-debugger](skills/distro-debugger/) | Debug why a CRM record was (or wasn't) routed through a distribution — rule stage by rule stage | ✅ |
+| [chat-conversation-inspector](skills/chat-conversation-inspector/) | Inspect Chat AI conversation logs — routing outcomes, transcripts, abandonment analysis | ✅ |
+| [org-meeting](skills/org-meeting/) | Org-wide meeting volume and health snapshot | ✅ |
+| [user-details](skills/user-details/) | Full profile for any Chili Piper user | ✅ |
+| [user-meetings](skills/user-meetings/) | Rep-level meeting volume and health metrics | ✅ |
+| [user-copy](skills/user-copy/) | Copy a user's workspace/team memberships to another user | ⚠️ writes |
+| [user-offboarding](skills/user-offboarding/) | Safely remove a departing rep, with an audit trail | ⚠️ writes |
+| [meeting-type-management](skills/meeting-type-management/) | Manage team meeting types and their reminders — durations, invite text, booking limits | ⚠️ writes |
+| [distro-router-configuration](skills/distro-router-configuration/) | Manage Distro lead-routing routers — create, update, activate/deactivate, delete | ⚠️ writes |
+| [handoff-router-configuration](skills/handoff-router-configuration/) | Manage Handoff routers — rep-to-rep handoff routing rules and meeting types | ⚠️ writes |
+| [concierge-router-configuration](skills/concierge-router-configuration/) | Manage Concierge routers — web-form routing rules, forms, and branding | ⚠️ writes |
+| [scheduling-link-management](skills/scheduling-link-management/) | Manage scheduling links — round-robin, admin one-on-one, group, ownership | ⚠️ writes |
+| [chiliforms-configuration](skills/chiliforms-configuration/) | Generate a ChiliForms embed (a Chili Piper–built web form) for a customer without a form of their own, as a ready-to-paste snippet | ✅ |
+
+See [`skills/README.md`](skills/README.md) for the full index with QA/maturity status, and [`gpts/README.md`](gpts/README.md) for the ChatGPT versions.
+
+---
+
+## Get started
+
+### 1. Connect the Chili Piper MCP
+
+Every skill talks to your Chili Piper account through the official MCP server. Set it up once — **API key** or **OAuth** — following [`mcp-servers/chili-piper/README.md`](mcp-servers/chili-piper/README.md).
+
+### 2. Install the skills — pick your surface
+
+**Option A — Claude Desktop or claude.ai (plugin, easiest — no terminal):**
+
+Install the whole plugin (every skill + the Chili Piper MCP config) right inside Claude:
+
+1. Open **Customize → Plugins** (or **Connectors**), click **＋** next to **Personal plugins** → **Create plugin → Add marketplace**.
+2. Paste `https://github.com/Chili-Piper/mcp-assets` and click **Sync**.
+3. Go to the **Directory → Plugins** (the **Personal** tab), open the **mcp-assets** marketplace, and click **＋** on **Chili Piper Skills** to install.
+
+> **Admins:** add it under **Organization plugins** instead to make it available to your whole org in one step — see [Deploy for your whole team](#deploy-for-your-whole-team).
+
+**Option B — Claude Code CLI (plugin):**
+
+In the standalone Claude Code terminal CLI:
+
+```
+/plugin marketplace add https://github.com/Chili-Piper/mcp-assets
+/plugin install chili-piper-skills@chili-piper-skills
+```
+
+> Both the marketplace and plugin are named **`chili-piper-skills`** (the ref is `plugin-name@marketplace-name`); or run `/plugin` and pick it from the **Marketplaces** menu. `/plugin` is CLI-only — on Desktop/web use Option A.
+>
+> **See a `git@github.com: Permission denied` / SSH error?** No key is needed for this public repo — tell git to use HTTPS and retry:
+> ```
+> git config --global url."https://github.com/".insteadOf "git@github.com:"
+> ```
+
+Options A and B install the full plugin (skills + slash commands + MCP config) and keep it updated — see [Staying up to date](#staying-up-to-date).
+
+**Option C — Just one skill (upload a single `.zip`):**
+
+Want only one skill, or to push a single skill as an **Organization skill**? Download it from the [latest release](https://github.com/Chili-Piper/mcp-assets/releases/latest) (e.g. [`meeting-inspector.zip`](https://github.com/Chili-Piper/mcp-assets/releases/latest/download/meeting-inspector.zip)) and upload it via **Customize → Skills → ＋** (added as a Personal skill; admins can choose **Organization** + **Share**).
+
+**Option D — OpenAI Codex (standalone skills):**
+
+First connect the Chili Piper MCP as a plugin by following the [ChatGPT/Codex setup in the Help Center](https://help.chilipiper.com/hc/en-us/articles/50430350863635-How-do-I-connect-Chili-Piper-via-MCP#connect-chatgpt). Then ask Codex:
+
+```
+$skill-installer install every skill from https://github.com/Chili-Piper/mcp-assets/tree/main/skills
+```
+
+Start a new Codex task after installation. Codex can select a matching skill automatically, or you can invoke one explicitly:
+
+```
+$meeting-inspector <meeting-id>
+```
+
+This installs the skills for the current user. The installer will not overwrite an existing skill folder; to update, remove the old installed copy first or maintain a Git clone and symlink its skill folders.
+
+**Option E — ChatGPT:**
+
+Connect the Chili Piper MCP as a plugin using the [Help Center instructions](https://help.chilipiper.com/hc/en-us/articles/50430350863635-How-do-I-connect-Chili-Piper-via-MCP#connect-chatgpt). If you prefer a dedicated Custom GPT with predefined conversation starters, deploy the matching GPT from [`gpts/`](gpts/README.md).
+
+**Option F — Cursor (plugin):**
+
+This repo ships a Cursor plugin (`.cursor-plugin/plugin.json` + a root `mcp.json`) that bundles the Chili Piper MCP with the same `skills/` and `commands/`.
+
+- **From the Marketplace:** open **Cursor → Settings → Plugins** (or the Marketplace) and search **"chili piper"**, then install. It's also discoverable from the Grok bot plugin list.
+- **Local / pre-release:** copy this repo into `~/.cursor/plugins/local/chili-piper`, reload Cursor, then install and log in.
+
+On first use Cursor runs the same one-click **OAuth** login the Chili Piper MCP already supports — no JSON to paste and no API key to manage. Prefer an API key instead? Follow [`mcp-servers/chili-piper/README.md`](mcp-servers/chili-piper/README.md) (`CHILI_PIPER_API_KEY`).
+
+### 3. Run a skill
+
+In Claude Code:
+
+```
+/inspect-meeting guest@example.com
+/audit-routing "APAC Sales"
+```
+
+Or just ask in natural language — the agent loads the matching skill automatically.
+
+Every skill also has a slash-command wrapper, so they all surface when you type `/chili…` (the plugin namespace). Type `/` to browse:
+
+| Command | Skill |
+|---|---|
+| `/inspect-meeting` | meeting-inspector |
+| `/audit-routing` | routing-audit |
+| `/check-availability` | availability-inspector |
+| `/debug-concierge` | concierge-debugger |
+| `/debug-distro` | distro-debugger |
+| `/inspect-chats` | chat-conversation-inspector |
+| `/analyze-distribution` | distribution-analysis |
+| `/analyze-no-shows` | no-show-analyzer |
+| `/org-meeting-report` | org-meeting |
+| `/user-details` | user-details |
+| `/user-meetings` | user-meetings |
+| `/copy-user` | user-copy |
+| `/offboard-user` | user-offboarding |
+| `/manage-meeting-types` | meeting-type-management |
+| `/configure-distro-router` | distro-router-configuration |
+| `/configure-handoff-router` | handoff-router-configuration |
+| `/configure-concierge-router` | concierge-router-configuration |
+| `/manage-scheduling-links` | scheduling-link-management |
+| `/configure-chiliforms` | chiliforms-configuration |
+| `/build-concierge-router` | concierge-router-builder |
+| `/onboard` | onboarding-chili-piper |
+
+`/copy-user`, `/offboard-user`, `/manage-meeting-types`, `/configure-distro-router`, `/configure-handoff-router`, `/configure-concierge-router`, `/manage-scheduling-links`, and `/build-concierge-router` write to Chili Piper — they default to a dry run and confirm before applying. `/onboard` also writes, by design with no dry run: an onboarding session exists to build, so nothing is created until the customer confirms the plan, and every write then goes through the client's approval prompt.
+
+---
+
+## Deploy for your whole team
+
+A single admin can roll these skills out to an entire team or org so everyone gets the same vetted specialists — and for a first-party set like this, org-wide is often the right call.
+
+**Easiest (Claude Desktop / claude.ai):** add the marketplace under **Organization plugins** (Customize → **Organization plugins → ＋ → Create plugin → Add marketplace** → `https://github.com/Chili-Piper/mcp-assets` → **Sync**). It then shows up for everyone in your org's **Directory → Your organization** tab.
+
+For Claude Code (settings.json), managed/enterprise rollout, and the private-fork option, see [`docs/org-deployment.md`](docs/org-deployment.md).
+
+---
+
+## Staying up to date
+
+We actively improve these skills, fix correctness issues, and add new ones. To stay current:
+
+- **Claude Desktop / claude.ai (plugin):** the plugin updates from the marketplace automatically; if needed, re-open **Add marketplace** and **Sync** to refresh.
+- **Claude Code plugin:** run `/plugin update chili-piper-skills@chili-piper-skills` (or enable auto-update).
+- **Single skill installed via `.zip`:** re-download from the [latest release](https://github.com/Chili-Piper/mcp-assets/releases/latest) and re-upload in Customize → Skills.
+- **Manual install:** `git pull`, or re-download the skill folder.
+- **Watch releases:** click **Watch → Custom → Releases** on this repo to be notified of every versioned update.
+- **Changelog:** every release is logged in [`CHANGELOG.md`](CHANGELOG.md).
+- **Discussions:** announcements and Q&A live in GitHub Discussions.
+
+Each skill carries a `version` in its frontmatter and a maturity level (`draft` / `tested` / `verified`) so you always know how battle-tested it is.
+
+---
+
+## Troubleshooting
+
+### Agent reports a tool as "not found" or can't call it (Claude Code, Cursor, Windsurf, Cline)
+
+**Symptom:** The agent says something like "I can't find the `concierge-router-create` tool" or refuses to call a tool it should have access to — even though the MCP is connected and the skill is installed.
+
+**Cause:** The Chili Piper MCP server uses **progressive tool disclosure** by default for known AI clients (Claude Code, Claude Desktop, Cursor, Windsurf, Cline, Continue). Instead of returning every tool's full input schema in `tools/list` — which would be hundreds of thousands of tokens across 100+ tools — the listing returns a compact stub for each tool. The full schema must be fetched on demand.
+
+Write tools tend to have the largest schemas. `concierge-router-create` in particular is ~78 KB (~26 k tokens), so an agent that skips loading its schema genuinely cannot construct a valid call.
+
+**Fix — fetch the schema first:**
+
+```
+describe-tools(names: ["concierge-router-create"])
+```
+
+Or fetch several at once before starting a workflow:
+
+```
+describe-tools(names: ["concierge-router-create", "concierge-router-update", "rule-list"])
+```
+
+Skills in this repository handle this automatically — the skill instructions tell the agent to call `describe-tools` as part of its setup. If you're calling tools directly without a skill, add this step manually before the first tool call.
+
+**Alternative — revert to the legacy full-schema listing:**
+
+Pass `X-MCP-Tool-Schemas: full` as a request header in your MCP client configuration. This sends every tool's complete schema in every `tools/list` response (the behaviour before 2026-09-01). Note the token overhead is substantial on a 100+ tool server — `concierge-router-create` alone adds ~26 k tokens per call.
+
+**Not affected:** ChatGPT Custom GPTs (they use `openapi.yaml` directly, not `tools/list`) and any MCP client not in the progressive-disclosure allowlist — those receive the full schema listing unchanged.
+
+---
+
+## Data & security
+
+This repository contains **zero customer data** — skills are instructions only. Your data stays in your Chili Piper account and is accessed live via the MCP using your own credentials. See [SECURITY.md](SECURITY.md).
+
+---
+
+## Contributing & support
+
+Found a bug or want a new skill? Open an [issue](https://github.com/Chili-Piper/mcp-assets/issues). For product/security questions see [SECURITY.md](SECURITY.md).
+
+**License:** MIT for code · CC-BY 4.0 for content — see [LICENSE](LICENSE).
+
+---
+
+*Official Chili Piper Skills. The MCP is the door into your Chili Piper account — these skills are the playbook for using it well.*
