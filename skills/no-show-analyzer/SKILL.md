@@ -1,8 +1,8 @@
 ---
 name: no-show-analyzer
 description: Analyzes Chili Piper meeting no-show patterns by trigger type, routing path, rep, or workspace using meeting-list-put and concierge-logs to surface actionable optimization opportunities
-version: 0.3.8
-api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 100 per page, default 20); Step 3b and preflight updated to paginate high-volume routers; 2026-07-23: DO-5176 (edge PR #996) added assigneeIds, hostIds, guestEmail, meetingTypeIds as optional server-side filters to meeting-list-put — useful for pre-filtering by specific hosts or meeting types before grouping client-side. 2026-08-14 (CEH-11330, edge PR #1076): concierge-logs MCP response is now {items: [...]} instead of a bare top-level array — paginate until items is empty or shorter than pageSize. 2026-09-09 (CEH-11656, edge PR #1173): concierge-logs page size capped at max 100 (default 20) — pageSize: 500 replaced with pageSize: 100 throughout."
+version: 0.3.9
+api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 100 per page, default 20); Step 3b and preflight updated to paginate high-volume routers; 2026-07-23: DO-5176 (edge PR #996) added assigneeIds, hostIds, guestEmail, meetingTypeIds as optional server-side filters to meeting-list-put — useful for pre-filtering by specific hosts or meeting types before grouping client-side. 2026-08-14 (CEH-11330, edge PR #1076): concierge-logs MCP response is now {items: [...]} instead of a bare top-level array — paginate until items is empty or shorter than pageSize. 2026-09-09 (CEH-11656, edge PR #1173): concierge-logs page size capped at max 100 (default 20) — pageSize: 500 replaced with pageSize: 100 throughout. 2026-11-24 (CEH-12835, edge PR #2565): bookerIds added as a new optional server-side filter on meeting-list-put — filter by the user(s) who booked the meeting (distinct from hostIds/assigneeIds); useful when the booker differs from the host."
 references:
   - api-reference
   - analysis-methodology
