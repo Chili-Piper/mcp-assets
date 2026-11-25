@@ -1,47 +1,48 @@
 ---
 name: distro-router-configuration
 description: Creates, updates, activates/deactivates, and deletes Chili Piper Distro (lead-routing) routers — full lifecycle with dry-run diffs, async status polling, overlay-aware updates, and delete safety gates. Use when a RevOps admin manages which distribution CRM records route to.
-version: 0.2.3
-references:
-  - api-reference
-  - lifecycle-procedures
-  - routing-model
-  - output-format
-inputs:
-  - name: workspace
-    type: string
-    description: "Workspace name or ID containing the router."
-    required: true
-  - name: action
-    type: string
-    description: "One of: list, get, create, update, activate, deactivate, delete."
-    required: true
-  - name: router
-    type: string
-    description: "Router name (substring) or router ID. Required for everything except list and create."
-    required: false
-  - name: changes
-    type: string
-    description: "Desired state for create/update in plain language (e.g. 'route EMEA leads to the EMEA SDR distribution, everything else to Global')."
-    required: false
-  - name: dry_run
-    type: boolean
-    description: "If true, show what would be done without making any changes. Always recommended before first run."
-    required: false
-    default: true
-outputs:
-  - name: plan
-    description: Dry-run diff — routing rows rendered as rule → distribution, lifecycle transitions, every object that would change
-  - name: result
-    description: Applied changes with post-write verification and final router status (only when dry_run=false)
-  - name: status
-    description: Router lifecycle status (Active/Inactive/Activating/Deactivating/Error) with polling progress for async transitions
-  - name: audit_trail
-    description: Which tool calls were made, on which IDs, with before/after values
-tools_required: [chili-piper-mcp]
-human_decision_point: "Two gates: (1) review the dry-run plan before any mutation; (2) confirm activation separately — an Active router starts routing live CRM records immediately. Delete is only planned from Inactive state."
-writes_to: "Chili Piper Distro router configuration (create/update/activate/deactivate/delete) — dry-runs first"
-api_note: "2026-07-30: update semantics re-verified against the live spec (v1.311.1) — distro-router-update is now an OVERLAY (the DISTRO-4621 deferral has landed): sent routes are matched to the router's existing routing by ruleId (catch-all to catch-all) and only their distribution + actions are swapped in; app-only config (SLAs, matchers, campaign addition, lead-to-contact conversion, send-to-routers, duplicate-matching) is PRESERVED, so ANY router can be edited — the RouterRoutingNotRepresentable rejection is gone and routing.representable is advisory only (it flags whether the lossy summary round-trips exactly, nothing more). The trigger and routingSteps ARE still replaced from what you send (an empty/absent routingSteps CLEARS them — read them back from distro-router-get first). Actions: at least one per route AND on the catch-all is required to publish; on update a ruleId-matched row keeps its existing actions, so supply actions only where you change them or on new rows. Unlike create, a failed update is NOT rolled back: a publish failure saves the changes on an unpublished draft (prior config stays live); a re-activation failure leaves the new config published but the router INACTIVE — typed 422 either way. Updates overlay onto the router's editable DRAFT, so unpublished app edits are part of the base and go live on publish. Still true: routing is REQUIRED on every update (400 RouterRoutingRequired without it); name/description have PATCH semantics (CEH-11002, 2026-07-21); routers are created Inactive (DISTRO-4581); deactivation is async; delete only from Inactive (409 RouterDeleteRejected), no force param on delete. Field truth → references/api-reference.md. 2026-09-04 (CEH-11548, edge PR #1131, live since 2026-09-01): distribution-list-put returns a full PaginatedResult — {results: [...], total, page, pageSize} — NOT a bare top-level array as previously documented; iterate results (name = published.name, ID = id). 2026-09-14 (CEH-11703, edge PR #1194): ConvertLead and AddToCampaign are now supported Distro router crmActions — {type: 'ConvertLead'} converts the CRM record post-routing, {type: 'AddToCampaign', campaignId, memberStatus} adds the record to a Salesforce campaign. Both are valid on routes and catchAll; resolve campaignId via campaign-list or campaign-search. 2026-09-14 (CEH-11715, edge PR #1198): routing.routes now defaults to Nil — callers no longer need to include \"routes\": [] for a catch-all-only router; the schema (optional) and decoder (previously required) now agree. Supply routes only when the router has rule-based rows beyond the catch-all."
+metadata:
+  version: 0.2.3
+  references:
+    - api-reference
+    - lifecycle-procedures
+    - routing-model
+    - output-format
+  inputs:
+    - name: workspace
+      type: string
+      description: "Workspace name or ID containing the router."
+      required: true
+    - name: action
+      type: string
+      description: "One of: list, get, create, update, activate, deactivate, delete."
+      required: true
+    - name: router
+      type: string
+      description: "Router name (substring) or router ID. Required for everything except list and create."
+      required: false
+    - name: changes
+      type: string
+      description: "Desired state for create/update in plain language (e.g. 'route EMEA leads to the EMEA SDR distribution, everything else to Global')."
+      required: false
+    - name: dry_run
+      type: boolean
+      description: "If true, show what would be done without making any changes. Always recommended before first run."
+      required: false
+      default: true
+  outputs:
+    - name: plan
+      description: Dry-run diff — routing rows rendered as rule → distribution, lifecycle transitions, every object that would change
+    - name: result
+      description: Applied changes with post-write verification and final router status (only when dry_run=false)
+    - name: status
+      description: Router lifecycle status (Active/Inactive/Activating/Deactivating/Error) with polling progress for async transitions
+    - name: audit_trail
+      description: Which tool calls were made, on which IDs, with before/after values
+  tools_required: [chili-piper-mcp]
+  human_decision_point: "Two gates: (1) review the dry-run plan before any mutation; (2) confirm activation separately — an Active router starts routing live CRM records immediately. Delete is only planned from Inactive state."
+  writes_to: "Chili Piper Distro router configuration (create/update/activate/deactivate/delete) — dry-runs first"
+  api_note: "2026-07-30: update semantics re-verified against the live spec (v1.311.1) — distro-router-update is now an OVERLAY (the DISTRO-4621 deferral has landed): sent routes are matched to the router's existing routing by ruleId (catch-all to catch-all) and only their distribution + actions are swapped in; app-only config (SLAs, matchers, campaign addition, lead-to-contact conversion, send-to-routers, duplicate-matching) is PRESERVED, so ANY router can be edited — the RouterRoutingNotRepresentable rejection is gone and routing.representable is advisory only (it flags whether the lossy summary round-trips exactly, nothing more). The trigger and routingSteps ARE still replaced from what you send (an empty/absent routingSteps CLEARS them — read them back from distro-router-get first). Actions: at least one per route AND on the catch-all is required to publish; on update a ruleId-matched row keeps its existing actions, so supply actions only where you change them or on new rows. Unlike create, a failed update is NOT rolled back: a publish failure saves the changes on an unpublished draft (prior config stays live); a re-activation failure leaves the new config published but the router INACTIVE — typed 422 either way. Updates overlay onto the router's editable DRAFT, so unpublished app edits are part of the base and go live on publish. Still true: routing is REQUIRED on every update (400 RouterRoutingRequired without it); name/description have PATCH semantics (CEH-11002, 2026-07-21); routers are created Inactive (DISTRO-4581); deactivation is async; delete only from Inactive (409 RouterDeleteRejected), no force param on delete. Field truth → references/api-reference.md. 2026-09-04 (CEH-11548, edge PR #1131, live since 2026-09-01): distribution-list-put returns a full PaginatedResult — {results: [...], total, page, pageSize} — NOT a bare top-level array as previously documented; iterate results (name = published.name, ID = id). 2026-09-14 (CEH-11703, edge PR #1194): ConvertLead and AddToCampaign are now supported Distro router crmActions — {type: 'ConvertLead'} converts the CRM record post-routing, {type: 'AddToCampaign', campaignId, memberStatus} adds the record to a Salesforce campaign. Both are valid on routes and catchAll; resolve campaignId via campaign-list or campaign-search. 2026-09-14 (CEH-11715, edge PR #1198): routing.routes now defaults to Nil — callers no longer need to include \"routes\": [] for a catch-all-only router; the schema (optional) and decoder (previously required) now agree. Supply routes only when the router has rule-based rows beyond the catch-all."
 ---
 
 # Distro Router Configuration

@@ -1,46 +1,47 @@
 ---
 name: onboarding-chili-piper
 description: Guided self-serve Chili Piper onboarding. Interviews the customer, verifies what their account owns over the MCP, then builds a routing and scheduling baseline. Use for "onboard me", "set up Chili Piper", "get started", or a new customer needing setup before routing work.
-version: 0.15.1
-references:
-  - account-baseline
-  - build-loop
-  - build-patterns
-  - chat
-  - chilical
-  - concierge
-  - customer-replies
-  - dimensions
-  - distro
-  - escalation
-  - handoff
-  - help-center
-  - interview
-  - onboarding-plan-template
-  - routing-data
-  - shared-assets
-  - standing-defaults
-  - use-cases
-inputs:
-  - name: workspace
-    type: string
-    description: The workspace to build in. When omitted, read from the account in Phase 0 (used directly if there is only one, asked otherwise).
-    required: false
-  - name: familiarity
-    type: string
-    description: How well the customer knows Chili Piper (new / some / expert). Sets how much each asset is explained. Asked first when omitted.
-    required: false
-outputs:
-  - name: onboarding_plan
-    description: The agreed plan, from references/onboarding-plan-template.md.
-  - name: built_assets
-    description: Each asset created or updated, with its admin link (and public link where one exists).
-  - name: handoff_list
-    description: Who / what / why for anything this session could not do.
-tools_required: [chili-piper-mcp]
-operator: "customer (self-serve)"
-human_decision_point: "Customer confirms the Onboarding Plan before any config is created; every write is approved in-client"
-writes_to: "Chili Piper (users, workspace and team membership, teams, meeting types and reminders, data fields, rules, distributions, routers, scheduling links, web experiences) only in a write-capable session, always behind the client's per-write approval prompt"
+metadata:
+  version: 0.15.1
+  references:
+    - account-baseline
+    - build-loop
+    - build-patterns
+    - chat
+    - chilical
+    - concierge
+    - customer-replies
+    - dimensions
+    - distro
+    - escalation
+    - handoff
+    - help-center
+    - interview
+    - onboarding-plan-template
+    - routing-data
+    - shared-assets
+    - standing-defaults
+    - use-cases
+  inputs:
+    - name: workspace
+      type: string
+      description: The workspace to build in. When omitted, read from the account in Phase 0 (used directly if there is only one, asked otherwise).
+      required: false
+    - name: familiarity
+      type: string
+      description: How well the customer knows Chili Piper (new / some / expert). Sets how much each asset is explained. Asked first when omitted.
+      required: false
+  outputs:
+    - name: onboarding_plan
+      description: The agreed plan, from references/onboarding-plan-template.md.
+    - name: built_assets
+      description: Each asset created or updated, with its admin link (and public link where one exists).
+    - name: handoff_list
+      description: Who / what / why for anything this session could not do.
+  tools_required: [chili-piper-mcp]
+  operator: "customer (self-serve)"
+  human_decision_point: "Customer confirms the Onboarding Plan before any config is created; every write is approved in-client"
+  writes_to: "Chili Piper (users, workspace and team membership, teams, meeting types and reminders, data fields, rules, distributions, routers, scheduling links, web experiences) only in a write-capable session, always behind the client's per-write approval prompt"
 ---
 
 # Chili Piper Onboarding

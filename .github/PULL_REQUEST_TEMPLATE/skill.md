@@ -3,7 +3,7 @@
 Before submitting, confirm each item:
 
 ### Content
-- [ ] Skill lives in `plugins/chili-piper-skills/skills/<slug>/SKILL.md` with complete frontmatter (`name`, `description`, `version`, `tools_required`, `writes_to`)
+- [ ] Skill lives in `plugins/chili-piper-skills/skills/<slug>/SKILL.md` with complete frontmatter (`name`, `description` at top level; `version`, `tools_required`, `writes_to` under `metadata:`)
 - [ ] `name` in frontmatter matches the directory name (kebab-case)
 - [ ] Any deep-dive content is in `references/*.md` and listed under `references:`
 - [ ] Skill is registered in `plugins/chili-piper-skills/skills/README.md` with its maturity/QA status

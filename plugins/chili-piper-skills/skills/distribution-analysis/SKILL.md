@@ -1,40 +1,41 @@
 ---
 name: distribution-analysis
 description: Analyzes a Chili Piper round-robin distribution for a workspace and date range — meeting counts by rep, imbalance vs. configured weights, day-of-week and source skew, and cancellations — interpreted against the workspace's fairness settings (credit-back, vacation calibration, reset period). Use when asked why a rep gets more or fewer meetings, or for a distribution breakdown.
-version: 0.2.3
-references:
-  - api-reference
-  - output-format
-inputs:
-  - name: workspace
-    type: string
-    description: "Workspace name or ID containing the distribution."
-    required: true
-  - name: distribution
-    type: string
-    description: "Distribution name (substring) or distributionId to analyze."
-    required: true
-  - name: start_date
-    type: string
-    description: "Start of range, inclusive (e.g. 2026-05-01)."
-    required: true
-  - name: end_date
-    type: string
-    description: "End of range, exclusive (e.g. 2026-06-01 = through May 31)."
-    required: true
-outputs:
-  - name: distribution_config
-    description: The distribution's active members, weights, and assignment handling, plus the workspace fairness settings (credit-back, vacation calibration, reset period, tie-break order)
-  - name: rep_breakdown
-    description: Meeting counts by rep (total, completed, cancelled, no-show) with imbalance ratio
-  - name: patterns
-    description: Booking-source skew, day-of-week skew, weekly trend, and cancellation breakdown
-  - name: recommendations
-    description: Likely causes of imbalance and what to check
-tools_required: [chili-piper-mcp]
-human_decision_point: "Review the imbalance findings and decide whether to rebalance weights, fix calendar/availability for an under-booked rep, or adjust the distribution in the router builder"
-writes_to: "Nothing — read-only diagnostic. Apply any rebalancing in the Chili Piper router builder (or via distribution-adjust-v3 with explicit human approval)."
-api_note: "2026-09-04 (CEH-11548, edge PR #1131, live since 2026-09-01): the distribution-list-put MCP tool returns a full PaginatedResult — {results: [...], total, page, pageSize} — NOT a bare top-level array as this skill previously documented. Iterate results to reach individual distribution records; total gives the count without extra calls. references/api-reference.md § Tools and Step 2 updated accordingly. 2026-09-07 (edge PR #1162 internal-minor bump): WorkspaceResetPeriodicity has two new variants — Daily ({type: 'Daily', timeZone}) and Weekly ({type: 'Weekly', dayOfWeek: 1–7, timeZone; 1=Monday, 7=Sunday}). Prior variants (Monthly/Quarterly/Yearly/Never) are unchanged. Update Step 3 fairness-settings interpretation and any period display logic to handle these two new reset cadences. CEH-12065 (edge PR #1884, 2026-10-20): distribution-list-put item shape confirmed: each results[] entry is {id, published: {distributionId, workspaceId, name, teamRef, weights, manualCalibration, assignmentTypeConfig, capping, metadata}, state, prioritization} — use published.name, published.weights, published.assignmentTypeConfig, and published.capping in Step 2; top-level distributionId/name do not exist."
+metadata:
+  version: 0.2.3
+  references:
+    - api-reference
+    - output-format
+  inputs:
+    - name: workspace
+      type: string
+      description: "Workspace name or ID containing the distribution."
+      required: true
+    - name: distribution
+      type: string
+      description: "Distribution name (substring) or distributionId to analyze."
+      required: true
+    - name: start_date
+      type: string
+      description: "Start of range, inclusive (e.g. 2026-05-01)."
+      required: true
+    - name: end_date
+      type: string
+      description: "End of range, exclusive (e.g. 2026-06-01 = through May 31)."
+      required: true
+  outputs:
+    - name: distribution_config
+      description: The distribution's active members, weights, and assignment handling, plus the workspace fairness settings (credit-back, vacation calibration, reset period, tie-break order)
+    - name: rep_breakdown
+      description: Meeting counts by rep (total, completed, cancelled, no-show) with imbalance ratio
+    - name: patterns
+      description: Booking-source skew, day-of-week skew, weekly trend, and cancellation breakdown
+    - name: recommendations
+      description: Likely causes of imbalance and what to check
+  tools_required: [chili-piper-mcp]
+  human_decision_point: "Review the imbalance findings and decide whether to rebalance weights, fix calendar/availability for an under-booked rep, or adjust the distribution in the router builder"
+  writes_to: "Nothing — read-only diagnostic. Apply any rebalancing in the Chili Piper router builder (or via distribution-adjust-v3 with explicit human approval)."
+  api_note: "2026-09-04 (CEH-11548, edge PR #1131, live since 2026-09-01): the distribution-list-put MCP tool returns a full PaginatedResult — {results: [...], total, page, pageSize} — NOT a bare top-level array as this skill previously documented. Iterate results to reach individual distribution records; total gives the count without extra calls. references/api-reference.md § Tools and Step 2 updated accordingly. 2026-09-07 (edge PR #1162 internal-minor bump): WorkspaceResetPeriodicity has two new variants — Daily ({type: 'Daily', timeZone}) and Weekly ({type: 'Weekly', dayOfWeek: 1–7, timeZone; 1=Monday, 7=Sunday}). Prior variants (Monthly/Quarterly/Yearly/Never) are unchanged. Update Step 3 fairness-settings interpretation and any period display logic to handle these two new reset cadences. CEH-12065 (edge PR #1884, 2026-10-20): distribution-list-put item shape confirmed: each results[] entry is {id, published: {distributionId, workspaceId, name, teamRef, weights, manualCalibration, assignmentTypeConfig, capping, metadata}, state, prioritization} — use published.name, published.weights, published.assignmentTypeConfig, and published.capping in Step 2; top-level distributionId/name do not exist."
 ---
 
 # Distribution Analysis

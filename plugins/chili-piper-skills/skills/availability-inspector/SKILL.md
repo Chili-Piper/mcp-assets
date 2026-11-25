@@ -1,37 +1,38 @@
 ---
 name: availability-inspector
 description: Checks why a rep or team is showing no available slots — diagnoses calendar connectivity, working hours, meeting limits, and distribution membership to find the specific blocker
-version: 0.1.3
-references:
-  - api-reference
-  - diagnostics
-  - output-format
-inputs:
-  - name: user
-    type: string
-    description: "Email, name, or user ID of the rep to check availability for"
-    required: true
-  - name: workspace
-    type: string
-    description: "Workspace name or ID to scope team/distribution lookup"
-    required: false
-  - name: lookahead_days
-    type: number
-    description: "How many days ahead to check for slots (default: 14)"
-    required: false
-    default: 14
-outputs:
-  - name: availability_result
-    description: Whether slots were found, and in what quantity
-  - name: per_day_breakdown
-    description: Slot count per calendar day across the window (includes zero-slot days), surfacing working-hours patterns and gaps
-  - name: diagnosis
-    description: Specific blocker identified with root cause (based on user profile and empty-results pattern; v2 API no longer returns per-user failure codes)
-  - name: fix
-    description: Step-by-step resolution for the human
-tools_required: [chili-piper-mcp]
-human_decision_point: "Review the diagnosis and fix the blocker — most causes require action in Chili Piper admin, Google/Outlook calendar settings, or Zoom/Teams reconnection"
-writes_to: "Nothing — read-only diagnostic"
+metadata:
+  version: 0.1.3
+  references:
+    - api-reference
+    - diagnostics
+    - output-format
+  inputs:
+    - name: user
+      type: string
+      description: "Email, name, or user ID of the rep to check availability for"
+      required: true
+    - name: workspace
+      type: string
+      description: "Workspace name or ID to scope team/distribution lookup"
+      required: false
+    - name: lookahead_days
+      type: number
+      description: "How many days ahead to check for slots (default: 14)"
+      required: false
+      default: 14
+  outputs:
+    - name: availability_result
+      description: Whether slots were found, and in what quantity
+    - name: per_day_breakdown
+      description: Slot count per calendar day across the window (includes zero-slot days), surfacing working-hours patterns and gaps
+    - name: diagnosis
+      description: Specific blocker identified with root cause (based on user profile and empty-results pattern; v2 API no longer returns per-user failure codes)
+    - name: fix
+      description: Step-by-step resolution for the human
+  tools_required: [chili-piper-mcp]
+  human_decision_point: "Review the diagnosis and fix the blocker — most causes require action in Chili Piper admin, Google/Outlook calendar settings, or Zoom/Teams reconnection"
+  writes_to: "Nothing — read-only diagnostic"
 ---
 
 # Availability Inspector
