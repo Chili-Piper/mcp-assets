@@ -1,50 +1,51 @@
 ---
 name: distro-debugger
 description: Debugs why a CRM record was routed (or not routed) through a Chili Piper distribution — accepts a log ID, Salesforce record ID, or contact/lead name, explains each rule stage, and recommends a targeted fix
-version: 0.3.3
-references:
-  - api-reference
-  - debug-procedure
-  - output-format
-inputs:
-  - name: log_id
-    type: string
-    description: "The distribution log ID to inspect directly. If omitted, provide salesforce_id or record_name instead."
-    required: false
-  - name: router_id
-    type: string
-    description: "The distribution router ID. Required when log_id is provided. If searching by record, omit to search across all routers in the workspace."
-    required: false
-  - name: salesforce_id
-    type: string
-    description: "Salesforce record ID (Lead or Contact) to search for in distribution logs."
-    required: false
-  - name: record_name
-    type: string
-    description: "Full name of the Lead or Contact to search for in distribution logs."
-    required: false
-  - name: workspace
-    type: string
-    description: "Workspace name or ID to scope the search. Required when searching by salesforce_id or record_name."
-    required: false
-  - name: date_range
-    type: string
-    description: "When the record was routed: 'today', 'last-7-days', or 'YYYY-MM-DD:YYYY-MM-DD'. Used when searching by salesforce_id or record_name."
-    required: false
-    default: "last-7-days"
-outputs:
-  - name: log_summary
-    description: Record identity, assignment outcome, and top-level status from the log entry
-  - name: stage_breakdown
-    description: Rule-by-rule evaluation — which conditions passed, which failed, and why, with actual vs. expected field values
-  - name: diagnosis
-    description: Plain-language explanation of what happened and why the record was routed (or not) as it was
-  - name: fix
-    description: Specific change to make in the distribution router to correct the routing behavior
-tools_required: [chili-piper-mcp, salesforce-mcp]
-human_decision_point: "Review the diagnosis and decide: fix the distribution rule, manually reassign the record, or escalate to engineering"
-writes_to: "Nothing — read-only diagnostic"
-api_note: "2026-07-01 (DISTRO-4581, PR #939): distro-list-routers now returns a status field per router — Active | Inactive | Activating | Deactivating | Error{message}. Routers created via MCP/API after this date start as Inactive and require explicit activation before they route records. Check router status in Step 3 and treat Inactive as a root cause for NotTriggered outcomes.; 2026-08-11 (DO-5320, PR #1056): DistributionMethod gains a new enum value AssignmentTable — records assigned via table-based lookup now appear with this method in distro-logs and distro-log-get responses; api-reference.md updated."
+metadata:
+  version: 0.3.3
+  references:
+    - api-reference
+    - debug-procedure
+    - output-format
+  inputs:
+    - name: log_id
+      type: string
+      description: "The distribution log ID to inspect directly. If omitted, provide salesforce_id or record_name instead."
+      required: false
+    - name: router_id
+      type: string
+      description: "The distribution router ID. Required when log_id is provided. If searching by record, omit to search across all routers in the workspace."
+      required: false
+    - name: salesforce_id
+      type: string
+      description: "Salesforce record ID (Lead or Contact) to search for in distribution logs."
+      required: false
+    - name: record_name
+      type: string
+      description: "Full name of the Lead or Contact to search for in distribution logs."
+      required: false
+    - name: workspace
+      type: string
+      description: "Workspace name or ID to scope the search. Required when searching by salesforce_id or record_name."
+      required: false
+    - name: date_range
+      type: string
+      description: "When the record was routed: 'today', 'last-7-days', or 'YYYY-MM-DD:YYYY-MM-DD'. Used when searching by salesforce_id or record_name."
+      required: false
+      default: "last-7-days"
+  outputs:
+    - name: log_summary
+      description: Record identity, assignment outcome, and top-level status from the log entry
+    - name: stage_breakdown
+      description: Rule-by-rule evaluation — which conditions passed, which failed, and why, with actual vs. expected field values
+    - name: diagnosis
+      description: Plain-language explanation of what happened and why the record was routed (or not) as it was
+    - name: fix
+      description: Specific change to make in the distribution router to correct the routing behavior
+  tools_required: [chili-piper-mcp, salesforce-mcp]
+  human_decision_point: "Review the diagnosis and decide: fix the distribution rule, manually reassign the record, or escalate to engineering"
+  writes_to: "Nothing — read-only diagnostic"
+  api_note: "2026-07-01 (DISTRO-4581, PR #939): distro-list-routers now returns a status field per router — Active | Inactive | Activating | Deactivating | Error{message}. Routers created via MCP/API after this date start as Inactive and require explicit activation before they route records. Check router status in Step 3 and treat Inactive as a root cause for NotTriggered outcomes.; 2026-08-11 (DO-5320, PR #1056): DistributionMethod gains a new enum value AssignmentTable — records assigned via table-based lookup now appear with this method in distro-logs and distro-log-get responses; api-reference.md updated."
 ---
 
 # Distribution Debugger

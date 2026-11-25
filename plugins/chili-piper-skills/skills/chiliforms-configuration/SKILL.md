@@ -1,44 +1,45 @@
 ---
 name: chiliforms-configuration
 description: Builds a ChiliForms embed, a web form Chili Piper generates from a Concierge router, for customers without a form of their own. Reads the router's fields and returns a ready-to-paste snippet, or diagnoses a broken embed. Read-only.
-version: 0.1.1
-references:
-  - api-reference
-  - embed-reference
-  - troubleshooting
-  - output-format
-inputs:
-  - name: router
-    type: string
-    description: "Concierge router name (substring), slug, or router ID the form should route through."
-    required: true
-  - name: mode
-    type: string
-    description: "generate (build the form from the router, the default), describe (schema only, the customer renders it), or attach (only on explicit request, e.g. migrating a legacy chiliforms-fire.js integration)."
-    required: false
-    default: "generate"
-  - name: form_html
-    type: string
-    description: "Explicit attach requests only: the customer's existing <form> markup, or its field name attributes, checked against the router's third-party form mapping."
-    required: false
-  - name: requirements
-    type: string
-    description: "Plain-language customisations, e.g. 'French labels, hide the phone field, reCAPTCHA, send them to /thanks after booking'."
-    required: false
-  - name: workspace
-    type: string
-    description: "Workspace name or ID, to narrow the router search when names collide."
-    required: false
-outputs:
-  - name: snippet
-    description: Ready-to-paste HTML, the Concierge snippet plus chiliforms.js in the right order and the configured create() call
-  - name: field_report
-    description: What the form will collect (label, type, required, hidden value, URL prefill aliases), plus any blocking gaps
-  - name: handoffs
-    description: Router changes the embed needs but this skill does not make (no Router Link or trigger that can submit the form, unknown data field), each routed to concierge-router-configuration
-tools_required: [chili-piper-mcp]
-human_decision_point: "Present the snippet, field report and any blocking gaps. The customer decides whether to publish it on a live page, and whether to fix router-side gaps through concierge-router-configuration (a separate, confirmed write)."
-writes_to: "Nothing, read-only. Router changes are handed off to concierge-router-configuration."
+metadata:
+  version: 0.1.1
+  references:
+    - api-reference
+    - embed-reference
+    - troubleshooting
+    - output-format
+  inputs:
+    - name: router
+      type: string
+      description: "Concierge router name (substring), slug, or router ID the form should route through."
+      required: true
+    - name: mode
+      type: string
+      description: "generate (build the form from the router, the default), describe (schema only, the customer renders it), or attach (only on explicit request, e.g. migrating a legacy chiliforms-fire.js integration)."
+      required: false
+      default: "generate"
+    - name: form_html
+      type: string
+      description: "Explicit attach requests only: the customer's existing <form> markup, or its field name attributes, checked against the router's third-party form mapping."
+      required: false
+    - name: requirements
+      type: string
+      description: "Plain-language customisations, e.g. 'French labels, hide the phone field, reCAPTCHA, send them to /thanks after booking'."
+      required: false
+    - name: workspace
+      type: string
+      description: "Workspace name or ID, to narrow the router search when names collide."
+      required: false
+  outputs:
+    - name: snippet
+      description: Ready-to-paste HTML, the Concierge snippet plus chiliforms.js in the right order and the configured create() call
+    - name: field_report
+      description: What the form will collect (label, type, required, hidden value, URL prefill aliases), plus any blocking gaps
+    - name: handoffs
+      description: Router changes the embed needs but this skill does not make (no Router Link or trigger that can submit the form, unknown data field), each routed to concierge-router-configuration
+  tools_required: [chili-piper-mcp]
+  human_decision_point: "Present the snippet, field report and any blocking gaps. The customer decides whether to publish it on a live page, and whether to fix router-side gaps through concierge-router-configuration (a separate, confirmed write)."
+  writes_to: "Nothing, read-only. Router changes are handed off to concierge-router-configuration."
 ---
 
 # ChiliForms Configuration

@@ -1,40 +1,41 @@
 ---
 name: user-meetings
 description: Shows all meetings assigned to a specific rep for a period — volume, statuses, and no-show rate — to surface rep-level pipeline health and flag reps who may need coaching or routing changes
-version: 0.5.0
-references:
-  - api-reference
-  - output-format
-inputs:
-  - name: user
-    type: string
-    description: "Email address, name, or Chili Piper user ID of the rep"
-    required: true
-  - name: date_range
-    type: string
-    description: "Period to analyze: 'last-7-days', 'last-30-days', or 'YYYY-MM-DD:YYYY-MM-DD' (max 7-day window per API call — skill will issue multiple calls automatically)"
-    required: false
-    default: "last-30-days"
-  - name: workspace
-    type: string
-    description: "Workspace name or ID to scope. Omit for org-wide."
-    required: false
-  - name: timezone
-    type: string
-    description: "IANA timezone for displaying timestamps (e.g. America/Chicago). Omit to display in UTC."
-    required: false
-    default: "UTC"
-outputs:
-  - name: summary
-    description: Meeting volume, completion rate, and no-show rate for the period
-  - name: meeting_list
-    description: All meetings in the period with scheduled date, status, guest, and workspace
-  - name: anomalies
-    description: Patterns that may indicate coaching needs or routing issues
-tools_required: [chili-piper-mcp]
-human_decision_point: "Review anomaly flags and decide: coaching conversation, territory/routing adjustment, or no action needed"
-writes_to: "Nothing — read-only diagnostic"
-api_note: "As of DISTRO-4472 (2026-05-21) meeting-export-v2-put supports these server-side filters (all confirmed live): hostIds, assigneeIds, bookerIds, meetingTypeIds, status. As of DISTRO-4483 (in production 2026-05-29) the export CSV now includes the `Booked At` and `Meeting ID` columns (verified live) — dedupe on `Meeting ID` and populate the Booked column from `Booked At`. Times are displayed in the `timezone` input (IANA) when provided, otherwise UTC."
+metadata:
+  version: 0.5.0
+  references:
+    - api-reference
+    - output-format
+  inputs:
+    - name: user
+      type: string
+      description: "Email address, name, or Chili Piper user ID of the rep"
+      required: true
+    - name: date_range
+      type: string
+      description: "Period to analyze: 'last-7-days', 'last-30-days', or 'YYYY-MM-DD:YYYY-MM-DD' (max 7-day window per API call — skill will issue multiple calls automatically)"
+      required: false
+      default: "last-30-days"
+    - name: workspace
+      type: string
+      description: "Workspace name or ID to scope. Omit for org-wide."
+      required: false
+    - name: timezone
+      type: string
+      description: "IANA timezone for displaying timestamps (e.g. America/Chicago). Omit to display in UTC."
+      required: false
+      default: "UTC"
+  outputs:
+    - name: summary
+      description: Meeting volume, completion rate, and no-show rate for the period
+    - name: meeting_list
+      description: All meetings in the period with scheduled date, status, guest, and workspace
+    - name: anomalies
+      description: Patterns that may indicate coaching needs or routing issues
+  tools_required: [chili-piper-mcp]
+  human_decision_point: "Review anomaly flags and decide: coaching conversation, territory/routing adjustment, or no action needed"
+  writes_to: "Nothing — read-only diagnostic"
+  api_note: "As of DISTRO-4472 (2026-05-21) meeting-export-v2-put supports these server-side filters (all confirmed live): hostIds, assigneeIds, bookerIds, meetingTypeIds, status. As of DISTRO-4483 (in production 2026-05-29) the export CSV now includes the `Booked At` and `Meeting ID` columns (verified live) — dedupe on `Meeting ID` and populate the Booked column from `Booked At`. Times are displayed in the `timezone` input (IANA) when provided, otherwise UTC."
 ---
 
 # User Meetings

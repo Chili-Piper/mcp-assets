@@ -1,43 +1,44 @@
 ---
 name: meeting-inspector
 description: Deep-dives into a single Chili Piper meeting — booking trigger, routing path, rep assignment, and outcome — to diagnose what happened and surface a next action.
-version: 0.3.5
-api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Quick API table and Step 3b updated; 2026-07-31: CEH-10893 (edge PR #1021) — meeting-get and meeting-list-put now return `sourceUrl` (booking-page URL the guest came from, Option[String]) and `sourceUrlParams` (parsed UTM/query params, Option[Map[String,String]]) directly on the meeting object; api-reference § Meeting summary fields updated. 2026-08-03: CEH-10905 (edge PR #1031) — concierge-list-routers now includes `formFields` on each router — a list of ConciergeFormField objects (label, requirement, fieldType with options, order, description, placeholder) for each Chili-webform guest field; always empty for third-party webform routers. 2026-09-04 (internal consistency fix): references/anomaly-detection.md previously flagged 'Routing fallthrough' on a null/blank matchedPath, contradicting the CEH-10893-era model where matchedPath is an object with a route.type discriminator (RuleRoute | CatchAllRoute). Corrected: Routing fallthrough (Medium) = matchedPath.route.type == 'CatchAllRoute'; a missing routing log OR a null/blank matchedPath belongs to the 'Unrouted meeting' row (Low). 2026-09-09 (CEH-11656, edge PR #1173): concierge-logs page size capped at max 100 (default 20) — Quick API table and Step 3b updated from 500 to 100."
-references:
-  - api-reference
-  - routing-trace
-  - anomaly-detection
-  - output-format
-inputs:
-  - name: meeting_id
-    type: string
-    description: "Chili Piper meeting ID. Provide this OR guest_email."
-    required: false
-  - name: guest_email
-    type: string
-    description: "Guest email. Used to find their most recent meeting when meeting_id is unknown."
-    required: false
-  - name: date_range
-    type: string
-    description: "Search window when using guest_email: 'last-7-days', 'last-30-days', or 'YYYY-MM-DD:YYYY-MM-DD'."
-    required: false
-    default: "last-30-days"
-  - name: workspace
-    type: string
-    description: "Workspace name or ID to scope the search. Omit for org-wide."
-    required: false
-outputs:
-  - name: meeting_summary
-    description: Core facts — status, scheduled time, guest, assigned rep, booking timestamp
-  - name: routing_trace
-    description: Full path from trigger to assignment — trigger type, router, matched rule, source URL
-  - name: anomalies
-    description: Flags for issues detected (no-show, late cancellation, rep mismatch, routing fallthrough)
-  - name: recommended_action
-    description: Suggested next step for the human based on what happened
-tools_required: [chili-piper-mcp]
-human_decision_point: "Review anomalies and decide: rebook, follow up with guest, or fix the underlying routing rule"
-writes_to: "Nothing — read-only diagnostic tool"
+metadata:
+  version: 0.3.5
+  api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 500 per page); Quick API table and Step 3b updated; 2026-07-31: CEH-10893 (edge PR #1021) — meeting-get and meeting-list-put now return `sourceUrl` (booking-page URL the guest came from, Option[String]) and `sourceUrlParams` (parsed UTM/query params, Option[Map[String,String]]) directly on the meeting object; api-reference § Meeting summary fields updated. 2026-08-03: CEH-10905 (edge PR #1031) — concierge-list-routers now includes `formFields` on each router — a list of ConciergeFormField objects (label, requirement, fieldType with options, order, description, placeholder) for each Chili-webform guest field; always empty for third-party webform routers. 2026-09-04 (internal consistency fix): references/anomaly-detection.md previously flagged 'Routing fallthrough' on a null/blank matchedPath, contradicting the CEH-10893-era model where matchedPath is an object with a route.type discriminator (RuleRoute | CatchAllRoute). Corrected: Routing fallthrough (Medium) = matchedPath.route.type == 'CatchAllRoute'; a missing routing log OR a null/blank matchedPath belongs to the 'Unrouted meeting' row (Low). 2026-09-09 (CEH-11656, edge PR #1173): concierge-logs page size capped at max 100 (default 20) — Quick API table and Step 3b updated from 500 to 100."
+  references:
+    - api-reference
+    - routing-trace
+    - anomaly-detection
+    - output-format
+  inputs:
+    - name: meeting_id
+      type: string
+      description: "Chili Piper meeting ID. Provide this OR guest_email."
+      required: false
+    - name: guest_email
+      type: string
+      description: "Guest email. Used to find their most recent meeting when meeting_id is unknown."
+      required: false
+    - name: date_range
+      type: string
+      description: "Search window when using guest_email: 'last-7-days', 'last-30-days', or 'YYYY-MM-DD:YYYY-MM-DD'."
+      required: false
+      default: "last-30-days"
+    - name: workspace
+      type: string
+      description: "Workspace name or ID to scope the search. Omit for org-wide."
+      required: false
+  outputs:
+    - name: meeting_summary
+      description: Core facts — status, scheduled time, guest, assigned rep, booking timestamp
+    - name: routing_trace
+      description: Full path from trigger to assignment — trigger type, router, matched rule, source URL
+    - name: anomalies
+      description: Flags for issues detected (no-show, late cancellation, rep mismatch, routing fallthrough)
+    - name: recommended_action
+      description: Suggested next step for the human based on what happened
+  tools_required: [chili-piper-mcp]
+  human_decision_point: "Review anomalies and decide: rebook, follow up with guest, or fix the underlying routing rule"
+  writes_to: "Nothing — read-only diagnostic tool"
 ---
 
 # Meeting Inspector
