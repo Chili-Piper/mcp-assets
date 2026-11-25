@@ -7,7 +7,6 @@ This folder is the Claude plugin. It holds only what the plugin ships:
 | Path | What it is |
 |------|-----------|
 | `.claude-plugin/plugin.json` | Plugin manifest |
-| `.claude-plugin/icon.png` | Listing icon |
 | `.mcp.json` | Chili Piper MCP connection |
 | `skills/` | The skills (see [`skills/README.md`](skills/README.md)) |
 | `commands/` | Slash commands that start a skill |

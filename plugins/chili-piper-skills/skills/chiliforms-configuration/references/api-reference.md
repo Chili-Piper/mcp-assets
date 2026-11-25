@@ -107,7 +107,7 @@ The embed calls these from the visitor's browser through a hidden bridge iframe 
 
 | Endpoint | Provides |
 |----------|----------|
-| `POST /api/fire-auth/v1/public/guest-tokens` | anonymous guest token |
+| `POST /api/fire-auth/v1/public/guest-tokens` | anonymous guest session |
 | `GET /api/concierge/v1/guest-external/tenant/{tenantId}/router/{slug}` | published triggers + field sets |
 | `GET /api/chili-crm/v1/public/tenant/{tenantId}/list?ref=…` | data types and choices |
 | `POST …/localization-entries/applied` | translated labels and error messages |
@@ -117,4 +117,4 @@ The embed calls these from the visitor's browser through a hidden bridge iframe 
 ## Permissions
 
 `tenant-get`, `concierge.read` and data-field read access. A 403 names the missing scope,
-which an admin fixes under Command Center → Integrations → Credentials → API Access Tokens.
+which an Admin grants in Command Center.

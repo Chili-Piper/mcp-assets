@@ -56,7 +56,7 @@ fields, and hand back a snippet the customer can paste into their site with no g
 `https://fire.chilipiper.com/chiliforms/cjs/chiliforms.js`. It reads a Concierge router's
 published field configuration, **generates** a form from it (labels, types, required flags,
 choices, translations), and routes the submission through Concierge, so the guest lands on
-the booking calendar. It needs no API key. It only reads what a visitor to the router's
+the booking calendar. It is fully public: it uses only what a visitor to the router's
 booking page could already see.
 
 ## When to use
@@ -177,7 +177,7 @@ Before presenting output, verify each item:
 - [ ] Every `overrides` key is a data field reference that appears in the field report.
 - [ ] *(explicit attach only)* Every ThirdPartyForm mapping entry was checked against `form_html`, the email field is matched, and the form `id` in the snippet exists in the markup.
 - [ ] `locale`, if set, is a key in the router's `localizations` (or explicitly flagged as falling back to default labels).
-- [ ] No API key, token or guest data appears anywhere in the snippet.
+- [ ] The snippet holds only public values (router slug, tenant, field references) and no guest data.
 
 ## Checkpoint
 
