@@ -1,6 +1,6 @@
 """Enforce SKILL <-> GPT parity so the ChatGPT versions never drift from the skills.
 
-For every skill in skills/<name>/ this checks that:
+For every skill in plugins/chili-piper-skills/skills/<name>/ this checks that:
   1. A paired gpts/<name>/ exists with both GPT.md and openapi.yaml.
   2. The GPT.md `version` matches the SKILL.md `version`.
 
@@ -17,7 +17,7 @@ import re
 import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SKILLS, GPTS = os.path.join(REPO, "skills"), os.path.join(REPO, "gpts")
+SKILLS, GPTS = os.path.join(REPO, "plugins", "chili-piper-skills", "skills"), os.path.join(REPO, "gpts")
 
 NO_GPT = {"onboarding-chili-piper"}  # skills that deliberately have no ChatGPT counterpart (onboarding: multi-file, multi-product build exceeds GPT instruction limits)
 

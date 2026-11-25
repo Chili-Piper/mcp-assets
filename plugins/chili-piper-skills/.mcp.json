@@ -4,7 +4,7 @@
       "type": "http",
       "url": "https://fire.chilipiper.com/api/fire-edge/v1/org/mcp",
       "headers": {
-        "Authorization": "Bearer ${CHILI_PIPER_API_KEY}"
+        "Authorization": "Bearer ${user_config.api_key}"
       }
     }
   }

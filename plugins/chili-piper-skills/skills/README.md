@@ -1,8 +1,8 @@
 # Skills
 
-Official Chili Piper Skills — small, reusable AI specialists that each do one Chili Piper task well, running against your account through the [Chili Piper MCP](../mcp-servers/chili-piper/README.md).
+Official Chili Piper Skills — small, reusable AI specialists that each do one Chili Piper task well, running against your account through the [Chili Piper MCP](../../../mcp-servers/chili-piper/README.md).
 
-Each skill works in Claude Code (and other Claude Skills-compatible agents). The ChatGPT equivalents live in [`../gpts/`](../gpts/).
+Each skill works in Claude Code (and other Claude Skills-compatible agents). The ChatGPT equivalents live in [`gpts/`](../../../gpts/).
 
 ---
 
@@ -25,7 +25,7 @@ Read skills/<skill-name>/SKILL.md
 
 ## Skill structure
 
-Skills follow **progressive disclosure** (Anthropic's Agent Skills convention) — one job per file, with on-demand loading of deep detail. The full authoring standard (the principles, the loading stages, file budgets, and the required SKILL.md shape) is in [`../docs/methodology.md`](../docs/methodology.md); copy [`../docs/SKILL.template.md`](../docs/SKILL.template.md) to start a new skill.
+Skills follow **progressive disclosure** (Anthropic's Agent Skills convention) — one job per file, with on-demand loading of deep detail. The full authoring standard (the principles, the loading stages, file budgets, and the required SKILL.md shape) is in [`docs/methodology.md`](../../../docs/methodology.md); copy [`docs/SKILL.template.md`](../../../docs/SKILL.template.md) to start a new skill.
 
 Each skill lives in its own directory:
 
@@ -73,7 +73,7 @@ writes_to: "Where outputs go, or 'Nothing — read-only'"
 
 ## Maturity
 
-Every skill carries a QA maturity level (tracked in [`../docs/QA.md`](../docs/QA.md)):
+Every skill carries a QA maturity level (tracked in [`docs/QA.md`](../../../docs/QA.md)):
 
 - **`draft`** — known issues or not yet verified against the live MCP.
 - **`tested`** — static review complete; tool names, response field names, and limits verified against the live MCP. No known correctness bugs.
@@ -130,14 +130,14 @@ Every skill carries a QA maturity level (tracked in [`../docs/QA.md`](../docs/QA
 
 ## Contributing a skill
 
-1. Create `skills/<your-slug>/SKILL.md` using the frontmatter schema above.
+1. Create `plugins/chili-piper-skills/skills/<your-slug>/SKILL.md` using the frontmatter schema above.
 2. Add `references/*.md` for any deep-dive content.
 3. Register the skill in this index with its maturity status.
-4. If a ChatGPT version applies, add the paired `../gpts/<your-slug>/` at the same `version`.
-5. Run the checks locally:
+4. If a ChatGPT version applies, add the paired `gpts/<your-slug>/` at the same `version`.
+5. Run the checks locally (from the repo root):
    ```bash
    pip install pyyaml
-   python ../.github/scripts/validate_skill_frontmatter.py
+   python .github/scripts/validate_skill_frontmatter.py
    ```
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for the full guide.
+See [CONTRIBUTING.md](../../../CONTRIBUTING.md) for the full guide.

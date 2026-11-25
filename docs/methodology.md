@@ -46,8 +46,8 @@ top for *authors* working across skills.
 |------|-----------------|--------------|
 | (author orientation) | — | [`AGENTS.md`](../AGENTS.md) — what this repo is, the layout, the rules. ~1 screen. |
 | Discovery | name + `description` only | A skill's frontmatter `description` — the one sentence an agent reads to decide *whether to load this skill at all*. |
-| Activation | full `SKILL.md` | `skills/<slug>/SKILL.md` body — Inputs → Process → Outputs for this one task. |
-| Execution | referenced files, as needed | `skills/<slug>/references/*.md` — API field names, output formats, deep procedures. Loaded **on demand** from a Process step. |
+| Activation | full `SKILL.md` | `plugins/chili-piper-skills/skills/<slug>/SKILL.md` body — Inputs → Process → Outputs for this one task. |
+| Execution | referenced files, as needed | `plugins/chili-piper-skills/skills/<slug>/references/*.md` — API field names, output formats, deep procedures. Loaded **on demand** from a Process step. |
 
 An agent should be able to route on the `description`, execute the happy path on
 `SKILL.md`, and only drop to a reference when a step says so.
@@ -56,7 +56,7 @@ An agent should be able to route on the `description`, execute the happy path on
 
 Copy [`SKILL.template.md`](SKILL.template.md). Every SKILL.md has, in order:
 
-1. **Frontmatter** — the schema in [`../skills/README.md`](../skills/README.md). The
+1. **Frontmatter** — the schema in [`skills/README.md`](../plugins/chili-piper-skills/skills/README.md). The
    `description` is the discovery line: one sentence, ≤ 280 characters. List every
    `references/` file in `references:` and nothing that isn't a file.
 2. **Role line** — one or two sentences: who the agent is and the job.
@@ -118,5 +118,5 @@ python .github/scripts/validate_gpt_openapi.py         # GPT specs ChatGPT-impor
 A structural refactor that doesn't change behavior keeps the existing skill `version` (and
 so needs no paired GPT edit). Bump a skill `version` only when behavior changes — and then
 bump the paired `gpts/<slug>/GPT.md` to match. The **plugin** version
-(`.claude-plugin/plugin.json` + `marketplace.json`) is separate: bump it whenever you want
+(`plugins/chili-piper-skills/.claude-plugin/plugin.json` + `.claude-plugin/marketplace.json`) is separate: bump it whenever you want
 installed clients to pull an update, since org distribution keys off it.

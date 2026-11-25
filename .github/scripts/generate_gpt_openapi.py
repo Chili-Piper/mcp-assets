@@ -18,7 +18,7 @@ WHY THIS EXISTS
 
   This keeps the GPTs in sync with the *API*. Keeping the GPTs in sync with the *Claude skills*
   is a separate concern, enforced in CI by check_gpt_sync.py (every skill must have a paired GPT
-  at a matching version). This script does NOT touch the Claude skills in skills/.
+  at a matching version). This script does NOT touch the Claude skills in plugins/chili-piper-skills/skills/.
 
 CHATGPT CONSTRAINTS (the GPT Actions importer rejects the spec otherwise)
   - Operation `description` must be <= 300 chars. The Edge descriptions are long MCP-tool

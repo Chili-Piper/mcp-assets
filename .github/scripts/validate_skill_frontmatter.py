@@ -20,7 +20,7 @@ import os
 import sys
 import yaml
 
-SKILLS_DIR = "skills"
+SKILLS_DIR = "plugins/chili-piper-skills/skills"
 
 REQUIRED_FIELDS = [
     "name",          # must match the directory name (kebab-case)
