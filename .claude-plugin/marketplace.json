@@ -1,25 +1,19 @@
 {
   "name": "chili-piper-skills",
   "owner": {
-    "name": "Chili Piper",
-    "url": "https://github.com/Chili-Piper"
+    "name": "Chili Piper"
   },
   "metadata": {
     "description": "Official Chili Piper Skills for the Chili Piper MCP server.",
-    "version": "1.4.0",
-    "homepage": "https://github.com/Chili-Piper/mcp-assets"
+    "version": "1.5.0"
   },
   "plugins": [
     {
       "name": "chili-piper-skills",
-      "source": {
-        "source": "url",
-        "url": "https://github.com/Chili-Piper/mcp-assets.git",
-        "ref": "main"
-      },
+      "source": "./plugins/chili-piper-skills",
       "description": "Official Chili Piper Skills — meeting diagnostics, routing audits, no-show analysis, availability checks, and user onboarding/offboarding. Includes the Chili Piper MCP config and slash commands.",
       "category": "sales",
-      "version": "1.4.0"
+      "version": "1.5.0"
     }
   ]
 }

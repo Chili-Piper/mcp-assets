@@ -7,7 +7,9 @@ Two classes of check (see docs/methodology.md for the why):
   ERRORS (exit non-zero — gate CI):
     - SKILL.md exists with well-formed, complete frontmatter
     - frontmatter `name` matches the directory
-    - every `references:` entry has a matching references/<name>.md  (and vice versa,
+    - only the top-level keys the Claude plugin directory accepts; custom keys live
+      under `metadata:`
+    - every `metadata.references` entry has a matching references/<name>.md  (and vice versa,
       so a reference is never orphaned or unlisted — canonical, one-way wiring)
     - no references/*.md exceeds the 200-line load budget
 
@@ -20,11 +22,18 @@ import os
 import sys
 import yaml
 
-SKILLS_DIR = "skills"
+SKILLS_DIR = "plugins/chili-piper-skills/skills"
+
+# Top-level keys the Claude plugin directory accepts in SKILL.md frontmatter.
+# Everything else goes under `metadata:`.
+ALLOWED_TOP_LEVEL = {"name", "description", "license", "allowed-tools", "compatibility", "metadata"}
 
 REQUIRED_FIELDS = [
     "name",          # must match the directory name (kebab-case)
     "description",   # one sentence, used by agents to decide whether to load
+]
+
+REQUIRED_METADATA_FIELDS = [
     "version",       # semver, e.g. 0.3.0
     "tools_required",  # MCP names the skill needs
     "writes_to",     # where outputs go, or "Nothing — read-only"
@@ -76,15 +85,26 @@ def validate_skill(skill_dir):
         if field not in fm or fm[field] in (None, "", []):
             errors.append(f"{name}/SKILL.md: missing required field '{field}'")
 
+    for key in sorted(set(fm) - ALLOWED_TOP_LEVEL):
+        errors.append(f"{name}/SKILL.md: top-level key '{key}' is not allowed; move it under 'metadata:'")
+
+    meta = fm.get("metadata") or {}
+    if not isinstance(meta, dict):
+        errors.append(f"{name}/SKILL.md: 'metadata' must be a mapping")
+        meta = {}
+    for field in REQUIRED_METADATA_FIELDS:
+        if field not in meta or meta[field] in (None, "", []):
+            errors.append(f"{name}/SKILL.md: missing required field 'metadata.{field}'")
+
     if fm.get("name") and fm["name"] != name:
         errors.append(
             f"{name}/SKILL.md: frontmatter name '{fm['name']}' does not match directory '{name}'"
         )
 
     # --- progressive-disclosure structure: references <-> frontmatter consistency ---
-    declared = fm.get("references") or []
+    declared = meta.get("references") or []
     if not isinstance(declared, list):
-        errors.append(f"{name}/SKILL.md: 'references' must be a list of basenames")
+        errors.append(f"{name}/SKILL.md: 'metadata.references' must be a list of basenames")
         declared = []
     declared = [str(r) for r in declared]
 
@@ -102,7 +122,7 @@ def validate_skill(skill_dir):
     for ref in on_disk:
         if ref not in declared:
             errors.append(
-                f"{name}: references/{ref}.md exists but is not listed in SKILL.md frontmatter 'references'"
+                f"{name}: references/{ref}.md exists but is not listed in SKILL.md frontmatter 'metadata.references'"
             )
 
     # --- file budgets ---

@@ -2,7 +2,7 @@
 
 Claude's Customize → Skills panel installs a skill from a .zip whose ROOT contains
 SKILL.md (plus a references/ subfolder for multi-file skills). This script builds one
-such .zip per skill in skills/, so non-CLI users (Claude Desktop, claude.ai) can add
+such .zip per skill in plugins/chili-piper-skills/skills/, so non-CLI users (Claude Desktop, claude.ai) can add
 them as Personal skills — or admins can upload them as Organization skills.
 
 Run:  python .github/scripts/package_skills.py
@@ -17,7 +17,7 @@ import os
 import zipfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-SKILLS_DIR = os.path.join(REPO, "skills")
+SKILLS_DIR = os.path.join(REPO, "plugins", "chili-piper-skills", "skills")
 OUT_DIR = os.path.join(REPO, "dist", "skills")
 
 

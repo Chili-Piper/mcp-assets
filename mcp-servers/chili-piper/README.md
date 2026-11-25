@@ -72,7 +72,9 @@ Replace `YOUR_API_KEY` with the key from Command Center.
 }
 ```
 
-> Store your API key in an environment variable or your OS keychain — never hardcode it in a committed file. Use `${CHILI_PIPER_API_KEY}` in the JSON to reference an env var.
+> Replace `YOUR_API_KEY` with your key in your local, uncommitted MCP config. Never commit a file that contains the key.
+>
+> **Claude Code plugin users:** the `chili-piper-skills` plugin asks for the API key when you enable it and keeps it in your system keychain — no JSON to edit.
 
 **Cursor / Windsurf / other MCP clients:** use the same JSON format in your client's MCP config file.
 
@@ -157,7 +159,7 @@ Create and manage keys in **Command Center → Integrations → Credentials → 
 4. Select the **Credentials** tab at the top of the page
 5. Make sure you're on the **API Access Tokens** sub-tab (**not** HTTP Auth)
 6. Click **Generate Token**, select the permissions (scopes) your token needs, then click **Generate**
-7. Copy the token and store it securely — **it is only shown once.** Then add it to your environment: `export CHILI_PIPER_API_KEY=your_key_here`
+7. Copy the token and store it securely — **it is only shown once.** Then paste it where your MCP client asks for it (the Claude Code plugin prompts for it when you enable the plugin).
 
 > **Need another permission later?** Token permissions are editable in place (shipped 2026-07-21): open the token in **API Access Tokens** and edit its permissions — the token value doesn't change, so nothing you've configured breaks. You no longer need to generate a new token when new endpoints ship or a scope was missed (e.g. after a 403 for a missing scope).
 

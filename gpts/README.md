@@ -1,6 +1,6 @@
 # Chili Piper GPTs
 
-ChatGPT Custom GPT configurations — the ChatGPT equivalent of the Claude [skills](../skills/). Each GPT calls the **real Chili Piper Edge API** directly via GPT Actions.
+ChatGPT Custom GPT configurations — the ChatGPT equivalent of the Claude [skills](../plugins/chili-piper-skills/skills/). Each GPT calls the **real Chili Piper Edge API** directly via GPT Actions.
 
 ## Structure
 
@@ -45,7 +45,7 @@ Two separate mechanisms keep things aligned — don't confuse them:
 - **GPTs ↔ ChatGPT** — `validate_gpt_openapi.py` (run in CI, offline) checks that every `openapi.yaml` is importable into the GPT Actions editor — operation descriptions ≤ 300 chars, every `type: object` schema has `properties`, no deprecated operations, operations exactly match `GPT_OPERATIONS` — and that every action a `GPT.md` names (`operationId` or MCP tool name in backticks) is in its `openapi.yaml`. It reads `gpts/edge-operations.yaml`, a catalog of all live Edge operations that the generator writes. Run it after every regeneration or `GPT.md` edit.
 - **GPTs ↔ the skills** — `check_gpt_sync.py` (run in CI) enforces that every skill has a paired GPT at a matching `version`. When a skill changes, mirror the change in its paired `GPT.md`, bump the `GPT.md` `version` to match `SKILL.md`, and regenerate the `openapi.yaml`.
 
-Neither script touches the Claude skills in `../skills/` — they only produce/validate the ChatGPT-side artifacts.
+Neither script touches the Claude skills in `../plugins/chili-piper-skills/skills/` — they only produce/validate the ChatGPT-side artifacts.
 
 ## Key differences from Claude skills
 

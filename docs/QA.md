@@ -1,6 +1,6 @@
 # Skill QA & Status Tracker
 
-This file tracks the quality of every skill in this repo so we (and clients) always know how battle-tested each one is. It is the source of truth for the **maturity** column in [`skills/README.md`](../skills/README.md).
+This file tracks the quality of every skill in this repo so we (and clients) always know how battle-tested each one is. It is the source of truth for the **maturity** column in [`skills/README.md`](../plugins/chili-piper-skills/skills/README.md).
 
 ## Maturity levels
 

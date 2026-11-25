@@ -18,11 +18,11 @@ Maintained by Chili Piper. These are ready-to-use AI specialists — meeting dia
 
 | Folder | What it is |
 |--------|----------|
-| [`skills/`](skills/) | **Agent Skills for Claude and OpenAI Codex** — drop-in specialists that call the Chili Piper MCP. One job each, done well. |
+| [`skills/`](plugins/chili-piper-skills/skills/) | **Agent Skills for Claude and OpenAI Codex** — drop-in specialists that call the Chili Piper MCP. One job each, done well. |
 | [`gpts/`](gpts/) | **ChatGPT Custom GPTs** — the ChatGPT equivalent of each skill, with a GPT Actions schema. |
 | [`mcp-servers/chili-piper/`](mcp-servers/chili-piper/) | **MCP setup guide** — connect the Chili Piper MCP via API key or OAuth. |
 | [`gemini/`](gemini/) | **Google Gemini guide** — connect via Gemini CLI, Gen AI SDK / ADK, or Gemini Enterprise. |
-| [`.claude-plugin/`](.claude-plugin/) · [`.cursor-plugin/`](.cursor-plugin/) | **Plugin manifests** — the Claude and Cursor plugins that bundle the MCP with these skills and commands. |
+| [`plugins/chili-piper-skills/`](plugins/chili-piper-skills/) · [`.claude-plugin/`](.claude-plugin/) · [`.cursor-plugin/`](.cursor-plugin/) | **Plugin manifests** — the Claude and Cursor plugins that bundle the MCP with these skills and commands. |
 | [`docs/`](docs/) | Authoring methodology, QA status tracker, and org-level deployment guide. |
 
 A **Skill** is a small, self-contained instruction set that teaches an AI agent how to do one Chili Piper task correctly — which MCP tools to call, in what order, and how to format the result. The same Agent Skills format works in Claude and OpenAI Codex. A **GPT** is a separate Custom GPT packaging of the capability for ChatGPT.
@@ -33,29 +33,29 @@ Every skill is built on **[progressive disclosure](docs/methodology.md)** (Anthr
 
 | Skill | What it does | Read-only? |
 |-------|-------------|:---:|
-| [meeting-inspector](skills/meeting-inspector/) | Deep-dive a single meeting — booking trigger, routing path, rep assignment, outcome | ✅ |
-| [no-show-analyzer](skills/no-show-analyzer/) | Analyze no-show patterns by trigger, route, rep, or workspace | ✅ |
-| [routing-audit](skills/routing-audit/) | Audit all concierge routers for coverage gaps and stale rules | ✅ |
-| [distribution-analysis](skills/distribution-analysis/) | Analyze a round-robin distribution — meeting counts by rep, imbalance vs. weights, skew, cancellations | ✅ |
-| [availability-inspector](skills/availability-inspector/) | Diagnose why a rep or team shows no available slots | ✅ |
-| [concierge-debugger](skills/concierge-debugger/) | Trace why a specific lead didn't book | ✅ |
-| [concierge-router-builder](skills/concierge-router-builder/) | Build a complete Concierge web-form router through a guided discovery and confirmation workflow | ⚠️ writes |
-| [onboarding-chili-piper](skills/onboarding-chili-piper/) | Guided self-serve onboarding: reads the account, interviews the customer, agrees a plan, then builds the routing and scheduling baseline across products | ⚠️ writes |
-| [distro-debugger](skills/distro-debugger/) | Debug why a CRM record was (or wasn't) routed through a distribution — rule stage by rule stage | ✅ |
-| [chat-conversation-inspector](skills/chat-conversation-inspector/) | Inspect Chat AI conversation logs — routing outcomes, transcripts, abandonment analysis | ✅ |
-| [org-meeting](skills/org-meeting/) | Org-wide meeting volume and health snapshot | ✅ |
-| [user-details](skills/user-details/) | Full profile for any Chili Piper user | ✅ |
-| [user-meetings](skills/user-meetings/) | Rep-level meeting volume and health metrics | ✅ |
-| [user-copy](skills/user-copy/) | Copy a user's workspace/team memberships to another user | ⚠️ writes |
-| [user-offboarding](skills/user-offboarding/) | Safely remove a departing rep, with an audit trail | ⚠️ writes |
-| [meeting-type-management](skills/meeting-type-management/) | Manage team meeting types and their reminders — durations, invite text, booking limits | ⚠️ writes |
-| [distro-router-configuration](skills/distro-router-configuration/) | Manage Distro lead-routing routers — create, update, activate/deactivate, delete | ⚠️ writes |
-| [handoff-router-configuration](skills/handoff-router-configuration/) | Manage Handoff routers — rep-to-rep handoff routing rules and meeting types | ⚠️ writes |
-| [concierge-router-configuration](skills/concierge-router-configuration/) | Manage Concierge routers — web-form routing rules, forms, and branding | ⚠️ writes |
-| [scheduling-link-management](skills/scheduling-link-management/) | Manage scheduling links — round-robin, admin one-on-one, group, ownership | ⚠️ writes |
-| [chiliforms-configuration](skills/chiliforms-configuration/) | Generate a ChiliForms embed (a Chili Piper–built web form) for a customer without a form of their own, as a ready-to-paste snippet | ✅ |
+| [meeting-inspector](plugins/chili-piper-skills/skills/meeting-inspector/) | Deep-dive a single meeting — booking trigger, routing path, rep assignment, outcome | ✅ |
+| [no-show-analyzer](plugins/chili-piper-skills/skills/no-show-analyzer/) | Analyze no-show patterns by trigger, route, rep, or workspace | ✅ |
+| [routing-audit](plugins/chili-piper-skills/skills/routing-audit/) | Audit all concierge routers for coverage gaps and stale rules | ✅ |
+| [distribution-analysis](plugins/chili-piper-skills/skills/distribution-analysis/) | Analyze a round-robin distribution — meeting counts by rep, imbalance vs. weights, skew, cancellations | ✅ |
+| [availability-inspector](plugins/chili-piper-skills/skills/availability-inspector/) | Diagnose why a rep or team shows no available slots | ✅ |
+| [concierge-debugger](plugins/chili-piper-skills/skills/concierge-debugger/) | Trace why a specific lead didn't book | ✅ |
+| [concierge-router-builder](plugins/chili-piper-skills/skills/concierge-router-builder/) | Build a complete Concierge web-form router through a guided discovery and confirmation workflow | ⚠️ writes |
+| [onboarding-chili-piper](plugins/chili-piper-skills/skills/onboarding-chili-piper/) | Guided self-serve onboarding: reads the account, interviews the customer, agrees a plan, then builds the routing and scheduling baseline across products | ⚠️ writes |
+| [distro-debugger](plugins/chili-piper-skills/skills/distro-debugger/) | Debug why a CRM record was (or wasn't) routed through a distribution — rule stage by rule stage | ✅ |
+| [chat-conversation-inspector](plugins/chili-piper-skills/skills/chat-conversation-inspector/) | Inspect Chat AI conversation logs — routing outcomes, transcripts, abandonment analysis | ✅ |
+| [org-meeting](plugins/chili-piper-skills/skills/org-meeting/) | Org-wide meeting volume and health snapshot | ✅ |
+| [user-details](plugins/chili-piper-skills/skills/user-details/) | Full profile for any Chili Piper user | ✅ |
+| [user-meetings](plugins/chili-piper-skills/skills/user-meetings/) | Rep-level meeting volume and health metrics | ✅ |
+| [user-copy](plugins/chili-piper-skills/skills/user-copy/) | Copy a user's workspace/team memberships to another user | ⚠️ writes |
+| [user-offboarding](plugins/chili-piper-skills/skills/user-offboarding/) | Safely remove a departing rep, with an audit trail | ⚠️ writes |
+| [meeting-type-management](plugins/chili-piper-skills/skills/meeting-type-management/) | Manage team meeting types and their reminders — durations, invite text, booking limits | ⚠️ writes |
+| [distro-router-configuration](plugins/chili-piper-skills/skills/distro-router-configuration/) | Manage Distro lead-routing routers — create, update, activate/deactivate, delete | ⚠️ writes |
+| [handoff-router-configuration](plugins/chili-piper-skills/skills/handoff-router-configuration/) | Manage Handoff routers — rep-to-rep handoff routing rules and meeting types | ⚠️ writes |
+| [concierge-router-configuration](plugins/chili-piper-skills/skills/concierge-router-configuration/) | Manage Concierge routers — web-form routing rules, forms, and branding | ⚠️ writes |
+| [scheduling-link-management](plugins/chili-piper-skills/skills/scheduling-link-management/) | Manage scheduling links — round-robin, admin one-on-one, group, ownership | ⚠️ writes |
+| [chiliforms-configuration](plugins/chili-piper-skills/skills/chiliforms-configuration/) | Generate a ChiliForms embed (a Chili Piper–built web form) for a customer without a form of their own, as a ready-to-paste snippet | ✅ |
 
-See [`skills/README.md`](skills/README.md) for the full index with QA/maturity status, and [`gpts/README.md`](gpts/README.md) for the ChatGPT versions.
+See [`skills/README.md`](plugins/chili-piper-skills/skills/README.md) for the full index with QA/maturity status, and [`gpts/README.md`](gpts/README.md) for the ChatGPT versions.
 
 ---
 
@@ -121,12 +121,12 @@ Connect the Chili Piper MCP as a plugin using the [Help Center instructions](htt
 
 **Option F — Cursor (plugin):**
 
-This repo ships a Cursor plugin (`.cursor-plugin/plugin.json` + a root `mcp.json`) that bundles the Chili Piper MCP with the same `skills/` and `commands/`.
+This repo ships a Cursor plugin (`.cursor-plugin/plugin.json` + a root `mcp.json`) that bundles the Chili Piper MCP with the same `plugins/chili-piper-skills/skills/` and `plugins/chili-piper-skills/commands/`.
 
 - **From the Marketplace:** open **Cursor → Settings → Plugins** (or the Marketplace) and search **"chili piper"**, then install. It's also discoverable from the Grok bot plugin list.
 - **Local / pre-release:** copy this repo into `~/.cursor/plugins/local/chili-piper`, reload Cursor, then install and log in.
 
-On first use Cursor runs the same one-click **OAuth** login the Chili Piper MCP already supports — no JSON to paste and no API key to manage. Prefer an API key instead? Follow [`mcp-servers/chili-piper/README.md`](mcp-servers/chili-piper/README.md) (`CHILI_PIPER_API_KEY`).
+On first use Cursor runs the same one-click **OAuth** login the Chili Piper MCP already supports — no JSON to paste and no API key to manage. Prefer an API key instead? Follow [`mcp-servers/chili-piper/README.md`](mcp-servers/chili-piper/README.md).
 
 ### 3. Run a skill
 

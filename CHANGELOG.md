@@ -5,6 +5,22 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Changed
+- **Claude plugin moved to `plugins/chili-piper-skills/` (plugin 1.5.0)** so the Claude plugin
+  directory can review the plugin folder alone, not the repo root. The folder holds only
+  `.claude-plugin/plugin.json`, `.claude-plugin/icon.png`, `.mcp.json`, `skills/`, `commands/`
+  and a README. Fixes the findings from the directory's review of v1.4.0:
+  - The MCP `Authorization` header now reads `${user_config.api_key}`, a sensitive `userConfig`
+    option that Claude Code asks for when the plugin is enabled, instead of the
+    `CHILI_PIPER_API_KEY` environment variable. Docs use the literal `YOUR_API_KEY`.
+  - SKILL.md frontmatter keeps only `name` and `description` at the top level. All custom keys
+    (`version`, `references`, `inputs`, `outputs`, `tools_required`, `writes_to`,
+    `human_decision_point`, `api_note`, `operator`) move under `metadata:`.
+    `validate_skill_frontmatter.py` enforces this.
+  - Adds a 1024 px PNG icon and `privacyPolicyUrl`; `marketplace.json` uses a relative source
+    and drops `owner.url` and `metadata.homepage`.
+  - Rewords the patch-semantics sentences in the Concierge and Handoff router skills and GPTs
+    that the review flagged as a package-registry redirect.
+  - The Cursor plugin (1.1.1) points its `skills` and `commands` at the new folder.
 - **`onboarding-chili-piper` 0.15.1:** several CRM owner objects (for example Account, Contact,
   Matched Account, Lead) are built as one ownership rule with one condition per object in the
   customer's priority order, rather than one rule per object. The rule checks them in order and

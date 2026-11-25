@@ -1,26 +1,27 @@
 ---
 name: skill-slug                       # kebab-case, MUST match the directory name
 description: One sentence (≤ 280 chars) an agent reads to decide whether to load this skill. This is the layer-1 router — say what it does and when, not how.
-version: 0.1.0
-references:                            # OMIT if the skill has no references/ folder.
-  - api-reference                      # basenames of files in references/ (no .md)
-  - output-format
-inputs:
-  - name: param_name
-    type: string
-    description: What this input controls.
-    required: true
-  - name: optional_param
-    type: string
-    description: What this controls; what happens when omitted.
-    required: false
-    default: "some-default"
-outputs:
-  - name: output_name
-    description: What gets returned.
-tools_required: [chili-piper-mcp]
-human_decision_point: "Where the agent must stop for a human (the Checkpoint below)."
-writes_to: "Nothing — read-only"      # or: exactly what is mutated, and that it dry-runs first
+metadata:                                # custom keys MUST be nested here (Claude plugin directory rule)
+  version: 0.1.0
+  references:                            # OMIT if the skill has no references/ folder.
+    - api-reference                      # basenames of files in references/ (no .md)
+    - output-format
+  inputs:
+    - name: param_name
+      type: string
+      description: What this input controls.
+      required: true
+    - name: optional_param
+      type: string
+      description: What this controls; what happens when omitted.
+      required: false
+      default: "some-default"
+  outputs:
+    - name: output_name
+      description: What gets returned.
+  tools_required: [chili-piper-mcp]
+  human_decision_point: "Where the agent must stop for a human (the Checkpoint below)."
+  writes_to: "Nothing — read-only"      # or: exactly what is mutated, and that it dry-runs first
 ---
 
 # Skill Name

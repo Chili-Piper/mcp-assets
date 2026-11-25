@@ -7,8 +7,8 @@ dist/
 .env
 .env.*
 *.env
-# .mcp.json is intentionally committed at repo root — it uses ${ENV_VAR} references,
-# not real secrets. Personal override files belong in ~/.claude.json, not here.
+# plugins/chili-piper-skills/.mcp.json is intentionally committed — it uses a ${user_config.*}
+# reference, not a real secret. Personal override files belong in ~/.claude.json, not here.
 **/secrets/
 **/.secrets/
 **/credentials/
@@ -19,11 +19,10 @@ dist/
 **/.local/
 
 # Root-level data files (use synthetic fixtures in fixtures/ instead)
-# Note: .mcp.json, mcp.json and .secrets.baseline are excluded from this pattern via negation
+# Note: mcp.json and .secrets.baseline are excluded from this pattern via negation
 /*.csv
 /*.parquet
 /*.json
-!/.mcp.json
 !/mcp.json
 !/.secrets.baseline
 /*.xlsx
@@ -75,6 +74,6 @@ yarn-debug.log*
 # uv.lock — keep
 
 # === MCP CONFIG ===
-# The repo-level .mcp.json uses ${ENV_VAR} references and is intentionally committed.
+# plugins/chili-piper-skills/.mcp.json uses a ${user_config.*} reference and is intentionally committed.
 # claude_desktop_config.json is personal and must never be committed.
 claude_desktop_config.json

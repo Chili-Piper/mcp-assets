@@ -101,7 +101,7 @@ Deploy this file via your MDM / configuration management. Managed settings take 
 
 ## The bundled MCP connection
 
-The plugin includes the Chili Piper MCP config (`.mcp.json`). On install, Claude Code shows a one-time trust prompt because the plugin bundles an MCP server — expected for a first-party plugin. Each user still authenticates with **their own** Chili Piper credentials (API key or OAuth) per [`../mcp-servers/chili-piper/README.md`](../mcp-servers/chili-piper/README.md); the plugin ships configuration, never credentials.
+The plugin includes the Chili Piper MCP config (`plugins/chili-piper-skills/.mcp.json`). On install, Claude Code shows a one-time trust prompt because the plugin bundles an MCP server — expected for a first-party plugin. When the plugin is enabled, Claude Code asks each user for their Chili Piper API key (the plugin's `api_key` user setting, stored in the system keychain) and sends it as the `Authorization` header. Each user still authenticates with **their own** Chili Piper API key per [`../mcp-servers/chili-piper/README.md`](../mcp-servers/chili-piper/README.md); the plugin ships configuration, never credentials.
 
 ---
 

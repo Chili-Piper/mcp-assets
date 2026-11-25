@@ -14,10 +14,10 @@ repo holds **zero customer data**.
 
 | Path | What it is |
 |------|-----------|
-| `skills/<slug>/SKILL.md` | A skill: frontmatter contract + Process. The entry point. |
-| `skills/<slug>/references/*.md` | Deep detail (API fields, output formats, procedures), loaded on demand. |
+| `plugins/chili-piper-skills/skills/<slug>/SKILL.md` | A skill: frontmatter contract + Process. The entry point. |
+| `plugins/chili-piper-skills/skills/<slug>/references/*.md` | Deep detail (API fields, output formats, procedures), loaded on demand. |
 | `gpts/<slug>/` | The ChatGPT version of each skill — `GPT.md` + `openapi.yaml`. |
-| `commands/*.md` | Thin slash-command wrappers that invoke a skill. |
+| `plugins/chili-piper-skills/commands/*.md` | Thin slash-command wrappers that invoke a skill. |
 | `mcp-servers/chili-piper/` | How to connect the Chili Piper MCP (API key / OAuth). |
 | `docs/` | `methodology.md` (authoring standard), `QA.md` (maturity tracker), `org-deployment.md`. |
 | `.github/scripts/` | CI checks: frontmatter+structure, GPT sync, packaging. |

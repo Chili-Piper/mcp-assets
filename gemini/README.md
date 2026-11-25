@@ -51,11 +51,11 @@ Add to `~/.gemini/settings.json` (global) or `.gemini/settings.json` (per projec
 }
 ```
 
-> Newer Gemini CLI versions accept `"url"` with an optional `"type": "http"` in place of `"httpUrl"` — both work. Keep the key in an environment variable rather than committing it: `"Authorization": "Bearer $CHILI_PIPER_API_KEY"`. The `X-MCP-Schema-Dialect: gemini` header is required (see above).
+> Newer Gemini CLI versions accept `"url"` with an optional `"type": "http"` in place of `"httpUrl"` — both work. Replace `YOUR_API_KEY` with your key and never commit the file: `"Authorization": "Bearer YOUR_API_KEY"`. The `X-MCP-Schema-Dialect: gemini` header is required (see above).
 
 Verify: start `gemini`, run `/mcp`, and confirm `chili-piper` is listed as connected. Then ask: *"What Chili Piper tenant is connected?"* — you should get your organization name back.
 
-**Using the Skills with Gemini CLI:** the [`skills/`](../skills/) in this repo are plain-markdown instruction sets — they are not Claude-specific. To run one through Gemini CLI, paste the skill's `SKILL.md` (and its `references/` files if needed) into your project's `GEMINI.md` context file, or reference the file directly in your prompt (e.g. *"Follow the procedure in skills/meeting-inspector/SKILL.md for meeting ID …"*).
+**Using the Skills with Gemini CLI:** the [`skills/`](../plugins/chili-piper-skills/skills/) in this repo are plain-markdown instruction sets — they are not Claude-specific. To run one through Gemini CLI, paste the skill's `SKILL.md` (and its `references/` files if needed) into your project's `GEMINI.md` context file, or reference the file directly in your prompt (e.g. *"Follow the procedure in skills/meeting-inspector/SKILL.md for meeting ID …"*).
 
 ## 2. Google Gen AI SDK / Agent Development Kit (developers)
 

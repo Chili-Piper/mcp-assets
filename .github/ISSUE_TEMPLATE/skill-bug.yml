@@ -7,7 +7,7 @@ body:
     id: skill
     attributes:
       label: Which skill or GPT?
-      placeholder: "e.g. skills/meeting-inspector or gpts/no-show-analyzer"
+      placeholder: "e.g. plugins/chili-piper-skills/skills/meeting-inspector or gpts/no-show-analyzer"
     validations:
       required: true
 
