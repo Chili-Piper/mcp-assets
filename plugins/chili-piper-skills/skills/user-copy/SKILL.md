@@ -1,44 +1,43 @@
 ---
 name: user-copy
 description: Copies a user's Chili Piper workspace and team memberships (and, optionally, product licenses) to a new or existing user — eliminating manual re-configuration when onboarding a rep onto an existing territory or replacing a departing rep
-metadata:
-  version: 0.1.7
-  references:
-    - api-reference
-    - output-format
-    - copy-procedure
-  inputs:
-    - name: source_user
-      type: string
-      description: "Email, name, or user ID of the user to copy configuration from"
-      required: true
-    - name: target_user
-      type: string
-      description: "Email, name, or user ID of the user to copy configuration to (must already exist in Chili Piper)"
-      required: true
-    - name: dry_run
-      type: boolean
-      description: "If true, show what would be done without making any changes. Always recommended before first run."
-      required: false
-      default: true
-    - name: copy_licenses
-      type: boolean
-      description: "If true, also grant the target any product licenses the source has that the target lacks (additive only — never revokes). Consumes paid seats, so it is opt-in. Defaults to false."
-      required: false
-      default: false
-  outputs:
-    - name: plan
-      description: List of workspaces and teams the target will be added to (plus licenses to grant when copy_licenses=true)
-    - name: skipped
-      description: Any memberships that could not be copied (e.g. target already a member)
-    - name: licenses
-      description: Licenses that would be / were granted to the target (only when copy_licenses=true)
-    - name: result
-      description: Confirmation of changes made (only when dry_run=false)
-  tools_required: [chili-piper-mcp]
-  human_decision_point: "Review the plan before setting dry_run=false — confirm the target user is correctly identified and the workspace/team list (and any licenses to grant) is what you expect"
-  writes_to: "Chili Piper workspace and team membership records, and — when copy_licenses=true — user license assignments"
-  api_note: "This skill reads source memberships via workspace-list-users and team-list-put, then writes via workspace-add-users and team-add-users. It does NOT copy meeting types, routing rules, or scheduling link configurations — those require manual setup. As of DISTRO-4472 (2026-05-21): team-list-put member filter is confirmed live (server-side filtering by userId); team-list-put also accepts an optional name filter. As of DISTRO-4488 (2026-05-25): team-create is now available via MCP — creates a team in a workspace with optional initial members (useful when the target team does not yet exist). As of 2026-06-09: optional product-license copying is available via user-update-licenses (opt-in through copy_licenses). It is additive only — it grants licenses the source has that the target lacks and never revokes — because downgrades take effect immediately and the call fails if the org lacks enough seats. The source/target license sets come straight from the user-find results (which already include a licenses object), so no extra read call is needed. The admin role (isSuperAdmin) is never copied. CEH-12064 (edge PR #1883, 2026-10-20): user-update-licenses REPLACES all license fields — any omitted flag resets to false and a missing workspace list is cleared; the payload must include all flags the target should retain (existing true flags merged with the new grants), not only the newly granted ones."
+version: 0.1.7
+references:
+  - api-reference
+  - output-format
+  - copy-procedure
+inputs:
+  - name: source_user
+    type: string
+    description: "Email, name, or user ID of the user to copy configuration from"
+    required: true
+  - name: target_user
+    type: string
+    description: "Email, name, or user ID of the user to copy configuration to (must already exist in Chili Piper)"
+    required: true
+  - name: dry_run
+    type: boolean
+    description: "If true, show what would be done without making any changes. Always recommended before first run."
+    required: false
+    default: true
+  - name: copy_licenses
+    type: boolean
+    description: "If true, also grant the target any product licenses the source has that the target lacks (additive only — never revokes). Consumes paid seats, so it is opt-in. Defaults to false."
+    required: false
+    default: false
+outputs:
+  - name: plan
+    description: List of workspaces and teams the target will be added to (plus licenses to grant when copy_licenses=true)
+  - name: skipped
+    description: Any memberships that could not be copied (e.g. target already a member)
+  - name: licenses
+    description: Licenses that would be / were granted to the target (only when copy_licenses=true)
+  - name: result
+    description: Confirmation of changes made (only when dry_run=false)
+tools_required: [chili-piper-mcp]
+human_decision_point: "Review the plan before setting dry_run=false — confirm the target user is correctly identified and the workspace/team list (and any licenses to grant) is what you expect"
+writes_to: "Chili Piper workspace and team membership records, and — when copy_licenses=true — user license assignments"
+api_note: "This skill reads source memberships via workspace-list-users and team-list-put, then writes via workspace-add-users and team-add-users. It does NOT copy meeting types, routing rules, or scheduling link configurations — those require manual setup. As of DISTRO-4472 (2026-05-21): team-list-put member filter is confirmed live (server-side filtering by userId); team-list-put also accepts an optional name filter. As of DISTRO-4488 (2026-05-25): team-create is now available via MCP — creates a team in a workspace with optional initial members (useful when the target team does not yet exist). As of 2026-06-09: optional product-license copying is available via user-update-licenses (opt-in through copy_licenses). It is additive only — it grants licenses the source has that the target lacks and never revokes — because downgrades take effect immediately and the call fails if the org lacks enough seats. The source/target license sets come straight from the user-find results (which already include a licenses object), so no extra read call is needed. The admin role (isSuperAdmin) is never copied. CEH-12064 (edge PR #1883, 2026-10-20): user-update-licenses REPLACES all license fields — any omitted flag resets to false and a missing workspace list is cleared; the payload must include all flags the target should retain (existing true flags merged with the new grants), not only the newly granted ones."
 ---
 
 # User Copy

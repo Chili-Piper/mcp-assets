@@ -1,33 +1,32 @@
 ---
 name: org-meeting
 description: Org-wide meeting volume and health snapshot — total booked, completed, no-show, and cancelled by workspace — for weekly or monthly executive reviews of booking capacity and pipeline coverage
-metadata:
-  version: 0.1.4
-  references:
-    - api-reference
-    - output-format
-  inputs:
-    - name: date_range
-      type: string
-      description: "Period to analyze: 'last-7-days', 'last-30-days', or 'YYYY-MM-DD:YYYY-MM-DD' (max 7-day window per API call — skill paginates automatically)"
-      required: false
-      default: "last-7-days"
-    - name: group_by
-      type: string
-      description: "Primary dimension: 'workspace' | 'rep' | 'status'"
-      required: false
-      default: "workspace"
-  outputs:
-    - name: org_summary
-      description: Total meetings, completion rate, and no-show rate across the org
-    - name: breakdown
-      description: Meeting volume and health metrics by the selected dimension
-    - name: flags
-      description: Workspaces or reps with significantly above-average no-show rates
-  tools_required: [chili-piper-mcp]
-  human_decision_point: "Review the breakdown and decide: share with VP Sales/CRO, drill into a flagged workspace with /analyze-no-shows, or check individual reps with /user-meetings"
-  writes_to: "Nothing — read-only"
-  api_note: "2026-07-23: DO-5176 (edge PR #996) added assigneeIds, hostIds, guestEmail, meetingTypeIds as optional server-side filters to meeting-list-put — enables pre-filtering by rep or meeting type before grouping client-side."
+version: 0.1.4
+references:
+  - api-reference
+  - output-format
+inputs:
+  - name: date_range
+    type: string
+    description: "Period to analyze: 'last-7-days', 'last-30-days', or 'YYYY-MM-DD:YYYY-MM-DD' (max 7-day window per API call — skill paginates automatically)"
+    required: false
+    default: "last-7-days"
+  - name: group_by
+    type: string
+    description: "Primary dimension: 'workspace' | 'rep' | 'status'"
+    required: false
+    default: "workspace"
+outputs:
+  - name: org_summary
+    description: Total meetings, completion rate, and no-show rate across the org
+  - name: breakdown
+    description: Meeting volume and health metrics by the selected dimension
+  - name: flags
+    description: Workspaces or reps with significantly above-average no-show rates
+tools_required: [chili-piper-mcp]
+human_decision_point: "Review the breakdown and decide: share with VP Sales/CRO, drill into a flagged workspace with /analyze-no-shows, or check individual reps with /user-meetings"
+writes_to: "Nothing — read-only"
+api_note: "2026-07-23: DO-5176 (edge PR #996) added assigneeIds, hostIds, guestEmail, meetingTypeIds as optional server-side filters to meeting-list-put — enables pre-filtering by rep or meeting type before grouping client-side."
 ---
 
 # Org Meeting Snapshot

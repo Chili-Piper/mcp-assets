@@ -12,10 +12,6 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
   - The MCP `Authorization` header now reads `${user_config.api_key}`, a sensitive `userConfig`
     option that Claude Code asks for when the plugin is enabled, instead of the
     `CHILI_PIPER_API_KEY` environment variable. Docs use the literal `YOUR_API_KEY`.
-  - SKILL.md frontmatter keeps only `name` and `description` at the top level. All custom keys
-    (`version`, `references`, `inputs`, `outputs`, `tools_required`, `writes_to`,
-    `human_decision_point`, `api_note`, `operator`) move under `metadata:`.
-    `validate_skill_frontmatter.py` enforces this.
   - Adds a 1024 px PNG icon and `privacyPolicyUrl`; `marketplace.json` uses a relative source
     and drops `owner.url` and `metadata.homepage`.
   - Rewords the patch-semantics sentences in the Concierge and Handoff router skills and GPTs

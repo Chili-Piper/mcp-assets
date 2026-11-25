@@ -1,45 +1,44 @@
 ---
 name: no-show-analyzer
 description: Analyzes Chili Piper meeting no-show patterns by trigger type, routing path, rep, or workspace using meeting-list-put and concierge-logs to surface actionable optimization opportunities
-metadata:
-  version: 0.3.8
-  api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 100 per page, default 20); Step 3b and preflight updated to paginate high-volume routers; 2026-07-23: DO-5176 (edge PR #996) added assigneeIds, hostIds, guestEmail, meetingTypeIds as optional server-side filters to meeting-list-put — useful for pre-filtering by specific hosts or meeting types before grouping client-side. 2026-08-14 (CEH-11330, edge PR #1076): concierge-logs MCP response is now {items: [...]} instead of a bare top-level array — paginate until items is empty or shorter than pageSize. 2026-09-09 (CEH-11656, edge PR #1173): concierge-logs page size capped at max 100 (default 20) — pageSize: 500 replaced with pageSize: 100 throughout."
-  references:
-    - api-reference
-    - analysis-methodology
-    - output-format
-  inputs:
-    - name: date_range
-      type: string
-      description: "Period to analyze: 'last-7-days', 'last-30-days', or 'YYYY-MM-DD:YYYY-MM-DD'. For trigger/route breakdown, concierge-logs caps at 30 days. Meeting data can go further but loses routing context."
-      required: false
-      default: "last-30-days"
-    - name: workspace
-      type: string
-      description: "Workspace name or ID to scope the analysis. Omit for org-wide."
-      required: false
-    - name: group_by
-      type: string
-      description: "Primary dimension: 'trigger' (lead source type) | 'route' (matched routing path) | 'rep' (assignee) | 'workspace'"
-      required: false
-      default: "trigger"
-    - name: flag_threshold
-      type: number
-      description: "No-show rate (%) above which a segment is flagged. Default: 30."
-      required: false
-      default: 30
-  outputs:
-    - name: summary
-      description: Overall no-show rate and meeting volume for the period
-    - name: breakdown
-      description: No-show rate by the selected dimension, sorted highest to lowest
-    - name: flagged_segments
-      description: Segments above the threshold with root-cause hypotheses
-    - name: recommended_actions
-      description: Specific routing or confirmation flow changes to test
-  tools_required: [chili-piper-mcp]
-  human_decision_point: "Review flagged segments and decide which routing rule or confirmation flow change to test first"
-  writes_to: "Salesforce task (optional) — created by human after reviewing recommendations"
+version: 0.3.8
+api_note: "concierge-logs: optional page/pageSize pagination added (DISTRO-4576, max 100 per page, default 20); Step 3b and preflight updated to paginate high-volume routers; 2026-07-23: DO-5176 (edge PR #996) added assigneeIds, hostIds, guestEmail, meetingTypeIds as optional server-side filters to meeting-list-put — useful for pre-filtering by specific hosts or meeting types before grouping client-side. 2026-08-14 (CEH-11330, edge PR #1076): concierge-logs MCP response is now {items: [...]} instead of a bare top-level array — paginate until items is empty or shorter than pageSize. 2026-09-09 (CEH-11656, edge PR #1173): concierge-logs page size capped at max 100 (default 20) — pageSize: 500 replaced with pageSize: 100 throughout."
+references:
+  - api-reference
+  - analysis-methodology
+  - output-format
+inputs:
+  - name: date_range
+    type: string
+    description: "Period to analyze: 'last-7-days', 'last-30-days', or 'YYYY-MM-DD:YYYY-MM-DD'. For trigger/route breakdown, concierge-logs caps at 30 days. Meeting data can go further but loses routing context."
+    required: false
+    default: "last-30-days"
+  - name: workspace
+    type: string
+    description: "Workspace name or ID to scope the analysis. Omit for org-wide."
+    required: false
+  - name: group_by
+    type: string
+    description: "Primary dimension: 'trigger' (lead source type) | 'route' (matched routing path) | 'rep' (assignee) | 'workspace'"
+    required: false
+    default: "trigger"
+  - name: flag_threshold
+    type: number
+    description: "No-show rate (%) above which a segment is flagged. Default: 30."
+    required: false
+    default: 30
+outputs:
+  - name: summary
+    description: Overall no-show rate and meeting volume for the period
+  - name: breakdown
+    description: No-show rate by the selected dimension, sorted highest to lowest
+  - name: flagged_segments
+    description: Segments above the threshold with root-cause hypotheses
+  - name: recommended_actions
+    description: Specific routing or confirmation flow changes to test
+tools_required: [chili-piper-mcp]
+human_decision_point: "Review flagged segments and decide which routing rule or confirmation flow change to test first"
+writes_to: "Salesforce task (optional) — created by human after reviewing recommendations"
 ---
 
 # No-Show Analyzer

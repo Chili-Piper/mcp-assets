@@ -40,7 +40,7 @@ skills/
         └── output-format.md
 ```
 
-**`SKILL.md`** — the entry point. Frontmatter declares `name` and `description` at the top level; everything else (`version`, inputs/outputs, `tools_required`, `writes_to`, …) sits under `metadata:` because the Claude plugin directory rejects other top-level keys. Read this first.
+**`SKILL.md`** — the entry point. Frontmatter declares `name`, `description`, `version`, inputs/outputs, `tools_required`, and `writes_to`. Read this first.
 
 **`references/`** — deep dives loaded only when a step needs them, keeping context minimal.
 
@@ -52,21 +52,20 @@ skills/
 ---
 name: skill-name                    # kebab-case, matches directory name
 description: One sentence           # used by agents to decide whether to load this skill
-metadata:                                # custom keys MUST be nested here (Claude plugin directory rule)
-  version: 0.1.0
-  references:                         # optional — basenames of files in references/
-    - api-reference
-  inputs:
-    - name: param_name
-      type: string
-      description: What this input controls
-      required: true
-  outputs:
-    - name: output_name
-      description: What gets returned
-  tools_required: [chili-piper-mcp]   # MCP the skill needs
-  human_decision_point: "When a human must approve before continuing"
-  writes_to: "Where outputs go, or 'Nothing — read-only'"
+version: 0.1.0
+references:                         # optional — basenames of files in references/
+  - api-reference
+inputs:
+  - name: param_name
+    type: string
+    description: What this input controls
+    required: true
+outputs:
+  - name: output_name
+    description: What gets returned
+tools_required: [chili-piper-mcp]   # MCP the skill needs
+human_decision_point: "When a human must approve before continuing"
+writes_to: "Where outputs go, or 'Nothing — read-only'"
 ---
 ```
 
@@ -131,14 +130,14 @@ Every skill carries a QA maturity level (tracked in [`docs/QA.md`](../../../docs
 
 ## Contributing a skill
 
-1. Create `skills/<your-slug>/SKILL.md` using the frontmatter schema above.
+1. Create `plugins/chili-piper-skills/skills/<your-slug>/SKILL.md` using the frontmatter schema above.
 2. Add `references/*.md` for any deep-dive content.
 3. Register the skill in this index with its maturity status.
-4. If a ChatGPT version applies, add the paired `../gpts/<your-slug>/` at the same `version`.
-5. Run the checks locally:
+4. If a ChatGPT version applies, add the paired `gpts/<your-slug>/` at the same `version`.
+5. Run the checks locally (from the repo root):
    ```bash
    pip install pyyaml
-   python ../.github/scripts/validate_skill_frontmatter.py
+   python .github/scripts/validate_skill_frontmatter.py
    ```
 
 See [CONTRIBUTING.md](../../../CONTRIBUTING.md) for the full guide.

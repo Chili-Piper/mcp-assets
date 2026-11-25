@@ -27,7 +27,7 @@ def version_of(path):
         return None
     with open(path, encoding="utf-8") as f:
         for line in f:
-            m = re.match(r"\s*version:\s*(\S+)", line)  # SKILL.md nests it under metadata:
+            m = re.match(r"version:\s*(\S+)", line)
             if m:
                 return m.group(1)
     return None
