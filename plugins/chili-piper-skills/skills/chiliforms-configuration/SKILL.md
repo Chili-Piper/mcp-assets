@@ -24,7 +24,7 @@ metadata:
       required: false
     - name: requirements
       type: string
-      description: "Plain-language customisations, e.g. 'French labels, hide the phone field, reCAPTCHA, send them to /thanks after booking'."
+      description: "Plain-language customisations, e.g. 'French labels, hide the phone field, send them to /thanks after booking'."
       required: false
     - name: workspace
       type: string
@@ -82,7 +82,7 @@ Not for editing the router itself (routing, fields, mapping). That is `concierge
 | `router` | ✅ | — | Router name, slug, or ID |
 | `mode` | — | `generate` | `generate`, `describe`, or `attach` (explicit request only) |
 | `form_html` | attach only | — | Existing form markup or its `name` attributes |
-| `requirements` | — | none | Locale, relabels, hidden or excluded fields, reCAPTCHA, callbacks |
+| `requirements` | — | none | Locale, relabels, hidden or excluded fields, callbacks |
 | `workspace` | — | all | Narrows the router search |
 
 If `router` is missing, ask for it in one sentence. If the customer mentions a form they
@@ -150,9 +150,8 @@ mapped, unmapped, and mapping-without-control entries → `references/embed-refe
 
 Map `requirements` onto the create() options. Relabel, hide, require, exclude or change
 choices go in `overrides`. Language goes in `locale`, which must be one the router has in
-`localizations`. Captcha goes in `recaptcha`: write the placeholder `YOUR_RECAPTCHA_SITE_KEY` and tell the
-customer to paste their public reCAPTCHA site value there. The page must also load Google's
-`api.js` itself. Post-booking behaviour goes in `options`, a lead mirror in `post`, and
+`localizations`. Leave captcha out of the snippet; if the customer asks for it, point them to
+`references/embed-reference.md`. Post-booking behaviour goes in `options`, a lead mirror in `post`, and
 callbacks in `onReady` / `onSubmitted` / `onError`. Page placement goes in `selector`, and
 button text in `submitLabel`. Never invent a data field reference: take override keys from
 Step 4 → `references/embed-reference.md` § Options and § Overrides. A field the router doesn't
