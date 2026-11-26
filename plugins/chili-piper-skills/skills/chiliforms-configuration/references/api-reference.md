@@ -29,7 +29,7 @@ subdomain of `acmeinc` can belong to tenant `acme.com`. Neither can be derived f
 | Embed option | Source | Shape | Why it's needed |
 |--------------|--------|-------|-----------------|
 | `domain` | `tenantData.subdomain` | bare slug, e.g. `acme` | Builds the booking popup URL (`https://<domain>.chilipiper.com/concierge-router/<slug>`). **Required by `create()`** |
-| `tenantId` | `tenantData.tenantId` | dotted, e.g. `acme.com` | Keys every guest API call. Optional (looked up from `domain`), but passing it skips a request |
+| `tenantId` | `tenantData.tenantId` | dotted, e.g. `acme.com` | Identifies the tenant in every guest API call. Optional (looked up from `domain`), but passing it skips a request |
 
 - ChiliForms treats a dotted value as a tenant id and a bare value as a subdomain, whichever option it's passed in. Never put `acme.com` in `domain`.
 - Use `tenantData.subdomain` exactly as returned, even when it's a shared host name like `calendar` rather than a vanity subdomain. That's a real registered subdomain (verified: a test tenant returns `calendar` and its embed renders). Fall back to `domain: 'fire'` only if `subdomain` is empty, and say so in the output.
@@ -101,13 +101,12 @@ references, and every field left after `overrides.exclude` has to be covered, hi
 
 ## Guest-side endpoints (context only)
 
-The embed calls these from the visitor's browser through a hidden bridge iframe on
+The embed also opens an anonymous guest session. It calls these from the visitor's browser through a hidden bridge iframe on
 `https://calendar.chilipiper.com`. The skill never calls them. They matter for troubleshooting
 (CSP, blocked frames) only:
 
 | Endpoint | Provides |
 |----------|----------|
-| `POST /api/fire-auth/v1/public/guest-tokens` | anonymous guest session |
 | `GET /api/concierge/v1/guest-external/tenant/{tenantId}/router/{slug}` | published triggers + field sets |
 | `GET /api/chili-crm/v1/public/tenant/{tenantId}/list?ref=…` | data types and choices |
 | `POST …/localization-entries/applied` | translated labels and error messages |
