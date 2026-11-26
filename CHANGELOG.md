@@ -5,6 +5,9 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Added
+- **`book-meeting` 0.2.0:** adds Path A, the public Chili Piper booking MCP server (Edge
+  `/api/fire-edge/v1/prospect/mcp`, no auth; tools `booking-link-describe`, `booking-slots-find`,
+  `booking-create`), with `references/mcp-reference.md`. The plain-HTTPS path stays as Path B.
 - **`book-meeting` 0.1.0 (plugin 1.6.0):** a skill for a *prospect's* AI agent, not for Chili Piper
   admins. A customer's website links to it next to a Chili Piper booking link; the agent then books
   a meeting for its user through the same public HTTPS calls the booking page makes (guest token,

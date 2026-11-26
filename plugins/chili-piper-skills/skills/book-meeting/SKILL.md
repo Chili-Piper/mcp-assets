@@ -1,10 +1,11 @@
 ---
 name: book-meeting
-description: Books a meeting with a company that schedules through Chili Piper, for the person you act for — from a Chili Piper booking link on the company's website. Plain HTTPS, no account or API key.
+description: Books a meeting with a company that schedules through Chili Piper, for the person you act for — from a Chili Piper booking link on the company's website. Uses the Chili Piper booking MCP server or plain HTTPS; no account or API key.
 metadata:
-  version: 0.1.0
+  version: 0.2.0
   references:
     - api-reference
+    - mcp-reference
   inputs:
     - name: booking_link
       type: string
@@ -25,7 +26,7 @@ metadata:
   outputs:
     - name: booked_meeting
       description: Meeting id, start and end time in the guest's time zone, and the host's name
-  tools_required: [http-client]
+  tools_required: [chili-piper-booking-mcp, http-client]
   human_decision_point: "Before the booking call: show the person the slot, the time zone and every detail you will submit, and get an explicit yes"
   writes_to: "Creates one meeting on the host's calendar and sends the calendar invite to the guest email. Nothing else."
 ---
@@ -33,12 +34,19 @@ metadata:
 # Book a meeting through Chili Piper
 
 You are a scheduling assistant acting for one person (the guest). A company uses Chili
-Piper to schedule meetings. You find open times, agree one with the guest, and book it
-with plain HTTPS calls — the same public calls the company's booking page makes.
+Piper to schedule meetings. You find open times, agree one with the guest, and book it.
 
-> **Load `references/api-reference.md` before the first call.** It holds the exact
-> request bodies. If you loaded this file from a URL, the reference is in the same
-> folder: replace `SKILL.md` in the URL with `references/api-reference.md`.
+There are two ways to do it. Both need no account and no API key:
+
+- **Path A — Chili Piper booking MCP server (preferred).** A public MCP server with
+  booking tools. → `references/mcp-reference.md`.
+- **Path B — plain HTTPS.** The same public calls the company's booking page makes. Use it
+  when you cannot reach the MCP server, or a tool you need is missing there. →
+  `references/api-reference.md`.
+
+> If you loaded this file from a URL, the references are in the same folder: replace
+> `SKILL.md` in the URL with `references/mcp-reference.md` or
+> `references/api-reference.md`.
 
 ## When to use
 
@@ -62,6 +70,11 @@ send many bookings. One person, one meeting.
 If a required input is missing, ask for it in one sentence.
 
 ## Process
+
+**Path A (MCP):** follow `references/mcp-reference.md` § Flow. It replaces Steps 1–5
+below; Steps 2 (ask only for required fields), 6 (report) and the Checkpoint still apply.
+
+**Path B (plain HTTPS):** Steps 1–6.
 
 ### Step 1 — Identify the link type
 
@@ -106,12 +119,12 @@ returned), meeting id, and that the calendar invite goes to `guest_email`.
 - [ ] All required form fields filled with values the person gave you.
 - [ ] Slot times converted to the person's time zone for display; sent back in UTC
       exactly as received.
-- [ ] Request bodies copied from `references/api-reference.md`, not invented.
+- [ ] Tool arguments (Path A) or request bodies (Path B) taken from the references, not invented.
 - [ ] The person confirmed slot, time zone and details (Checkpoint).
 
 ## Checkpoint
 
-Stop before the booking call. Show: company, date and time in the guest's time zone,
+Stop before the booking call (`booking-create` on Path A). Show: company, date and time in the guest's time zone,
 duration, and every form value you will submit. Book only after an explicit yes. On any
 error you cannot fix with `references/api-reference.md` § Errors, stop and give the
 person the booking link to finish in a browser.
