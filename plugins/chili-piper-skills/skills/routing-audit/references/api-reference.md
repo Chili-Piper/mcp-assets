@@ -12,7 +12,7 @@ Piper MCP tools this skill uses.
 
 | Tool | What it returns |
 |------|----------------|
-| `workspace-list` | All workspaces → items `{id, name, nrOfUsers}`. The identifier is **`id`** (NOT `workspaceId`); pass `id` as the `workspaceId` argument to other tools. |
+| `workspace-list` | All workspaces → items `{id, name, nrOfUsers}`. The identifier is **`id`** (NOT `workspaceId`); use `id` as the `workspaceId` argument to other tools. |
 | `concierge-list-routers` | Routers in a workspace → `{routers: [{router: {id, name, slug, routing: {rules: [...], catchAll: {outcome: ...}}}, workspaceId}]}`. routerId is `routers[N].router.id`; rules and catch-all on `routers[N].router.routing`. Each rule row and the catch-all carry `outcome`: `{type: "Schedule", assignment: {type: "Distribution", distributionId} \| {type: "User", userId}, meetingTypeId, timeout?: {minutes, onTimeout: "Landing"\|{url}}, crmActions?: [...]}`, `{type: "Redirect", url}`, or a read-only variant — `OwnerAssign`, `ContactOptions {meeting?, callSuccess?, callMissed?}`, `CrmAction`, `Other {kind}` (see § Routing outcomes). |
 | `rule-list` | Active routing rules, **workspace-scoped** (no routerId). Input `{filter: {ruleBuilderVersion: ["ExplicitV1"] (required), workspaceId?, name?, type?}, pagination}`. Returns `{results: [{id, name, type, conditions, workspaceId, metadata: {revision}}], total}`. `type` is `OwnershipRule` or `NonOwnershipRule`. |
 | `concierge-logs` | Routing decisions → `status`, `matchedPath` (object), `guestEmail`, `triggeredAt`, `assignments`, `meetingId`. `matchedPath.route.type` is `RuleRoute` or `CatchAllRoute`. 30-day max window; requires `workspaceId` + `routerId`. |
@@ -23,7 +23,7 @@ Piper MCP tools this skill uses.
 ## Critical field name differences
 
 - **Workspace identifier is `id`, not `workspaceId`.** `workspace-list` items expose
-  `id`; pass that value as the `workspaceId` argument to every other tool.
+  `id`; use that value as the `workspaceId` argument to every other tool.
 - **routerId lives at `routers[N].router.id`** — the response nests the router object
   one level down under `router`, with `workspaceId` as a sibling of `router`.
 - **A router's rules and catch-all come from the router object itself**
