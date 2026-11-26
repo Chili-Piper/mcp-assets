@@ -125,11 +125,11 @@ Every skill carries a QA maturity level (tracked in [`docs/QA.md`](../../../docs
 |-------|-------------|:--------:|
 | [chiliforms-configuration](chiliforms-configuration/SKILL.md) | Builds a ChiliForms embed (a web form generated from a Concierge router) for customers without their own form, as a ready-to-paste snippet with troubleshooting. Existing forms are pointed to the Concierge snippet | `tested` |
 
-### Prospect-side booking (no account)
+### Guest-side booking (no account)
 
 | Skill | What it does | Maturity |
 |-------|-------------|:--------:|
-| [book-meeting](book-meeting/SKILL.md) | Lets a prospect's own AI agent book a meeting with a Chili Piper customer from the booking link on the customer's website — public HTTPS calls, no Chili Piper account or API key. The only skill that does not use the MCP | `tested` |
+| [book-meeting](book-meeting/SKILL.md) | Lets a guest's own AI agent book a meeting with a Chili Piper customer from the booking link on the customer's website — public HTTPS calls, no Chili Piper account or API key. The only skill that does not use the MCP | `tested` |
 
 > ⚠️ `user-copy`, `user-offboarding`, and the configuration-management skills modify Chili Piper data. All default to `dry_run: true` and require explicit human confirmation before any write.
 

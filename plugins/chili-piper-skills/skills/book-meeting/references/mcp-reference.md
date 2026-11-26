@@ -1,12 +1,12 @@
 # book-meeting — MCP reference (Path A)
 
 The Chili Piper booking MCP server is public and needs **no authentication**. It is a
-separate server from the Chili Piper admin MCP and has only prospect tools.
+separate server from the Chili Piper admin MCP and has only guest tools.
 
 | Environment | MCP endpoint (Streamable HTTP, JSON-RPC 2.0) |
 |---|---|
-| Production | `https://fire.chilipiper.com/api/fire-edge/v1/prospect/mcp` |
-| Staging | `https://fire.chilipiper.io/api/fire-edge/v1/prospect/mcp` |
+| Production | `https://fire.chilipiper.com/api/fire-edge/v1/guest/mcp` |
+| Staging | `https://fire.chilipiper.io/api/fire-edge/v1/guest/mcp` |
 
 Use the endpoint of the booking link's domain: `*.chilipiper.com` → Production,
 `*.chilipiper.io` → Staging.
