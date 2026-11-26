@@ -113,7 +113,7 @@ Verify before presenting the plan:
 - [ ] The plan states in bold that changes go **live on the public form immediately**.
 - [ ] Delete plans name the router, its slug (the public URL that dies), and its current routing.
 - [ ] Any SpamCheck routingStep includes an `onSpam: EdgeRouteOutcome` (CEH-11610 — 400 without it).
-- [ ] **Schema loaded (DISTRO-4632):** in an MCP session, call `describe-tools(names: ["concierge-router-create"])` before attempting a create — the server uses progressive disclosure by default and omits the full schema from `tools/list`; without this step the tool call will fail.
+- [ ] **Schema loaded:** in an MCP session, call `describe-tools(names: ["concierge-router-create"])` before the first create. The server shows only a short tool summary by default, and the create needs the full schema.
 - [ ] Any redirect URL in the plan (Redirect outcome `url`, `redirectAfterBooking.url`, `timeout.onTimeout` URL) is http/https or scheme-less — other schemes (e.g. javascript:, data:) return 400 (CEH-12122).
 - [ ] To **remove** a post-booking redirect, send `redirectAfterBooking: null` — not omitting the field (omit = keep existing); `null` is the explicit removal signal (CEH-12121).
 - [ ] No lead-conversion CRM action in the plan; any existing one on the router is taken out.

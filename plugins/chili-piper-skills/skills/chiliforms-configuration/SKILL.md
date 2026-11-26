@@ -52,8 +52,8 @@ fields, and hand back a snippet the customer can paste into their site with no g
 > MCP calls. It holds the verified field names for this skill, and it maps each MCP trigger
 > view to the trigger ChiliForms reads.
 
-**What ChiliForms is.** `chiliforms.js` is a script served from
-`https://fire.chilipiper.com/chiliforms/cjs/chiliforms.js`. It reads a Concierge router's
+**What ChiliForms is.** `chiliforms.js` is a Chili Piper script (its URL is in
+`references/embed-reference.md`). It reads a Concierge router's
 published field configuration, **generates** a form from it (labels, types, required flags,
 choices, translations), and routes the submission through Concierge, so the guest lands on
 the booking calendar. It is fully public: it uses only what a visitor to the router's
@@ -100,7 +100,7 @@ can be derived from the other. Field paths are in `references/api-reference.md` 
 
 ### Step 2 — Resolve and read the router
 
-`concierge-list-routers` (pass `workspaceId` via `workspace-list` if given, since the
+`concierge-list-routers` (give `workspaceId` from `workspace-list` if the user names a workspace, since the
 whole-org response is large), then match by ID, `slug`, or case-insensitive name substring.
 List and ask on multiple matches. Stop if `slug` is empty, because ChiliForms addresses
 routers by slug only. Take the trigger inventory from that list entry's
