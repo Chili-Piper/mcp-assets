@@ -129,7 +129,7 @@ Every skill carries a QA maturity level (tracked in [`docs/QA.md`](../../../docs
 
 | Skill | What it does | Maturity |
 |-------|-------------|:--------:|
-| [book-meeting](book-meeting/SKILL.md) | Lets a guest's own AI agent book a meeting with a Chili Piper customer from the booking link on the customer's website — public HTTPS calls, no Chili Piper account or API key. The only skill that does not use the MCP | `tested` |
+| [chili-piper-guest](chili-piper-guest/SKILL.md) | Entry point for a guest's own AI agent: everything a guest can do with a Chili Piper customer (book a meeting; view, reschedule or cancel it), via the public guest MCP or plain HTTPS, no Chili Piper account. Linked from the customer's website snippet; the link stays the same as guest tasks are added | `tested` |
 
 > ⚠️ `user-copy`, `user-offboarding`, and the configuration-management skills modify Chili Piper data. All default to `dry_run: true` and require explicit human confirmation before any write.
 

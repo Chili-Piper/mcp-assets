@@ -1,6 +1,6 @@
-# book-meeting — MCP reference (Path A)
+# chili-piper-guest — MCP reference (Path A)
 
-The Chili Piper booking MCP server is public and needs **no authentication**. It is a
+The Chili Piper guest MCP server is public and needs **no authentication**. It is a
 separate server from the Chili Piper admin MCP and has only guest tools.
 
 | Environment | MCP endpoint (Streamable HTTP, JSON-RPC 2.0) |

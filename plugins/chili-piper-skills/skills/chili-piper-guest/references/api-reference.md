@@ -1,4 +1,4 @@
-# book-meeting — API reference
+# chili-piper-guest — API reference (Path B, booking)
 
 Exact public calls of the Chili Piper booking page. `{host}` is the booking link's host
 (`https://acme.chilipiper.com`). `{tid}` is the tenant id. Times are ISO-8601 UTC
