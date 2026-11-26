@@ -19,7 +19,7 @@ import sys
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SKILLS, GPTS = os.path.join(REPO, "plugins", "chili-piper-skills", "skills"), os.path.join(REPO, "gpts")
 
-NO_GPT = {"onboarding-chili-piper"}  # skills that deliberately have no ChatGPT counterpart (onboarding: multi-file, multi-product build exceeds GPT instruction limits)
+NO_GPT = {"onboarding-chili-piper", "chili-piper-guest"}  # skills that deliberately have no ChatGPT counterpart (onboarding: multi-file, multi-product build exceeds GPT instruction limits; chili-piper-guest: runs in the guest's own agent over public HTTPS, not against the Chili Piper MCP)
 
 
 def version_of(path):

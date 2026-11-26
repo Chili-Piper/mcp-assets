@@ -4,6 +4,22 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 
 ## [Unreleased]
 
+### Added
+- **`chili-piper-guest` 0.3.0** (renamed from `book-meeting`): the general entry point for a
+  guest's own AI agent — everything a guest can do with a Chili Piper customer. Today: book a
+  meeting, and view, reschedule or cancel a booked one (guest MCP tools `meeting-*`,
+  `website-booking-link-find`). The customer's website snippet links to this skill; its URL
+  stays the same as guest tasks are added.
+- **`book-meeting` 0.2.0:** adds Path A, the public Chili Piper booking MCP server (Edge
+  `/api/fire-edge/v1/guest/mcp`, no auth; tools `booking-link-describe`, `booking-slots-find`,
+  `booking-create`), with `references/mcp-reference.md`. The plain-HTTPS path stays as Path B.
+- **`book-meeting` 0.1.0 (plugin 1.6.0):** a skill for a *guest's* AI agent, not for Chili Piper
+  admins. A customer's website links to it next to a Chili Piper booking link; the agent then books
+  a meeting for its user through the same public HTTPS calls the booking page makes (guest token,
+  Concierge routing, slots, reservation, schedule). Covers Concierge router links (fixed host and
+  round robin) and personal `/me/` links. No account, API key or MCP. It has no ChatGPT version
+  (listed in `NO_GPT`). Tested live on Staging.
+
 ### Changed
 - **Claude plugin moved to `plugins/chili-piper-skills/` (plugin 1.5.0)** so the Claude plugin
   directory can review the plugin folder alone, not the repo root. The folder holds only
