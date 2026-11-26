@@ -150,7 +150,8 @@ mapped, unmapped, and mapping-without-control entries → `references/embed-refe
 
 Map `requirements` onto the create() options. Relabel, hide, require, exclude or change
 choices go in `overrides`. Language goes in `locale`, which must be one the router has in
-`localizations`. Captcha goes in `recaptcha`, and the page must also load Google's
+`localizations`. Captcha goes in `recaptcha`: write the placeholder `YOUR_RECAPTCHA_SITE_KEY` and tell the
+customer to paste their public reCAPTCHA site value there. The page must also load Google's
 `api.js` itself. Post-booking behaviour goes in `options`, a lead mirror in `post`, and
 callbacks in `onReady` / `onSubmitted` / `onError`. Page placement goes in `selector`, and
 button text in `submitLabel`. Never invent a data field reference: take override keys from

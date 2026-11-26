@@ -49,7 +49,7 @@ with a `ChiliForms:` prefix and passed to `onError`.
 | `prefillFromQuery` | boolean | `true` | Prefill from `window.location.search` via smart parameters |
 | `multiValueSeparator` | string | `';'` | Joins multi-select values (the separator Salesforce multi-picklists expect) |
 | `enhance` | boolean | `false` | Attach: apply router required flags, placeholders and email/tel/number input types to existing controls |
-| `recaptcha` | string | — | reCAPTCHA **v2** site key. The page must load `https://www.google.com/recaptcha/api.js` itself |
+| `recaptcha` | string | — | Public reCAPTCHA **v2** site value, from the customer (snippets use the placeholder `YOUR_RECAPTCHA_SITE_KEY`). The page must load `https://www.google.com/recaptcha/api.js` itself |
 | `post` | string (URL) | — | Also POST the lead there as `multipart/form-data`, fire-and-forget |
 | `options` | object | — | Merged into the `ChiliPiper.submit` call: `lead` (extra/pinned values, which win over form values), `trigger` (pins the submit trigger, see Generate mode behaviour), and any other Concierge options (e.g. `onSuccess`) |
 | `debug` | boolean | `false` | Log every API call and the resolved schema |
