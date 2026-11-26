@@ -54,6 +54,7 @@ Every skill is built on **[progressive disclosure](docs/methodology.md)** (Anthr
 | [concierge-router-configuration](plugins/chili-piper-skills/skills/concierge-router-configuration/) | Manage Concierge routers — web-form routing rules, forms, and branding | ⚠️ writes |
 | [scheduling-link-management](plugins/chili-piper-skills/skills/scheduling-link-management/) | Manage scheduling links — round-robin, admin one-on-one, group, ownership | ⚠️ writes |
 | [chiliforms-configuration](plugins/chili-piper-skills/skills/chiliforms-configuration/) | Generate a ChiliForms embed (a Chili Piper–built web form) for a customer without a form of their own, as a ready-to-paste snippet | ✅ |
+| [book-meeting](plugins/chili-piper-skills/skills/book-meeting/) | For a **prospect's** AI agent: book a meeting with a Chili Piper customer from the booking link on their website — public HTTPS, no account, no MCP | ⚠️ books one meeting |
 
 See [`skills/README.md`](plugins/chili-piper-skills/skills/README.md) for the full index with QA/maturity status, and [`gpts/README.md`](gpts/README.md) for the ChatGPT versions.
 

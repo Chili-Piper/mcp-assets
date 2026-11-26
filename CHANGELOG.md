@@ -4,6 +4,14 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 
 ## [Unreleased]
 
+### Added
+- **`book-meeting` 0.1.0 (plugin 1.6.0):** a skill for a *prospect's* AI agent, not for Chili Piper
+  admins. A customer's website links to it next to a Chili Piper booking link; the agent then books
+  a meeting for its user through the same public HTTPS calls the booking page makes (guest token,
+  Concierge routing, slots, reservation, schedule). Covers Concierge router links (fixed host and
+  round robin) and personal `/me/` links. No account, API key or MCP. It has no ChatGPT version
+  (listed in `NO_GPT`). Tested live on Staging.
+
 ### Changed
 - **Claude plugin moved to `plugins/chili-piper-skills/` (plugin 1.5.0)** so the Claude plugin
   directory can review the plugin folder alone, not the repo root. The folder holds only
