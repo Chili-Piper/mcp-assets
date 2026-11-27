@@ -27,7 +27,7 @@ All data goes to Chili Piper only. The plugin sends nothing to third parties.
 | Skill | Service | Data sent |
 |-------|---------|-----------|
 | All skills except `chili-piper-guest` | Chili Piper org MCP (`/api/fire-edge/v1/org/mcp`, declared in `.mcp.json`) | Tool arguments: workspace, router, meeting and user data, with your API key |
-| `chili-piper-guest` | Chili Piper guest MCP (`/api/fire-edge/v1/guest/mcp`) or the company's public booking host (`<sub>.chilipiper.com`) over HTTPS | The guest's email and form answers, to book or change a meeting. No API key |
+| `chili-piper-guest` | Chili Piper guest MCP (`/api/fire-edge/v1/guest/mcp`) or the company's public booking host (`<sub>.chilipiper.com`) over HTTPS | The guest's email and form answers, to book or change a meeting, and the guest's questions to the company. No API key |
 
 ## Privacy
 

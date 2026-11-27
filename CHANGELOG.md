@@ -5,6 +5,14 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Added
+- **`chili-piper-guest` 0.4.0:** documents every tool of the guest MCP server
+  ([edge-fire-service PR #2573](https://github.com/Chili-Piper/edge-fire-service/pull/2573)):
+  booking from round-robin, group, ownership and shared links; meeting type choice
+  (`meetingTypeId` on `booking-slots-find`) and location choice (`location` on
+  `booking-create`); `company-question-ask` (answers from the company's Chat AI knowledge
+  base, router link only); `meeting-calendar-file` (.ics and add-to-calendar links); the join
+  link and reminders in `meeting-get`. The `no-calendar` outcome now also covers live routing.
+  Path B (plain HTTPS) still covers router and personal links only.
 - **`chili-piper-guest` 0.3.0** (renamed from `book-meeting`): the general entry point for a
   guest's own AI agent — everything a guest can do with a Chili Piper customer. Today: book a
   meeting, and view, reschedule or cancel a booked one (guest MCP tools `meeting-*`,

@@ -54,7 +54,7 @@ Every skill is built on **[progressive disclosure](docs/methodology.md)** (Anthr
 | [concierge-router-configuration](plugins/chili-piper-skills/skills/concierge-router-configuration/) | Manage Concierge routers — web-form routing rules, forms, and branding | ⚠️ writes |
 | [scheduling-link-management](plugins/chili-piper-skills/skills/scheduling-link-management/) | Manage scheduling links — round-robin, admin one-on-one, group, ownership | ⚠️ writes |
 | [chiliforms-configuration](plugins/chili-piper-skills/skills/chiliforms-configuration/) | Generate a ChiliForms embed (a Chili Piper–built web form) for a customer without a form of their own, as a ready-to-paste snippet | ✅ |
-| [chili-piper-guest](plugins/chili-piper-skills/skills/chili-piper-guest/) | For a **guest's** AI agent: everything a guest can do with a Chili Piper customer — book a meeting, view, reschedule or cancel it — via the public guest MCP or plain HTTPS; no account | ⚠️ books/changes one meeting |
+| [chili-piper-guest](plugins/chili-piper-skills/skills/chili-piper-guest/) | For a **guest's** AI agent: everything a guest can do with a Chili Piper customer — book a meeting from any router, personal or team link (with meeting type and location choice), ask the company a question, view, reschedule, cancel or add to a calendar a booked meeting — via the public guest MCP or plain HTTPS; no account | ⚠️ books/changes one meeting |
 
 See [`skills/README.md`](plugins/chili-piper-skills/skills/README.md) for the full index with QA/maturity status, and [`gpts/README.md`](gpts/README.md) for the ChatGPT versions.
 
