@@ -142,8 +142,8 @@ invite (`https://<sub>.chilipiper.com/reschedule/<id>` or `/cancel/<id>`). Right
 
 1. `company-question-ask` with the router link and the question. Keep the key words; leave
    out personal data.
-2. `found: true` → answer only from `excerpts` and name `sourceTitle` (and `sourceUrl` if
-   set). If the excerpts do not answer the question, say that the company did not publish
+2. `found: true` → answer only from `excerpts` and name `sourceTitle` (and `sourceUrl`
+   when there is one). If the excerpts do not answer the question, say that the company did not publish
    the answer.
 3. `found: false`, or an error that the company has no knowledge base or does not answer AI
    agents → tell the person you could not find the answer. Offer to book a meeting.

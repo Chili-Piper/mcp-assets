@@ -12,6 +12,8 @@ Two classes of check (see docs/methodology.md for the why):
     - every `metadata.references` entry has a matching references/<name>.md  (and vice versa,
       so a reference is never orphaned or unlisted — canonical, one-way wiring)
     - no references/*.md exceeds the 200-line load budget
+    - no line in SKILL.md or references/*.md starts with a word that the Claude plugin
+      directory scanner reads as a shell command (see SCAN_TRIGGER_WORDS)
 
   WARNINGS (printed, do NOT fail — they flag structural debt to pay down):
     - SKILL.md over 200 lines (push deep detail into references/)
@@ -19,6 +21,7 @@ Two classes of check (see docs/methodology.md for the why):
 """
 
 import os
+import re
 import sys
 import yaml
 
@@ -57,6 +60,25 @@ def parse_frontmatter(filepath):
         return yaml.safe_load(parts[1])
     except yaml.YAMLError as exc:
         raise ValueError(f"invalid YAML frontmatter: {exc}")
+
+
+# Lowercase words that make the Claude plugin directory scanner refuse the plugin when a line
+# starts with them: "node" reads as a package-manager call, "pass" as a credential, and
+# "set" / "env" / "export" / "printenv" as reading the installer's environment.
+SCAN_TRIGGER_WORDS = ("set", "env", "export", "printenv", "node", "pass")
+SCAN_TRIGGER_RE = re.compile(
+    r"^[\s>*#|`-]*(" + "|".join(SCAN_TRIGGER_WORDS) + r")\b"
+)
+
+
+def scan_trigger_errors(label, filepath):
+    with open(filepath, encoding="utf-8") as f:
+        return [
+            f"{label}:{i}: line starts with '{m.group(1)}', which the plugin directory "
+            "scanner reads as a shell command; reword the line"
+            for i, line in enumerate(f, 1)
+            if (m := SCAN_TRIGGER_RE.match(line))
+        ]
 
 
 def line_count(filepath):
@@ -124,6 +146,13 @@ def validate_skill(skill_dir):
             errors.append(
                 f"{name}: references/{ref}.md exists but is not listed in SKILL.md frontmatter 'metadata.references'"
             )
+
+    # --- plugin directory scanner trigger words ---
+    errors.extend(scan_trigger_errors(f"{name}/SKILL.md", skill_md))
+    for ref in on_disk:
+        errors.extend(
+            scan_trigger_errors(f"{name}/references/{ref}.md", os.path.join(ref_dir, f"{ref}.md"))
+        )
 
     # --- file budgets ---
     for ref in on_disk:
