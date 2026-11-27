@@ -5,6 +5,12 @@ All notable changes to the official Chili Piper Skills are recorded here. The re
 ## [Unreleased]
 
 ### Added
+- **`chili-piper-guest` 0.5.0:** documents live calls and meeting-attempt links
+  ([edge-fire-service PR #2577](https://github.com/Chili-Piper/edge-fire-service/pull/2577)):
+  the `live-call-offered` outcome of `booking-slots-find` with its `liveCall` offer,
+  `live-call-request` (Chili Piper calls the guest's phone now and connects a rep) and
+  `live-call-status`; booking from one-time (`/once/<id>`) and suggested-times
+  (`/suggested-times/<id>`) links. Path B (plain HTTPS) covers neither.
 - **`chili-piper-guest` 0.4.0:** documents every tool of the guest MCP server
   ([edge-fire-service PR #2573](https://github.com/Chili-Piper/edge-fire-service/pull/2573)):
   booking from round-robin, group, ownership and shared links; meeting type choice

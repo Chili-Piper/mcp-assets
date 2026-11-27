@@ -42,6 +42,8 @@ link with `supported: true`.
 | `booking-link-describe` | `bookingLink` | `linkType`, `routerSlug` (router only), `formFields` (`ref`, `label`, `required`) |
 | `booking-slots-find` | `bookingLink`, `guestEmail`, `guestTimezone` (IANA), `formValues` (opt, map `ref` → value), `from` (opt, default now), `days` (opt, 1–7, default 7), `meetingTypeId` (opt) | `bookingSessionId`, `outcome`, `durationMinutes`, `redirectUrl`, `startTimes`, `meetingTypeId`, `meetingTypes`, `locations` |
 | `booking-create` | `bookingLink`, `bookingSessionId`, `startTime`; not for a router link: also `guestEmail`, `guestTimezone`, `formValues`; opt: `meetingTypeId`, `location` | `meetingId`, `startTime` |
+| `live-call-request` | `bookingLink`, `bookingSessionId`, `guestPhone` (opt, E.164), `meetingTypeId` (opt) | `state`, `meetingId`, `calendarFallback`, `redirectUrl` |
+| `live-call-status` | `bookingLink`, `bookingSessionId` | `state`, `meetingId`, `calendarFallback`, `redirectUrl` |
 
 `linkType` values:
 
@@ -51,6 +53,8 @@ link with `supported: true`.
 | `personal` | `/me/<userSlug>/<linkSlug>`. One fixed person |
 | `round-robin`, `group`, `ownership` | `/round-robin/<slug>`, `/group/<slug>`, `/ownership/<slug>`. A team link |
 | `shared` | `/shared/<userSlug>/<slug>`. A team link that one user shares |
+| `one-time` | `/once/<id>`. A link the host sent this guest. It offers the link's open times and books once |
+| `suggested-times` | `/suggested-times/<id>`. The host proposed some times. `startTimes` holds only the proposed times that are still open; another time is refused |
 
 Tools reject links that are not Chili Piper booking links of the server's environment. The
 server sets everything else (trigger, routing options). You cannot add guests — the same as
@@ -62,6 +66,7 @@ on the booking page.
 |---|---|
 | `calendar-offered` | `startTimes` holds the open times |
 | `no-calendar` | Router link only. The company does not offer a calendar to this guest now: it sends them to `redirectUrl`, or its team contacts them live. `startTimes` is empty |
+| `live-call-offered` | Router link only. The company offers a phone call now ("talk now"); see `liveCall` and `mcp-live-call.md`. If `liveCall.calendarAlsoOffered` is `true`, `startTimes` also holds open times |
 
 **Meeting type choice.** `meetingTypes` lists the meeting types the link offers (`id`,
 `name`, `durationMinutes`). `meetingTypeId` is the one the `startTimes` are for (default:
@@ -76,6 +81,14 @@ of the session.
 `webex`. To use another one, give `booking-create` `location: {"id": <id>}`. If
 `guestValueRequired` is `true`, also send `value`: the guest's own meeting link, phone or
 address (at most 500 characters). Do not send `value` for other locations.
+
+**Live call.** Outcome `live-call-offered`, `liveCall`, `live-call-request` and
+`live-call-status`: → `mcp-live-call.md`.
+
+**One-time and suggested-times links.** The same tools work, with the guest fields as for a
+personal link. One booking uses the link up. A used or currently reserved link is a tool
+error. If the tool says an AI agent cannot book from this link (for example a link from a
+Handoff), give the person the link to book in a browser.
 
 ### Ask the company a question
 
@@ -123,6 +136,8 @@ invite (`https://<sub>.chilipiper.com/reschedule/<id>` or `/cancel/<id>`). Right
      says there are no open times, call again with `from` 7 days later.
    - `no-calendar` → the company does not offer a meeting to this person now. Tell them.
      Give them `redirectUrl` if it is set, else the booking link to use in a browser.
+   - `live-call-offered` → follow `mcp-live-call.md` (or book one of `startTimes` if
+     `liveCall.calendarAlsoOffered` and the person prefers a meeting).
 3. If `meetingTypes` has more than one item, or `locations` has more than one item, tell
    the person the options (name and duration; location `label` and `details`). For
    another meeting type, run step 2 again with its `meetingTypeId`. If the chosen location

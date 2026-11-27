@@ -117,7 +117,7 @@ Success: `{"type": "ScheduledByReservation", "meetingId": "..."}`.
 |---|---|---|
 | `RoutedWithCalendar` | A calendar is offered | Continue to step 3 |
 | `RoutedWithoutCalendar` | No calendar for this guest (`redirect` says where to go) | Tell the person the company will follow up, or give them `redirect.url` |
-| `RoutedLive` or other | Live call or other flow | Give the person the booking link |
+| `RoutedLive` or other | Live call or other flow | Path B cannot start a live call. Use Path A (`SKILL.md` § Live call) or give the person the booking link |
 
 ## Personal-link flow
 
