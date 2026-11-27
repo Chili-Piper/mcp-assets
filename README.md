@@ -23,7 +23,7 @@ Maintained by Chili Piper. These are ready-to-use AI specialists — meeting dia
 | [`mcp-servers/chili-piper/`](mcp-servers/chili-piper/) | **MCP setup guide** — connect the Chili Piper MCP via API key or OAuth. |
 | [`gemini/`](gemini/) | **Google Gemini guide** — connect via Gemini CLI, Gen AI SDK / ADK, or Gemini Enterprise. |
 | [`plugins/chili-piper-skills/`](plugins/chili-piper-skills/) · [`.claude-plugin/`](.claude-plugin/) · [`.cursor-plugin/`](.cursor-plugin/) | **Plugin manifests** — the Claude and Cursor plugins that bundle the MCP with these skills and commands. |
-| [`docs/`](docs/) | Authoring methodology, QA status tracker, and org-level deployment guide. |
+| [`docs/`](docs/) | Authoring methodology, QA status tracker, org-level deployment guide, and the [website snippet for guests' AI agents](docs/website-snippet.md). |
 
 A **Skill** is a small, self-contained instruction set that teaches an AI agent how to do one Chili Piper task correctly — which MCP tools to call, in what order, and how to format the result. The same Agent Skills format works in Claude and OpenAI Codex. A **GPT** is a separate Custom GPT packaging of the capability for ChatGPT.
 
